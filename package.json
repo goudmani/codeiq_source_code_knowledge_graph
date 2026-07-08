@@ -1,0 +1,8 @@
+{
+  "name": "codeiq_source_code_knowledge_graph",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "ts-morph": "^23.0.0"
+  }
+}

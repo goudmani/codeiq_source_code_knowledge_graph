@@ -1,0 +1,18 @@
+name: codeiq_source_code_knowledge_graph
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - nodejs
+  - pandas
+  - numpy
+  - networkx
+  - jupyterlab
+  - pytest
+  - black
+  - flake8
+  - pip
+  - pip:
+      - python-dotenv
+      - tree-sitter
+      - tree-sitter-typescript
