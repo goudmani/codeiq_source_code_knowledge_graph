@@ -27,4 +27,5 @@ We have provided make commands to make extraction in 2 different languages easie
 ```make
 make clone
 make extract
+make graph
 ```
