@@ -1,4 +1,4 @@
-name: codeiq_source_code_knowledge_graph
+name: codeiq
 channels:
   - conda-forge
 dependencies:
