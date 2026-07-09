@@ -17,3 +17,4 @@ dependencies:
       - python-dotenv
       - tree-sitter
       - tree-sitter-typescript
+      - chromadb
