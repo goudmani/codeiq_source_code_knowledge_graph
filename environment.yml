@@ -5,6 +5,7 @@ dependencies:
   - python=3.11
   - nodejs
   - pandas
+  - make
   - numpy
   - networkx
   - jupyterlab
