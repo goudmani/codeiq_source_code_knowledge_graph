@@ -10,10 +10,9 @@ or kill the script partway through, you can just run it again and it will
 pick up where it left off.
 
 Usage:
-    python annotate_entities_resumable.py --llm local
-    python annotate_entities_resumable.py --llm remote --groq-api-key YOUR_KEY
-    python annotate_entities_resumable.py --llm remote            # uses GROQ_API_KEY env var
-    python annotate_entities_resumable.py --llm remote --retry-errors  # also retry previously-failed files
+    python add_descriptions_stepped.py --llm local
+    python add_descriptions_stepped.py --llm remote            # uses env var according to config
+    python add_descriptions_stepped.py --llm remote --retry-errors  # also retry previously-failed files
 
 Input:
     ../data/processed/entities.jsonl
@@ -64,36 +63,62 @@ ENTITIES:
 
 SYSTEM_PROMPT = "You are a precise code documentation assistant. Output valid JSON only."
 
+from dotenv import load_dotenv
+load_dotenv()
 
+DEFAULT_CONFIG_PATH = Path(os.getenv("LLM_CONFIG_PATH", "src/ts_extract/llm_config.json"))
+
+# --------------------------------------------------------------------------
+# Config loading
+# --------------------------------------------------------------------------
+
+def load_llm_config(config_path: Path = DEFAULT_CONFIG_PATH) -> dict:
+    if not config_path.exists():
+        raise FileNotFoundError(f"LLM config file not found: {config_path}")
+    with open(config_path, "r") as f:
+        return json.load(f)
+    
 # --------------------------------------------------------------------------
 # LLM construction
 # --------------------------------------------------------------------------
 
-def build_llm(backend: str, groq_api_key: str | None, max_tokens: int) -> ChatOpenAI:
-    """Build a ChatOpenAI client pointed at either a local (LM Studio) or
-    remote (Groq) OpenAI-compatible endpoint."""
-    if backend == "local":
-        return ChatOpenAI(
-            base_url='http://localhost:1234/v1',
-            api_key="lm-studio",  # LM Studio ignores the key but the SDK requires one
-            model='qwen3.5-4b',
-            max_tokens=max_tokens,
+def build_llm(
+    backend: str,
+    max_tokens: int,
+    config = load_llm_config(DEFAULT_CONFIG_PATH)
+) -> ChatOpenAI:
+    """Build a ChatOpenAI client pointed at whichever backend is selected,
+    using settings from llm_config.json."""
+
+    if backend not in config:
+        available = ", ".join(sorted(config.keys()))
+        raise ValueError(f"Unknown backend: {backend!r} (available: {available})")
+
+    entry = config[backend]
+
+    # Resolve API key: explicit override > env var from config > literal key in config
+    api_key = (
+        (os.environ.get(entry["api_key_env"]) if entry.get("api_key_env") else None)
+        or entry.get("api_key")
+    )
+
+    if entry.get("requires_key", True) and not api_key:
+        raise ValueError(
+            f"Backend {backend!r} requires an API key but none was found. "
+            f"Set {entry.get('api_key_env') or 'api_key'} in the environment "
+            f"or in {DEFAULT_CONFIG_PATH}."
         )
-    elif backend == "remote":
-        api_key = groq_api_key or os.environ.get("GROQ_API_KEY")
-        if not api_key:
-            raise ValueError(
-                "Remote backend selected but no Groq API key found. "
-                "Pass --groq-api-key or set the GROQ_API_KEY environment variable."
-            )
-        return ChatOpenAI(
-            base_url="https://api.groq.com/openai/v1",
-            api_key=api_key,
-            model='llama-3.1-8b-instant',
-            max_tokens=max_tokens,
-        )
-    else:
-        raise ValueError(f"Unknown backend: {backend!r} (expected 'local' or 'remote')")
+
+    # Local backends often don't validate the key at all, so fall back to a placeholder
+    if not api_key:
+        api_key = "not-needed"
+
+    return ChatOpenAI(
+        base_url=entry["base_url"],
+        api_key=api_key,
+        model=entry["model"],
+        max_tokens=max_tokens,
+    )
 
 
 # --------------------------------------------------------------------------
@@ -359,9 +384,11 @@ def merge_descriptions(data: list[dict], results: list[dict]) -> list[dict]:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--llm", choices=["local", "remote"], default=os.environ.get("LLM_BACKEND", "local"),
-                        help="Which LLM backend to use (default: local, or $LLM_BACKEND if set)")
-    parser.add_argument("--groq-api-key", default=None, help="Groq API key (remote backend). Falls back to $GROQ_API_KEY.")
+    _llm_config = load_llm_config()
+    parser.add_argument("--llm", choices=sorted(_llm_config.keys()),
+                        default=os.environ.get("LLM_BACKEND", "local"),
+                        help=f"Which LLM backend to use (default: local, or $LLM_BACKEND if set). "
+                             f"Available: {', '.join(sorted(_llm_config.keys()))}")
     parser.add_argument("--max-tokens", type=int, default=2048)
     parser.add_argument("--input", default="./data/processed/entities.jsonl", help="Input entities JSONL path")
     parser.add_argument("--output", default="./data/processed/entities_with_desc.jsonl", help="Final merged output JSONL path")
@@ -380,8 +407,8 @@ def main():
 
     llm = build_llm(
         backend=args.llm,
-        groq_api_key=args.groq_api_key,
         max_tokens=args.max_tokens,
+        config = _llm_config
     )
     print(f"[INFO] Using {args.llm} backend "
           f"({'qwen3.5-4b' if args.llm == 'local' else 'llama-3.1-8b-instant'})")

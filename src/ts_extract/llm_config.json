@@ -1,0 +1,16 @@
+{
+  "local": {
+    "base_url": "http://localhost:1234/v1",
+    "api_key": "lm-studio",
+    "api_key_env": null,
+    "model": "qwen3.5-4b",
+    "requires_key": false
+  },
+  "remote": {
+    "base_url": "https://api.groq.com/openai/v1",
+    "api_key": null,
+    "api_key_env": "GROQ_API_KEY",
+    "model": "llama-3.1-8b-instant",
+    "requires_key": true
+  }
+}
