@@ -1,4 +1,4 @@
-.PHONY: all clone extract graph
+.PHONY: all clone extract graph eval
 
 all: clone extract graph
 
@@ -10,3 +10,6 @@ extract:
 
 graph:
 	python src/build_graph/build_graph.py data/processed/
+
+eval:
+	python -m src.qa_agent.eval
