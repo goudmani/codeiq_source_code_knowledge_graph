@@ -311,25 +311,42 @@ def process_repo(llm: ChatOpenAI, file_entity_map: dict[Path, list[dict]],
 # --------------------------------------------------------------------------
 
 def merge_descriptions(data: list[dict], results: list[dict]) -> list[dict]:
-    """Return a copy of `data` where entities that received a description
-    from the LLM have it merged in, keyed on the entity's "name" (falling
-    back to identity) within its source file."""
     desc_lookup: dict[tuple, str] = {}
     for r in results:
         if "error" in r:
             continue
-        for ent in r.get("entities", []):
-            key_name = ent.get("name") or ent.get("id") or json.dumps(ent, sort_keys=True)
+        entities = r.get("entities", [])
+        if not isinstance(entities, list):
+            print(f"[WARN] {r.get('file')}: 'entities' is not a list ({type(entities).__name__}), skipping")
+            continue
+        for ent in entities:
+            if not isinstance(ent, dict):
+                print(f"[WARN] {r.get('file')}: entity is not a dict ({type(ent).__name__}: {ent!r}), skipping")
+                continue
+            key_name = ent.get("id") or ent.get("path") or ent.get("name") or json.dumps(ent, sort_keys=True)
+            if not isinstance(key_name, (str, int, float, bool)):
+                key_name = json.dumps(key_name, sort_keys=True)
             desc_lookup[(r["file"], key_name)] = ent.get("description")
 
     updated = []
     for entity in data:
-        entity = dict(entity)  # shallow copy so we don't mutate original
-        key_name = entity.get("name") or entity.get("id")
+        entity = dict(entity)
+        key_name = entity.get("id") or entity.get("path") or entity.get("name")
+        if not isinstance(key_name, (str, int, float, bool)):
+            key_name = json.dumps(key_name, sort_keys=True)
+
+        entity_path = entity.get("path")
+        entity_file = entity.get("file")
+
         for (file_key, name_key), desc in desc_lookup.items():
-            if name_key == key_name and (
-                entity.get("path", "xcjdj") in file_key or entity.get("file", "wjvdjvr") in file_key
-            ):
+            if not isinstance(file_key, str):
+                continue
+            if name_key != key_name:
+                continue
+            file_key_norm = file_key.replace("\\", "/")
+            path_match = isinstance(entity_path, str) and file_key_norm.endswith(entity_path.replace("\\", "/"))
+            file_match = isinstance(entity_file, str) and file_key_norm.endswith(entity_file.replace("\\", "/"))
+            if path_match or file_match:
                 entity["description"] = desc
                 break
         updated.append(entity)
