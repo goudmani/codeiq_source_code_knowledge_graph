@@ -29,8 +29,12 @@ data/processed/graph.graphml                exported graph for Gephi / yEd viewi
 data/processed/chroma/                      ChromaDB vector index (one doc per entity:
                                              graph context + real source snippet)
         │
+        │  python -m src.qa_agent.agent "<question>"  (src/qa_agent/)
         ▼
-   (next) LangChain retriever + LLM Q&A agent, chat/console UI, confidence scoring
+Answer + High/Medium/Low confidence + cited file/snippet sources
+        │
+        ▼
+   (next) chat/console UI on top of the agent
 ```
 
 Each stage reads the previous stage's output and is independently re-runnable.
@@ -231,31 +235,109 @@ codeiq_source_code_knowledge_graph/
 │                                    @tool or similar); also runnable as a CLI
 │                                    for manual sanity checks
 │
+│   └── qa_agent/                    stage 5: LLM-powered Q&A agent
+│       ├── tools.py                   find_entity_by_id_or_name() (exact
+│       │                              id/name lookup) + get_related_entities()
+│       │                              (uncapped graph traversal for one
+│       │                              entity) — reuse build_index.py's
+│       │                              load_entities()/load_adjacency()
+│       ├── agent.py                   ask(question, model) — binds
+│       │                              search_code + the two tools above to a
+│       │                              Groq chat model, runs a bounded
+│       │                              tool-calling loop, computes a
+│       │                              High/Medium/Low confidence level
+│       │                              deterministically from retrieval
+│       │                              relevance (not LLM self-reported); also
+│       │                              a CLI for one-off questions
+│       └── eval.py                    runs data/eval/questions.json against
+│                                      every model in agent.MODELS, writes
+│                                      data/eval/results.json + RESULTS.md
+│
 └── data/
     ├── raw/                        gitignored — cloned *.ts/*.tsx source,
     │                                regenerate any time with `make clone`
-    └── processed/                  pipeline outputs, checked into git
-        ├── entities.jsonl            graph nodes (source of truth)
-        ├── edges.jsonl                graph edges (source of truth)
-        ├── graph.graphml              GraphML export of the above, for
-        │                              opening in Gephi/yEd — derived, not
-        │                              a separate source of data
-        └── chroma/                    ChromaDB persistent store (SQLite +
-                                        HNSW index segment) for the
-                                        codeiq_entities collection — derived
-                                        from entities.jsonl/edges.jsonl +
-                                        data/raw/, safe to delete/rebuild,
-                                        should be gitignored
+    ├── processed/                  pipeline outputs, checked into git
+    │   ├── entities.jsonl            graph nodes (source of truth)
+    │   ├── edges.jsonl                graph edges (source of truth)
+    │   ├── graph.graphml              GraphML export of the above, for
+    │   │                              opening in Gephi/yEd — derived, not
+    │   │                              a separate source of data
+    │   └── chroma/                    ChromaDB persistent store (SQLite +
+    │                                  HNSW index segment) for the
+    │                                  codeiq_entities collection — derived
+    │                                  from entities.jsonl/edges.jsonl +
+    │                                  data/raw/, safe to delete/rebuild,
+    │                                  should be gitignored
+    └── eval/                       checked into git
+        ├── questions.json            10 self-generated question/expected-
+        │                              answer/expected-entity pairs, written
+        │                              before tuning the agent
+        ├── results.json              raw structured output of the last
+        │                              `make eval` run (all models x all
+        │                              questions)
+        └── RESULTS.md                human-readable comparison report
 ```
+
+## Q&A agent
+
+`src/qa_agent/` answers natural-language questions about the codebase, grounded
+in retrieved evidence, using a Groq-hosted LangChain agent with three tools:
+
+1. **`search_code`** (`src/vector_index/query_index.py`) — semantic search over
+   the vector index; the entry point for discovery questions.
+2. **`find_entity_by_id_or_name`** (`src/qa_agent/tools.py`) — exact/near-exact
+   identifier lookup, preferred over semantic similarity when a question names
+   a specific entity directly (embedding search can't reliably disambiguate
+   identically-named entities in different files, e.g. two `useSessionId`
+   hooks).
+3. **`get_related_entities`** (`src/qa_agent/tools.py`) — uncapped graph
+   traversal for one entity, for when a question needs more of its
+   relationships than `search_code`'s capped preview (8 names per relation
+   type) exposes.
+
+Every answer gets a **High/Medium/Low confidence level**, computed
+deterministically from `search_code`'s retrieval relevance scores (not
+self-reported by the LLM), plus a one-line rationale.
+
+### Setup
+
+```bash
+cp .env.example .env   # then fill in GROQ_API_KEY
+```
+
+### Usage
+
+```bash
+python -m src.qa_agent.agent "which hook manages session state?" --model llama-3.3-70b-versatile
+python -m src.qa_agent.agent "what breaks if useSession changes?" --model openai/gpt-oss-120b
+```
+
+### Evaluation
+
+`data/eval/questions.json` holds 10 self-generated question/expected-answer
+pairs, grounded in real entities from the parsed graph, written *before*
+tuning the agent so answer quality can be measured as the agent changes — not
+just checked once at the end.
+
+```bash
+make eval   # or: python -m src.qa_agent.eval
+```
+
+Runs all 10 questions against every model in `agent.MODELS`
+(`llama-3.3-70b-versatile` and `openai/gpt-oss-120b`, compared head-to-head)
+and writes `data/eval/results.json` (raw) and `data/eval/RESULTS.md`
+(human-readable side-by-side report: per-question answers/confidence/latency,
+plus a per-model summary table).
 
 ## Roadmap
 
 - [x] Parse codebase into entities/edges (File, Component, Hook, Screen)
 - [x] Build knowledge graph (NetworkX) + GraphML export
 - [x] Vector search index (ChromaDB, local embeddings)
-- [ ] LangChain retriever + LLM Q&A agent over the vector index, with
-      graph-neighbor expansion for multi-hop questions ("what breaks if X
-      changes?")
-- [ ] Confidence scoring (High/Medium/Low) per answer
-- [ ] Chat UI or console interface with source citations
-- [ ] Answer-quality evaluation against a hand-written question set
+- [x] LangChain retriever + LLM Q&A agent over the vector index, with graph
+      expansion for multi-hop/impact questions ("what breaks if X changes?")
+- [x] Confidence scoring (High/Medium/Low) per answer
+- [x] Answer-quality evaluation against a hand-written question set (10
+      questions x 2 Groq models)
+- [ ] Chat UI or console interface with source citations (planned as
+      `feat/qa-ui`, to branch off this agent once it's validated)
