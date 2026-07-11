@@ -18,4 +18,6 @@ dependencies:
       - langchain
       - langchain-openai
       - chromadb
-
+      - langchain
+      - langchain-core
+      - langchain-groq

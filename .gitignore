@@ -1,4 +1,10 @@
 node_modules/
 __pycache__/
 .vscode/
+.DS_Store
+.env
 data/raw/*
+
+# Local context/reference material (notes, briefs, transcripts, etc.)
+# provided for understanding only -- never committed.
+context/
