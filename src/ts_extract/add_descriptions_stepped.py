@@ -17,9 +17,9 @@ Usage:
 Input:
     ../data/processed/entities.jsonl
         JSON-lines file where each record has at least a "type" field.
-        Records with type == "File" must have a "path" field (relative to
+        Records with type == "File" must have a "file" field (relative to
         --root-folder) pointing at a source file. Other records reference
-        that file via either a "path" or "file" field.
+        that file via either a "file" or "file" field.
 
 Output (written incrementally, one line per file, as each completes):
     ../data/processed/entities_raw_results.jsonl
@@ -142,16 +142,16 @@ def build_file_entity_map(data: list[dict], root_folder: str) -> dict[Path, list
     """Group entities by the source file they belong to.
 
     Entities of type "File" define the files to process. Any other entity
-    that references that same path (via a "path" or "file" key) is grouped
+    that references that same path (via a "file" or "file" key) is grouped
     under it.
     """
-    files = [entity["path"] for entity in data if entity.get("type") == "File"]
+    files = [entity["file"] for entity in data if entity.get("type") == "File"]
 
     file_entity_map: dict[Path, list[dict]] = {}
     for file_path in files:
         entities = [
             entity for entity in data
-            if entity.get("path") == file_path or entity.get("file") == file_path
+            if entity.get("file") == file_path
         ]
         file_entity_map[Path(root_folder) / file_path] = entities
 
@@ -348,7 +348,7 @@ def merge_descriptions(data: list[dict], results: list[dict]) -> list[dict]:
             if not isinstance(ent, dict):
                 print(f"[WARN] {r.get('file')}: entity is not a dict ({type(ent).__name__}: {ent!r}), skipping")
                 continue
-            key_name = ent.get("id") or ent.get("path") or ent.get("name") or json.dumps(ent, sort_keys=True)
+            key_name = ent.get("id") or ent.get("file") or ent.get("name") or json.dumps(ent, sort_keys=True)
             if not isinstance(key_name, (str, int, float, bool)):
                 key_name = json.dumps(key_name, sort_keys=True)
             desc_lookup[(r["file"], key_name)] = ent.get("description")
@@ -356,11 +356,10 @@ def merge_descriptions(data: list[dict], results: list[dict]) -> list[dict]:
     updated = []
     for entity in data:
         entity = dict(entity)
-        key_name = entity.get("id") or entity.get("path") or entity.get("name")
+        key_name = entity.get("id") or entity.get("file") or entity.get("name")
         if not isinstance(key_name, (str, int, float, bool)):
             key_name = json.dumps(key_name, sort_keys=True)
 
-        entity_path = entity.get("path")
         entity_file = entity.get("file")
 
         for (file_key, name_key), desc in desc_lookup.items():
@@ -369,9 +368,8 @@ def merge_descriptions(data: list[dict], results: list[dict]) -> list[dict]:
             if name_key != key_name:
                 continue
             file_key_norm = file_key.replace("\\", "/")
-            path_match = isinstance(entity_path, str) and file_key_norm.endswith(entity_path.replace("\\", "/"))
             file_match = isinstance(entity_file, str) and file_key_norm.endswith(entity_file.replace("\\", "/"))
-            if path_match or file_match:
+            if file_match:
                 entity["description"] = desc
                 break
         updated.append(entity)
