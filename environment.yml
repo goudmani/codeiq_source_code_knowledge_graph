@@ -15,8 +15,8 @@ dependencies:
   - pip
   - pip:
       - python-dotenv
-      - tree-sitter
-      - tree-sitter-typescript
+      - langchain
+      - langchain-openai
       - chromadb
       - langchain
       - langchain-core

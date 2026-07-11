@@ -105,7 +105,7 @@ for (const sf of sourceFiles) {
     id: fileId,
     type: "File",
     name: path.basename(filePath),
-    path: relPath,
+    file: relPath,
     isScreenDir: isScreenByPath(relPath),
     startLine: 1,
     endLine: sf.getEndLineNumber(),
