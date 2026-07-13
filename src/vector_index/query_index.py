@@ -14,6 +14,7 @@ Also runnable directly as a CLI for manual sanity checks:
   python3 query_index.py "authentication hook" --n 10 --type Hook
 """
 import argparse
+import json
 from functools import lru_cache
 
 import chromadb
@@ -62,6 +63,12 @@ def search_code(
           - snippet (str): the entity's actual source code
           - graph_context (str): human-readable renders/calls/depends_on/
             defines relationships (both directions) for this entity
+          - edges (list[dict]): structured version of graph_context, one dict
+            per relationship -- direction ("out"|"in"), type, id, name,
+            external (bool, target is a third-party package), lines (call/
+            render-site line numbers). Use this instead of parsing
+            graph_context when you need exact line numbers or want to filter
+            to/from external packages.
           - relevance (float): similarity score in [0, 1], higher is more
             relevant (converted from Chroma's raw cosine distance)
     """
@@ -93,6 +100,7 @@ def search_code(
                 "end_line": meta["endLine"],
                 "snippet": meta["snippet"] or snippet,
                 "graph_context": graph_context,
+                "edges": json.loads(meta["edges"]) if meta.get("edges") else [],
                 "relevance": round(max(0.0, 1.0 - dist / 2), 4),
             }
         )
@@ -114,6 +122,9 @@ def main():
         print(f"{hit['type']} {hit['name']}  ({hit['file']}:{hit['start_line']}-{hit['end_line']})")
         if hit["graph_context"]:
             print(hit["graph_context"])
+        external = [e for e in hit["edges"] if e["external"]]
+        if external:
+            print(f"External calls: {', '.join(e['name'] + ' L' + ','.join(map(str, e['lines'])) for e in external[:5])}")
         print("Source:")
         print(hit["snippet"][:400])
         print()
