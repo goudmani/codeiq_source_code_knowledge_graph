@@ -3,11 +3,14 @@
 eval.py
 
 Runs the 10 self-generated questions in data/eval/questions.json against the
-Q&A agent (agent.py) for every model in MODELS -- head-to-head, not just one
--- and writes the results as both raw JSON and a human-readable comparison
-report. This is the harness used *while building* the agent (per the brief:
-write the eval set before building, then measure quality as you iterate), not
-just a final report.
+Q&A agent (agent.py). Defaults to just agent.DEFAULT_MODEL (currently
+openai/gpt-oss-120b) -- head-to-head model comparison isn't meaningful yet,
+since answer quality depends on more than the model choice alone. Pass
+--models to run more than one (e.g. --models llama-3.3-70b-versatile
+openai/gpt-oss-120b) once that comparison is worth doing again. Writes the
+results as both raw JSON and a human-readable report. This is the harness
+used *while building* the agent (per the brief: write the eval set before
+building, then measure quality as you iterate), not just a final report.
 
 Sequential (not parallel) to stay under Groq free-tier rate limits; a failed
 question is recorded as an error and does not abort the run.
@@ -27,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from dotenv import load_dotenv  # noqa: E402
 
-from src.qa_agent.agent import MODELS, ask  # noqa: E402
+from src.qa_agent.agent import DEFAULT_MODEL, MODELS, ask  # noqa: E402
 
 DEFAULT_QUESTIONS_PATH = "data/eval/questions.json"
 DEFAULT_OUT_DIR = "data/eval"
@@ -59,6 +62,11 @@ def run_eval(questions: list[dict], models: list[str]) -> list[dict]:
                         "expected_entities": q["expected_entities"],
                         "entity_hit": entity_hit,
                         "error": None,
+                        # A run can "succeed" (no exception) yet return empty
+                        # answer text -- seen live when the tool-call budget
+                        # ran out mid-turn. Flag it as its own failure
+                        # category so it can't hide inside the hit rate.
+                        "blank_answer": not str(result["answer"] or "").strip(),
                         **result,
                     }
                 )
@@ -71,6 +79,7 @@ def run_eval(questions: list[dict], models: list[str]) -> list[dict]:
                         "expected_entities": q["expected_entities"],
                         "entity_hit": False,
                         "error": str(exc),
+                        "blank_answer": False,
                         "answer": None,
                         "confidence": None,
                         "confidence_rationale": None,
@@ -98,6 +107,7 @@ def summarize(runs: list[dict], models: list[str]) -> dict:
         summary[model] = {
             "total": len(model_runs),
             "errors": len(model_runs) - len(ok_runs),
+            "blank_answers": sum(1 for r in ok_runs if r.get("blank_answer")),
             "entity_hit_rate": round(sum(r["entity_hit"] for r in model_runs) / len(model_runs), 2) if model_runs else 0,
             "avg_latency_s": round(sum(latencies) / len(latencies), 2) if latencies else None,
             "confidence_counts": dict(confidence_counts),
@@ -116,13 +126,13 @@ def write_markdown_report(runs: list[dict], summary: dict, models: list[str], ou
 
     lines.append("## Summary")
     lines.append("")
-    lines.append("| Model | Entity-hit rate | Avg latency (s) | Errors | Confidence (H/M/L) |")
-    lines.append("|---|---|---|---|---|")
+    lines.append("| Model | Entity-hit rate | Avg latency (s) | Errors | Blank answers | Confidence (H/M/L) |")
+    lines.append("|---|---|---|---|---|---|")
     for model in models:
         s = summary[model]
         conf = s["confidence_counts"]
         conf_str = f"{conf.get('High', 0)}/{conf.get('Medium', 0)}/{conf.get('Low', 0)}"
-        lines.append(f"| `{model}` | {s['entity_hit_rate']} | {s['avg_latency_s']} | {s['errors']} | {conf_str} |")
+        lines.append(f"| `{model}` | {s['entity_hit_rate']} | {s['avg_latency_s']} | {s['errors']} | {s['blank_answers']} | {conf_str} |")
     lines.append("")
 
     lines.append("## Per-question comparison")
@@ -141,6 +151,8 @@ def write_markdown_report(runs: list[dict], summary: dict, models: list[str], ou
                          f"entity hit: {'yes' if r['entity_hit'] else 'no'} -- latency: {r['latency_s']}s")
             if r["error"]:
                 lines.append(f"> ERROR: {r['error']}")
+            elif r.get("blank_answer"):
+                lines.append("> BLANK ANSWER (run raised no error but returned empty text)")
             else:
                 lines.append(f"> {r['answer']}")
             lines.append("")
@@ -154,7 +166,7 @@ def main():
     ap = argparse.ArgumentParser(description="Run the eval question set against every configured model.")
     ap.add_argument("--questions", default=DEFAULT_QUESTIONS_PATH)
     ap.add_argument("--out-dir", default=DEFAULT_OUT_DIR)
-    ap.add_argument("--models", nargs="+", default=list(MODELS), choices=list(MODELS))
+    ap.add_argument("--models", nargs="+", default=[DEFAULT_MODEL], choices=list(MODELS))
     args = ap.parse_args()
 
     load_dotenv()
@@ -170,7 +182,8 @@ def main():
 
     print(f"\nWrote {out_dir / 'results.json'} and {out_dir / 'RESULTS.md'}")
     for model, s in summary.items():
-        print(f"  {model}: hit_rate={s['entity_hit_rate']} avg_latency={s['avg_latency_s']}s errors={s['errors']}")
+        print(f"  {model}: hit_rate={s['entity_hit_rate']} avg_latency={s['avg_latency_s']}s "
+              f"errors={s['errors']} blank_answers={s['blank_answers']}")
 
 
 if __name__ == "__main__":
