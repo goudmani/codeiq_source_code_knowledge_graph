@@ -27,22 +27,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import groq  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
 
-from src.qa_agent.agent import MODELS  # noqa: E402
+from src.qa_agent.agent import MODELS, _load_api_keys  # noqa: E402
 
 
 def probe(models: list[str]) -> dict[str, str]:
-    client = groq.Groq(api_key=os.environ["GROQ_API_KEY"])
     status = {}
-    for model in models:
-        try:
-            client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": "hi"}],
-                max_completion_tokens=1,
-            )
-            status[model] = "OK -- not rate limited"
-        except groq.RateLimitError as exc:
-            status[model] = f"RATE LIMITED -- {str(exc)[:300]}"
+    for label, key in _load_api_keys():
+        client = groq.Groq(api_key=key)
+        for model in models:
+            try:
+                client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": "hi"}],
+                    max_completion_tokens=1,
+                )
+                status[f"{label} / {model}"] = "OK -- not rate limited"
+            except groq.RateLimitError as exc:
+                status[f"{label} / {model}"] = f"RATE LIMITED -- {str(exc)[:300]}"
+            except groq.AuthenticationError as exc:
+                status[f"{label} / {model}"] = f"BAD KEY -- {str(exc)[:200]}"
     return status
 
 
