@@ -124,23 +124,66 @@ def _trim_for_context(hits: list[dict] | None) -> list[dict]:
     return trimmed
 
 
-def _invoke_with_retry(llm_with_tools, messages, max_retries: int = MAX_INVOKE_RETRIES):
-    """Retry a Groq call on tool-call generation glitches and transient rate limits.
+def _load_api_keys() -> list[tuple[str, str]]:
+    """Configured Groq API keys in priority order: [(account_label, key), ...].
 
-    Groq's tool-calling occasionally emits malformed function calls (a known
-    flakiness, not specific to our prompt); a 413/429 token-rate error is
-    often transient within the same rolling window. Both are worth a bounded
-    retry before surfacing as a hard failure.
+    GROQ_API_KEY is Account_1; GROQ_API_KEY_2, GROQ_API_KEY_3, ... are
+    additional accounts used as fallbacks when the active one hits its rate
+    limit -- each Groq account carries its own independent TPM/TPD quota.
     """
+    keys = []
+    if os.environ.get("GROQ_API_KEY"):
+        keys.append(("Account_1", os.environ["GROQ_API_KEY"]))
+    n = 2
+    while os.environ.get(f"GROQ_API_KEY_{n}"):
+        keys.append((f"Account_{n}", os.environ[f"GROQ_API_KEY_{n}"]))
+        n += 1
+    return keys
+
+
+# Sticks across calls once rotated, so an account that just exhausted its
+# quota isn't pointlessly retried first on every subsequent request.
+_active_key_index = 0
+
+
+def _invoke_with_retry(make_runnable, messages, max_retries: int = MAX_INVOKE_RETRIES):
+    """Invoke a Groq call with bounded retries, rotating accounts on rate limits.
+
+    make_runnable(api_key) builds the runnable (with or without tools bound)
+    for one account's key. On a 413/429 the next configured account is tried
+    immediately -- it has its own fresh TPM/TPD budget, so rotating beats
+    sleeping. Only when every account is rate-limited does it sleep 15s for
+    the rolling window. Other API glitches (e.g. Groq's occasional malformed
+    tool-call 400s) retry the same account after a short pause.
+    """
+    global _active_key_index
+    keys = _load_api_keys()
+    if not keys:
+        raise SystemExit("No GROQ_API_KEY configured (add it to .env, see .env.example)")
+
     last_exc = None
     for attempt in range(max_retries + 1):
-        try:
-            return llm_with_tools.invoke(messages)
-        except groq.APIStatusError as exc:
-            last_exc = exc
+        for offset in range(len(keys)):
+            index = (_active_key_index + offset) % len(keys)
+            label, key = keys[index]
+            try:
+                result = make_runnable(key).invoke(messages)
+                if index != _active_key_index:
+                    print(f"[groq] rate limit on active account -- switched to {label}", file=sys.stderr)
+                    _active_key_index = index
+                return result
+            except groq.APIStatusError as exc:
+                last_exc = exc
+                if exc.status_code in (413, 429):
+                    continue  # rate-limit-flavored: the next account has its own quota
+                if attempt >= max_retries:
+                    raise
+                time.sleep(2)
+                break  # transient non-rate-limit glitch: retry the same account
+        else:
             if attempt >= max_retries:
-                raise
-            time.sleep(15 if exc.status_code in (413, 429) else 2)
+                raise last_exc
+            time.sleep(15)  # every account limited: wait out the rolling window
     raise last_exc
 
 
@@ -167,10 +210,16 @@ def _score_confidence(sources: list[dict]) -> tuple[str, str]:
 
 
 def ask(question: str, model: str = DEFAULT_MODEL, max_tool_calls: int = MAX_TOOL_CALLS) -> dict:
-    llm = ChatGroq(model=model, temperature=0)
     tools = _build_tools()
     tools_by_name = {t.name: t for t in tools}
-    llm_with_tools = llm.bind_tools(tools)
+
+    # Built per-key (not once) so _invoke_with_retry can rotate to another
+    # account's key mid-question when the active one hits its rate limit.
+    def make_llm(api_key: str):
+        return ChatGroq(model=model, temperature=0, api_key=api_key)
+
+    def make_llm_with_tools(api_key: str):
+        return make_llm(api_key).bind_tools(tools)
 
     messages = [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=question)]
     sources_by_id: dict[str, dict] = {}
@@ -179,7 +228,7 @@ def ask(question: str, model: str = DEFAULT_MODEL, max_tool_calls: int = MAX_TOO
     start = time.monotonic()
     calls_made = 0
     budget_exhausted_mid_turn = False
-    response: AIMessage = _invoke_with_retry(llm_with_tools, messages)
+    response: AIMessage = _invoke_with_retry(make_llm_with_tools, messages)
 
     while response.tool_calls and calls_made < max_tool_calls:
         messages.append(response)
@@ -195,7 +244,7 @@ def ask(question: str, model: str = DEFAULT_MODEL, max_tool_calls: int = MAX_TOO
                 break
         if budget_exhausted_mid_turn:
             break
-        response = _invoke_with_retry(llm_with_tools, messages)
+        response = _invoke_with_retry(make_llm_with_tools, messages)
 
     if budget_exhausted_mid_turn or response.tool_calls or not response.content:
         # Either the tool-call budget ran out mid-turn (every tool_call in the
@@ -208,7 +257,7 @@ def ask(question: str, model: str = DEFAULT_MODEL, max_tool_calls: int = MAX_TOO
         # carries no text content, producing a blank final answer.)
         try:
             response = _invoke_with_retry(
-                llm,
+                make_llm,
                 messages
                 + [
                     HumanMessage(
