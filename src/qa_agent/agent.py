@@ -83,6 +83,13 @@ Rules:
 - Only these three tools exist: search_code, find_entity_by_id_or_name, get_related_entities. \
 Never call any other tool name (e.g. open_file, read_file, list_files) -- if you need more of a \
 file's content, call search_code or get_related_entities again instead.
+- If the question names a code identifier (CamelCase like BookmarksScreen, or a useX hook name), \
+your FIRST call must be find_entity_by_id_or_name with that identifier. Only fall back to \
+search_code if the exact lookup returns nothing. Many entities share a name (e.g. 57 components \
+are named Provider) -- semantic similarity cannot disambiguate them, exact lookup can.
+- Never repeat a tool call with the same arguments -- it returns identical results. search_code's \
+n_results is hard-capped at 3, so raising it changes nothing. If a search missed, change the \
+query wording, switch tool, or answer from what you have.
 """
 
 
@@ -224,6 +231,7 @@ def ask(question: str, model: str = DEFAULT_MODEL, max_tool_calls: int = MAX_TOO
     messages = [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=question)]
     sources_by_id: dict[str, dict] = {}
     tool_call_trace: list[dict] = []
+    seen_calls: set[tuple] = set()
 
     start = time.monotonic()
     calls_made = 0
@@ -233,8 +241,30 @@ def ask(question: str, model: str = DEFAULT_MODEL, max_tool_calls: int = MAX_TOO
     while response.tool_calls and calls_made < max_tool_calls:
         messages.append(response)
         for call in response.tool_calls:
-            tool_call_trace.append({"tool": call["name"], "args": call["args"]})
-            result = tools_by_name[call["name"]].invoke(_clamp_tool_args(call["name"], call["args"]))
+            clamped_args = _clamp_tool_args(call["name"], call["args"])
+            # Dedupe on the CLAMPED args: raising n_results past the cap
+            # produces a byte-identical request, so e.g. n_results 10/20/50
+            # all collapse to the same key as the n_results=3 call.
+            dedupe_key = (call["name"], json.dumps(clamped_args, sort_keys=True, default=str))
+            duplicate = dedupe_key in seen_calls
+            tool_call_trace.append({"tool": call["name"], "args": call["args"], "duplicate": duplicate})
+            if duplicate:
+                # Don't re-execute or resend the same payload -- nudge the
+                # model to change strategy. Still counts against the budget
+                # so a stubborn model can't loop forever.
+                messages.append(ToolMessage(
+                    content=json.dumps({"note": "Duplicate call: identical arguments were already "
+                                        "used above and would return the same results. Change the "
+                                        "query wording, switch tool, or answer now."}),
+                    tool_call_id=call["id"],
+                ))
+                calls_made += 1
+                if calls_made >= max_tool_calls:
+                    budget_exhausted_mid_turn = True
+                    break
+                continue
+            seen_calls.add(dedupe_key)
+            result = tools_by_name[call["name"]].invoke(clamped_args)
             for hit in result or []:
                 sources_by_id.setdefault(hit["id"], hit)
             messages.append(ToolMessage(content=json.dumps(_trim_for_context(result)), tool_call_id=call["id"]))
