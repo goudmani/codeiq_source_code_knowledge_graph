@@ -39,17 +39,24 @@ MODELS = {
     "llama-3.3-70b-versatile": "Groq Llama 3.3 70B -- most tool-calling-tested default",
     "openai/gpt-oss-120b": "Groq-hosted OpenAI gpt-oss 120B -- alternate for reasoning-quality comparison",
 }
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_MODEL = "openai/gpt-oss-120b"
 MAX_TOOL_CALLS = 5
 MAX_INVOKE_RETRIES = 2
 
 # Free-tier Groq TPM limits are tight (as low as 8000 tokens/minute for larger
-# models), and a single search_code call already returns ~2K tokens of full
-# snippets. Trim what goes back into the LLM's context; full hits (untrimmed)
-# are still kept in `sources_by_id` for citations/eval, this only shrinks what
-# the model has to re-read on every subsequent turn.
-MAX_SNIPPET_CHARS_IN_CONTEXT = 300
-MAX_GRAPH_CONTEXT_CHARS_IN_CONTEXT = 200
+# models). A trimmed tool result still accumulates across every call in the
+# loop and gets resent in full on every subsequent turn (Groq's chat API is
+# stateless), so two independent levers keep a single request under the cap:
+#   1. Hard-clamp search_code's n_results before invoking it (see
+#      _clamp_tool_args below) -- more reliable than trusting the system
+#      prompt's "prefer n_results=3" hint, since the model can ignore it.
+#   2. Truncate the two large free-text fields (snippet, graph_context) in
+#      every hit before it goes back into the LLM's context. Full hits
+#      (untrimmed) are still kept in `sources_by_id` for citations/eval --
+#      this only shrinks what the model has to re-read on later turns.
+MAX_SEARCH_RESULTS = 3
+MAX_SNIPPET_CHARS_IN_CONTEXT = 150
+MAX_GRAPH_CONTEXT_CHARS_IN_CONTEXT = 100
 
 SYSTEM_PROMPT = """You are CodeIQ, a code-understanding assistant answering questions about a \
 parsed React/React Native codebase (bluesky-social/social-app) via a knowledge graph and \
@@ -73,6 +80,16 @@ Rules:
 - Answer only from retrieved evidence. If the tools don't surface a clear answer, say so.
 - Cite the file path and line range for every factual claim (e.g. `src/App.tsx:110-145`).
 - Keep answers concise and concrete -- prefer real entity/file names over generalities.
+- Only these three tools exist: search_code, find_entity_by_id_or_name, get_related_entities. \
+Never call any other tool name (e.g. open_file, read_file, list_files) -- if you need more of a \
+file's content, call search_code or get_related_entities again instead.
+- If the question names a code identifier (CamelCase like BookmarksScreen, or a useX hook name), \
+your FIRST call must be find_entity_by_id_or_name with that identifier. Only fall back to \
+search_code if the exact lookup returns nothing. Many entities share a name (e.g. 57 components \
+are named Provider) -- semantic similarity cannot disambiguate them, exact lookup can.
+- Never repeat a tool call with the same arguments -- it returns identical results. search_code's \
+n_results is hard-capped at 3, so raising it changes nothing. If a search missed, change the \
+query wording, switch tool, or answer from what you have.
 """
 
 
@@ -82,6 +99,18 @@ def _build_tools():
         as_tool(find_entity_by_id_or_name),
         as_tool(get_related_entities),
     ]
+
+
+def _clamp_tool_args(name: str, args: dict) -> dict:
+    """Hard-cap search_code's n_results regardless of what the model requested.
+
+    Each hit already carries a full code snippet, so result count is the
+    single biggest lever on request size under Groq's per-minute token cap --
+    more reliable than trusting the system prompt's n_results hint alone.
+    """
+    if name == "search_code" and args.get("n_results", 0) > MAX_SEARCH_RESULTS:
+        args = {**args, "n_results": MAX_SEARCH_RESULTS}
+    return args
 
 
 def _trim_for_context(hits: list[dict] | None) -> list[dict]:
@@ -102,23 +131,66 @@ def _trim_for_context(hits: list[dict] | None) -> list[dict]:
     return trimmed
 
 
-def _invoke_with_retry(llm_with_tools, messages, max_retries: int = MAX_INVOKE_RETRIES):
-    """Retry a Groq call on tool-call generation glitches and transient rate limits.
+def _load_api_keys() -> list[tuple[str, str]]:
+    """Configured Groq API keys in priority order: [(account_label, key), ...].
 
-    Groq's tool-calling occasionally emits malformed function calls (a known
-    flakiness, not specific to our prompt); a 413/429 token-rate error is
-    often transient within the same rolling window. Both are worth a bounded
-    retry before surfacing as a hard failure.
+    GROQ_API_KEY is Account_1; GROQ_API_KEY_2, GROQ_API_KEY_3, ... are
+    additional accounts used as fallbacks when the active one hits its rate
+    limit -- each Groq account carries its own independent TPM/TPD quota.
     """
+    keys = []
+    if os.environ.get("GROQ_API_KEY"):
+        keys.append(("Account_1", os.environ["GROQ_API_KEY"]))
+    n = 2
+    while os.environ.get(f"GROQ_API_KEY_{n}"):
+        keys.append((f"Account_{n}", os.environ[f"GROQ_API_KEY_{n}"]))
+        n += 1
+    return keys
+
+
+# Sticks across calls once rotated, so an account that just exhausted its
+# quota isn't pointlessly retried first on every subsequent request.
+_active_key_index = 0
+
+
+def _invoke_with_retry(make_runnable, messages, max_retries: int = MAX_INVOKE_RETRIES):
+    """Invoke a Groq call with bounded retries, rotating accounts on rate limits.
+
+    make_runnable(api_key) builds the runnable (with or without tools bound)
+    for one account's key. On a 413/429 the next configured account is tried
+    immediately -- it has its own fresh TPM/TPD budget, so rotating beats
+    sleeping. Only when every account is rate-limited does it sleep 15s for
+    the rolling window. Other API glitches (e.g. Groq's occasional malformed
+    tool-call 400s) retry the same account after a short pause.
+    """
+    global _active_key_index
+    keys = _load_api_keys()
+    if not keys:
+        raise SystemExit("No GROQ_API_KEY configured (add it to .env, see .env.example)")
+
     last_exc = None
     for attempt in range(max_retries + 1):
-        try:
-            return llm_with_tools.invoke(messages)
-        except groq.APIStatusError as exc:
-            last_exc = exc
+        for offset in range(len(keys)):
+            index = (_active_key_index + offset) % len(keys)
+            label, key = keys[index]
+            try:
+                result = make_runnable(key).invoke(messages)
+                if index != _active_key_index:
+                    print(f"[groq] rate limit on active account -- switched to {label}", file=sys.stderr)
+                    _active_key_index = index
+                return result
+            except groq.APIStatusError as exc:
+                last_exc = exc
+                if exc.status_code in (413, 429):
+                    continue  # rate-limit-flavored: the next account has its own quota
+                if attempt >= max_retries:
+                    raise
+                time.sleep(2)
+                break  # transient non-rate-limit glitch: retry the same account
+        else:
             if attempt >= max_retries:
-                raise
-            time.sleep(15 if exc.status_code in (413, 429) else 2)
+                raise last_exc
+            time.sleep(15)  # every account limited: wait out the rolling window
     raise last_exc
 
 
@@ -145,31 +217,99 @@ def _score_confidence(sources: list[dict]) -> tuple[str, str]:
 
 
 def ask(question: str, model: str = DEFAULT_MODEL, max_tool_calls: int = MAX_TOOL_CALLS) -> dict:
-    llm = ChatGroq(model=model, temperature=0)
     tools = _build_tools()
     tools_by_name = {t.name: t for t in tools}
-    llm_with_tools = llm.bind_tools(tools)
+
+    # Built per-key (not once) so _invoke_with_retry can rotate to another
+    # account's key mid-question when the active one hits its rate limit.
+    def make_llm(api_key: str):
+        return ChatGroq(model=model, temperature=0, api_key=api_key)
+
+    def make_llm_with_tools(api_key: str):
+        return make_llm(api_key).bind_tools(tools)
 
     messages = [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=question)]
     sources_by_id: dict[str, dict] = {}
     tool_call_trace: list[dict] = []
+    seen_calls: set[tuple] = set()
 
     start = time.monotonic()
     calls_made = 0
-    response: AIMessage = _invoke_with_retry(llm_with_tools, messages)
+    budget_exhausted_mid_turn = False
+    response: AIMessage = _invoke_with_retry(make_llm_with_tools, messages)
 
     while response.tool_calls and calls_made < max_tool_calls:
         messages.append(response)
         for call in response.tool_calls:
-            tool_call_trace.append({"tool": call["name"], "args": call["args"]})
-            result = tools_by_name[call["name"]].invoke(call["args"])
+            clamped_args = _clamp_tool_args(call["name"], call["args"])
+            # Dedupe on the CLAMPED args: raising n_results past the cap
+            # produces a byte-identical request, so e.g. n_results 10/20/50
+            # all collapse to the same key as the n_results=3 call.
+            dedupe_key = (call["name"], json.dumps(clamped_args, sort_keys=True, default=str))
+            duplicate = dedupe_key in seen_calls
+            tool_call_trace.append({"tool": call["name"], "args": call["args"], "duplicate": duplicate})
+            if duplicate:
+                # Don't re-execute or resend the same payload -- nudge the
+                # model to change strategy. Still counts against the budget
+                # so a stubborn model can't loop forever.
+                messages.append(ToolMessage(
+                    content=json.dumps({"note": "Duplicate call: identical arguments were already "
+                                        "used above and would return the same results. Change the "
+                                        "query wording, switch tool, or answer now."}),
+                    tool_call_id=call["id"],
+                ))
+                calls_made += 1
+                if calls_made >= max_tool_calls:
+                    budget_exhausted_mid_turn = True
+                    break
+                continue
+            seen_calls.add(dedupe_key)
+            result = tools_by_name[call["name"]].invoke(clamped_args)
             for hit in result or []:
                 sources_by_id.setdefault(hit["id"], hit)
             messages.append(ToolMessage(content=json.dumps(_trim_for_context(result)), tool_call_id=call["id"]))
             calls_made += 1
             if calls_made >= max_tool_calls:
+                budget_exhausted_mid_turn = True
                 break
-        response = _invoke_with_retry(llm_with_tools, messages)
+        if budget_exhausted_mid_turn:
+            break
+        response = _invoke_with_retry(make_llm_with_tools, messages)
+
+    if budget_exhausted_mid_turn or response.tool_calls or not response.content:
+        # Either the tool-call budget ran out mid-turn (every tool_call in the
+        # last AI turn was executed and paired with a ToolMessage -- `messages`
+        # is well-formed at this point), or the model still wants to call a
+        # tool it has no budget left for. Either way, re-invoke WITHOUT tools
+        # bound -- the model can't ask for another call, and must answer in
+        # text using only the evidence already gathered above. (Without this,
+        # the loop would exit holding a tool_calls-only response, which
+        # carries no text content, producing a blank final answer.)
+        try:
+            response = _invoke_with_retry(
+                make_llm,
+                messages
+                + [
+                    HumanMessage(
+                        content="You have used all available tool calls. Answer now, in text, "
+                        "using only the evidence already retrieved above. Do not emit any "
+                        "tool call -- respond with plain prose only."
+                    )
+                ],
+            )
+        except groq.APIStatusError as exc:
+            # gpt-oss-120b sometimes emits tool-call syntax even on this
+            # tools-unbound call, which Groq rejects with a 400 ("Tool choice
+            # is none, but model called a tool"). The evidence is already
+            # gathered at this point -- degrade to a stub answer pointing at
+            # the cited sources instead of failing the whole question.
+            if exc.status_code != 400:
+                raise
+            response = AIMessage(
+                content="The model exhausted its tool-call budget before producing a final "
+                "synthesis. The cited sources below were still retrieved and are valid "
+                "evidence for this question."
+            )
 
     latency_s = round(time.monotonic() - start, 2)
     sources = list(sources_by_id.values())

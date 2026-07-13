@@ -1,0 +1,1607 @@
+{
+  "runs": [
+    {
+      "question_id": "q1",
+      "question": "Which hook manages the app's authenticated session state, and where is it defined?",
+      "expected_answer": "useSession, defined in src/state/session/index.tsx (part of the session Provider component).",
+      "expected_entities": [
+        "src/state/session/index.tsx#useSession",
+        "src/state/session/index.tsx#Provider"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The hook that holds the app\u2019s authenticated\u2011session state is **`useSession`**. It simply returns the session context that is provided by the `<SessionProvider>` component.\n\n**Definition**  \n- File: `src/state/session/index.tsx`  \n- Lines:\u202f430\u2011432  \n\n```tsx\nexport function useSession() {\n  return useContext(StateContext)\n}\n```  \n\n(Reference: `src/state/session/index.tsx#useSession`, lines\u202f430\u2011432)",
+      "confidence": "Medium",
+      "confidence_rationale": "0 of 8 retrieved entities scored >=0.6 relevance; top match scored 0.59.",
+      "sources": [
+        {
+          "id": "src/state/session/index.tsx#useRequireAuth",
+          "type": "Hook",
+          "name": "useRequireAuth",
+          "file": "src/state/session/index.tsx",
+          "start_line": 438,
+          "end_line": 454,
+          "snippet": "export function useRequireAuth() {\n  const {hasSession} = useSession()\n  const closeAll = useCloseAllActiveElements()\n  const {signinDialogControl} = useGlobalDialogsControlContext()\n\n  return useCallback(\n    (fn: () => unknown) => {\n      if (hasSession) {\n        fn()\n      } else {\n        closeAll()\n        signinDialogControl.open()\n      }\n    },\n    [hasSession, signinDialogControl, closeAll],\n  )\n}",
+          "graph_context": "Calls: useSession, useCloseAllActiveElements, useGlobalDialogsControlContext, useCallback (external)",
+          "relevance": 0.5876
+        },
+        {
+          "id": "src/state/session/index.tsx#useSession",
+          "type": "Hook",
+          "name": "useSession",
+          "file": "src/state/session/index.tsx",
+          "start_line": 430,
+          "end_line": 432,
+          "snippet": "export function useSession() {\n  return useContext(StateContext)\n}",
+          "graph_context": "Calls: useContext (external)\nCalled by: useMigrateMutes, useFeedTuners, usePinnedPostMutation, useRequireAuth",
+          "relevance": 0.5596
+        },
+        {
+          "id": "src/state/session/index.tsx#useAgent",
+          "type": "Hook",
+          "name": "useAgent",
+          "file": "src/state/session/index.tsx",
+          "start_line": 456,
+          "end_line": 462,
+          "snippet": "export function useAgent(): AtpAgent {\n  const agent = useContext(AgentContext)\n  if (!agent) {\n    throw Error('useAgent() must be below <SessionProvider>.')\n  }\n  return agent\n}",
+          "graph_context": "Calls: useContext (external)\nCalled by: useFeedFeedback, useMigrateMutes, useAppPasswordsQuery, useAppPasswordCreateMutation, useAppPasswordDeleteMutation, usePinnedPostMutation",
+          "relevance": 0.5193
+        },
+        {
+          "id": "src/state/a11y.tsx#useA11y",
+          "type": "Hook",
+          "name": "useA11y",
+          "file": "src/state/a11y.tsx",
+          "start_line": 13,
+          "end_line": 15,
+          "snippet": "export function useA11y() {\n  return useContext(Context)\n}",
+          "graph_context": "Calls: useContext (external)",
+          "relevance": 0.505
+        },
+        {
+          "id": "src/lib/once.ts#useCallOnce",
+          "type": "Hook",
+          "name": "useCallOnce",
+          "file": "src/lib/once.ts",
+          "start_line": 14,
+          "end_line": 14,
+          "snippet": "export function useCallOnce(cb: Cb): () => void",
+          "graph_context": "Calls: useRef (external), useCallback (external)",
+          "relevance": 0.4963
+        },
+        {
+          "id": "src/components/PolicyUpdateOverlay/context.tsx",
+          "type": "File",
+          "name": "context.tsx",
+          "file": "src/components/PolicyUpdateOverlay/context.tsx",
+          "start_line": 1,
+          "end_line": 77,
+          "snippet": "import {\n  createContext,\n  type ReactNode,\n  useContext,\n  useMemo,\n  useState,\n} from 'react'\n\nimport {useSession} from '#/state/session'\nimport {POLICY_UPDATE_IS_ENABLED} from '#/components/PolicyUpdateOverlay/config'\nimport {Provider as PortalProvider} from '#/components/PolicyUpdateOverlay/Portal'\nimport {\n  type PolicyUpdateState,\n  usePolicyUpdateState,\n} from '#/components/PolicyUpdateOverlay/usePolicyUpdateState'\nimport {ENV} from '#/env'\n\nconst Context = createContext<{\n  state: PolicyUpdateState\n  setIsReadyToShowOverlay: () => void\n}>({\n  state: {\n    completed: true,\n    complete: () => {},\n  },\n  /**\n   * Although our data will be ready to go when the app shell mounts, we don't\n   * want to show the overlay until we actually render it, which happens after\n   * sigin/signup/onboarding in `createNativeStackNavigatorWithAuth`.\n   */\n  setIsReadyToShowOverlay: () => {},\n})\nContext.displayName = 'PolicyUpdateOverlayContext'\n\nexport function usePolicyUpdateContext() {\n  const context = useContext(Context)\n  if (!context) {\n    throw new Error(\n      'usePolicyUpdateContext must be used within a PolicyUpdateProvider',\n    )\n  }\n  return context\n}\n\nexport function Provider({children}: {children?: ReactNode}) {\n  const {hasSession} = useSession()\n  const [isReadyToShowOverlay, setIsReadyToShowOverlay] = useState(false)\n  const state = usePolicyUpdateState({\n    enabled:\n      // if the feature is enabled\n      POLICY_UPDATE_IS_ENABLED &&\n      // once shell has rendered\n      isReadyToShowOverlay &&\n      // only once logged in\n      hasSession &&\n      // only enabled in non-test environments\n      ENV !== 'e2e',\n  })\n\n  const ctx = useMemo(\n# ... truncated ...",
+          "graph_context": "Depends on: state/session, components/PolicyUpdateOverlay/config, components/PolicyUpdateOverlay/Portal, components/PolicyUpdateOverlay/usePolicyUpdateState, env\nDefines: usePolicyUpdateContext, Provider",
+          "relevance": 0.4941
+        },
+        {
+          "id": "src/screens/Signup/state.ts",
+          "type": "File",
+          "name": "state.ts",
+          "file": "src/screens/Signup/state.ts",
+          "start_line": 1,
+          "end_line": 376,
+          "snippet": "import {createContext, useCallback, useContext} from 'react'\nimport {LayoutAnimation} from 'react-native'\nimport {\n  ComAtprotoServerCreateAccount,\n  type ComAtprotoServerDescribeServer,\n} from '@atproto/api'\nimport {useLingui} from '@lingui/react/macro'\nimport * as EmailValidator from 'email-validator'\n\nimport {DEFAULT_SERVICE} from '#/lib/constants'\nimport {cleanError} from '#/lib/strings/errors'\nimport {createFullHandle} from '#/lib/strings/handles'\nimport {getAge} from '#/lib/strings/time'\nimport {useSessionApi} from '#/state/session'\nimport {useOnboardingDispatch} from '#/state/shell'\nimport {type AnalyticsContextType, useAnalytics} from '#/analytics'\n\nexport type ServiceDescription = ComAtprotoServerDescribeServer.OutputSchema\n\nconst date = new Date()\ndate.setFullYear(date.getFullYear() - 20) // default to 20 years ago\nconst DEFAULT_DATE = date\n\nexport enum SignupStep {\n  INFO,\n  HANDLE,\n  CAPTCHA,\n}\n\ntype SubmitTask = {\n  verificationCode: string | undefined\n  mutableProcessed: boolean // OK to mutate assuming it's never read in render.\n}\n\ntype ErrorField =\n  | 'invite-code'\n  | 'email'\n  | 'handle'\n  | 'password'\n  | 'date-of-birth'\n\nexport type SignupState = {\n  analytics?: AnalyticsContextType\n\n  hasPrev: boolean\n  activeStep: SignupStep\n  screenTransitionDirection: 'Forward' | 'Backward'\n\n  serviceUrl: string\n  serviceDescription?: ServiceDescription\n  userDomain: string\n  dateOfBirth: Date\n  email: string\n  password: string\n  inviteCode: string\n  handle: string\n\n  error: string\n  errorField?: ErrorField\n  isLoading: boolean\n# ... truncated ...",
+          "graph_context": "Depends on: lib/constants, lib/strings/errors, lib/strings/handles, lib/strings/time, state/session, state/shell, analytics\nDefines: useSignupContext, useSubmitSignup",
+          "relevance": 0.4617
+        },
+        {
+          "id": "src/state/preferences/used-starter-packs.tsx",
+          "type": "File",
+          "name": "used-starter-packs.tsx",
+          "file": "src/state/preferences/used-starter-packs.tsx",
+          "start_line": 1,
+          "end_line": 43,
+          "snippet": "import {createContext, useContext, useEffect, useState} from 'react'\n\nimport * as persisted from '#/state/persisted'\n\ntype StateContext = boolean | undefined\ntype SetContext = (v: boolean) => void\n\nconst stateContext = createContext<StateContext>(false)\nstateContext.displayName = 'UsedStarterPacksStateContext'\nconst setContext = createContext<SetContext>((_: boolean) => {})\nsetContext.displayName = 'UsedStarterPacksSetContext'\n\nexport function Provider({children}: {children: React.ReactNode}) {\n  const [state, setState] = useState<StateContext>(() =>\n    persisted.get('hasCheckedForStarterPack'),\n  )\n\n  const setStateWrapped = (v: boolean) => {\n    setState(v)\n    persisted.write('hasCheckedForStarterPack', v)\n  }\n\n  useEffect(() => {\n    return persisted.onUpdate(\n      'hasCheckedForStarterPack',\n      nextHasCheckedForStarterPack => {\n        setState(nextHasCheckedForStarterPack)\n      },\n    )\n  }, [])\n\n  return (\n    <stateContext.Provider value={state}>\n      <setContext.Provider value={setStateWrapped}>\n        {children}\n      </setContext.Provider>\n    </stateContext.Provider>\n  )\n}\n\nexport const useHasCheckedForStarterPack = () => useContext(stateContext)\nexport const useSetHasCheckedForStarterPack = () => useContext(setContext)",
+          "graph_context": "Depends on: state/persisted\nDefines: Provider, useHasCheckedForStarterPack, useSetHasCheckedForStarterPack\nDepended on by: index.tsx",
+          "relevance": 0.4582
+        },
+        {
+          "id": "src/analytics/identifiers/session.ts#useSessionId",
+          "type": "Hook",
+          "name": "useSessionId",
+          "file": "src/analytics/identifiers/session.ts",
+          "start_line": 31,
+          "end_line": 50
+        },
+        {
+          "id": "src/analytics/identifiers/session.web.ts#useSessionId",
+          "type": "Hook",
+          "name": "useSessionId",
+          "file": "src/analytics/identifiers/session.web.ts",
+          "start_line": 34,
+          "end_line": 54
+        },
+        {
+          "id": "src/state/session/index.tsx#useSessionApi",
+          "type": "Hook",
+          "name": "useSessionApi",
+          "file": "src/state/session/index.tsx",
+          "start_line": 434,
+          "end_line": 436
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 47.51,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 5,
+            "query": "authenticated session state hook"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 10,
+            "query": "auth session"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 5,
+            "query": "export function useSession"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "File",
+            "n_results": 5,
+            "query": "StateContext"
+          }
+        },
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Hook",
+            "limit": 5,
+            "query": "useSession"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q2",
+      "question": "There seem to be two versions of a useSessionId hook. Where are they, and why might there be two?",
+      "expected_answer": "src/analytics/identifiers/session.ts#useSessionId and src/analytics/identifiers/session.web.ts#useSessionId -- a native/native-default implementation and a .web.ts platform-specific override, a common React Native pattern for web-only behavior.",
+      "expected_entities": [
+        "src/analytics/identifiers/session.ts#useSessionId",
+        "src/analytics/identifiers/session.web.ts#useSessionId"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The hook **`useSessionId`** is defined in two separate files:\n\n| Hook | File (path) | Location in file |\n|------|-------------|------------------|\n| `useSessionId` (default) | `src/analytics/identifiers/session.ts` | lines\u202f31\u201150\u30100\u2020L0-L2\u3011 |\n| `useSessionId` (web\u2011specific) | `src/analytics/identifiers/session.web.ts` | lines\u202f34\u201154\u30100\u2020L0-L2\u3011 |\n\nBoth files export a hook with the same name and very similar implementation (they both create a stateful `id` and subscribe to app\u2011state changes). The presence of a **`.web.ts`** version indicates a platform\u2011specific implementation: React\u202fNative projects often provide separate modules for native and web builds, and the build system will pick `session.web.ts` when bundling for the web, while `session.ts` is used for the other platforms (iOS/Android). This allows the hook to handle platform\u2011specific APIs or behaviours while keeping a common public API.",
+      "confidence": "High",
+      "confidence_rationale": "3 of 7 retrieved entities scored >=0.6 relevance; top match scored 0.79.",
+      "sources": [
+        {
+          "id": "src/state/messages/current-convo-id.tsx#useCurrentConvoId",
+          "type": "Hook",
+          "name": "useCurrentConvoId",
+          "file": "src/state/messages/current-convo-id.tsx",
+          "start_line": 12,
+          "end_line": 20,
+          "snippet": "export function useCurrentConvoId() {\n  const ctx = useContext(CurrentConvoIdContext)\n  if (!ctx) {\n    throw new Error(\n      'useCurrentConvoId must be used within a CurrentConvoIdProvider',\n    )\n  }\n  return ctx\n}",
+          "graph_context": "Calls: useContext (external)\nCalled by: useMessageDraft, useSaveMessageDraft",
+          "relevance": 0.3847
+        },
+        {
+          "id": "src/analytics/identifiers/session.ts#useSessionId",
+          "type": "Hook",
+          "name": "useSessionId",
+          "file": "src/analytics/identifiers/session.ts",
+          "start_line": 31,
+          "end_line": 50,
+          "snippet": "export function useSessionId() {\n  const [id, setId] = useState(() => sessionId)\n\n  useEffect(() => {\n    const sub = onAppStateChange(state => {\n      if (state === 'active') {\n        const lastEvent = device.get(['nativeSessionIdLastEventAt'])\n        if (isSessionIdExpired(lastEvent)) {\n          sessionId = uuid.v4()\n          device.set(['nativeSessionId'], sessionId)\n          setId(sessionId)\n        }\n      }\n      device.set(['nativeSessionIdLastEventAt'], Date.now())\n    })\n    return () => sub.remove()\n  }, [])\n\n  return id\n}",
+          "graph_context": "Calls: useState (external), useEffect (external)",
+          "relevance": 0.3532
+        },
+        {
+          "id": "src/analytics/identifiers/session.web.ts#useSessionId",
+          "type": "Hook",
+          "name": "useSessionId",
+          "file": "src/analytics/identifiers/session.web.ts",
+          "start_line": 34,
+          "end_line": 54,
+          "snippet": "export function useSessionId() {\n  const [id, setId] = useState(() => sessionId)\n\n  useEffect(() => {\n    const sub = onAppStateChange(state => {\n      if (state === 'active') {\n        const lastEventStr = window.sessionStorage.getItem(LAST_EVENT_KEY)\n        const lastEvent = lastEventStr ? Number(lastEventStr) : undefined\n        if (isSessionIdExpired(lastEvent)) {\n          sessionId = uuid.v4()\n          window.sessionStorage.setItem(SESSION_ID_KEY, sessionId)\n          setId(sessionId)\n        }\n      }\n      window.sessionStorage.setItem(LAST_EVENT_KEY, String(Date.now()))\n    })\n    return () => sub.remove()\n  }, [])\n\n  return id\n}",
+          "graph_context": "Calls: useState (external), useEffect (external)",
+          "relevance": 0.3485
+        },
+        {
+          "id": "src/analytics/index.tsx#useAnalyticsBase",
+          "type": "Hook",
+          "name": "useAnalyticsBase",
+          "file": "src/analytics/index.tsx",
+          "start_line": 280,
+          "end_line": 282,
+          "snippet": "export function useAnalyticsBase() {\n  return useContext(Context)\n}",
+          "graph_context": "Calls: useContext (external)",
+          "relevance": 0.6252
+        },
+        {
+          "id": "src/analytics/index.tsx#useAnalytics",
+          "type": "Hook",
+          "name": "useAnalytics",
+          "file": "src/analytics/index.tsx",
+          "start_line": 288,
+          "end_line": 296,
+          "snippet": "export function useAnalytics() {\n  const ctx = useContext(Context)\n  if (!('features' in ctx)) {\n    throw new Error(\n      'useAnalytics must be used within an AnalyticsFeaturesContext',\n    )\n  }\n  return ctx as AnalyticsContextType\n}",
+          "graph_context": "Calls: useContext (external)",
+          "relevance": 0.5908
+        },
+        {
+          "id": "src/analytics/identifiers/index.ts",
+          "type": "File",
+          "name": "index.ts",
+          "file": "src/analytics/identifiers/index.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "snippet": "export * from '#/analytics/identifiers/device'\nexport * from '#/analytics/identifiers/session'",
+          "graph_context": "",
+          "relevance": 0.792
+        },
+        {
+          "id": "src/state/session/types.ts",
+          "type": "File",
+          "name": "types.ts",
+          "file": "src/state/session/types.ts",
+          "start_line": 1,
+          "end_line": 55,
+          "snippet": "import {type PersistedAccount} from '#/state/persisted'\nimport {type Metrics} from '#/analytics/metrics'\n\nexport type SessionAccount = PersistedAccount\n\nexport type SessionStateContext = {\n  accounts: SessionAccount[]\n  currentAccount: SessionAccount | undefined\n  hasSession: boolean\n}\n\nexport type SessionApiContext = {\n  createAccount: (\n    props: {\n      service: string\n      email: string\n      password: string\n      handle: string\n      birthDate: Date\n      inviteCode?: string\n      verificationPhone?: string\n      verificationCode?: string\n    },\n    metrics: Metrics['account:create:success'],\n  ) => Promise<void>\n  login: (\n    props: {\n      service: string\n      identifier: string\n      password: string\n      authFactorToken?: string | undefined\n    },\n    logContext: Metrics['account:loggedIn']['logContext'],\n  ) => Promise<void>\n  logoutCurrentAccount: (\n    logContext: Metrics['account:loggedOut']['logContext'],\n  ) => void\n  logoutEveryAccount: (\n    logContext: Metrics['account:loggedOut']['logContext'],\n  ) => void\n  resumeSession: (\n    account: SessionAccount,\n    isSwitchingAccounts?: boolean,\n  ) => Promise<void>\n  removeAccount: (account: SessionAccount) => void\n  /**\n   * Calls `getSession` and updates select fields on the current account and\n   * `BskyAgent`. This is an alternative to `resumeSession`, which updates\n   * current account/agent using the `persistSessionHandler`, but is more load\n   * bearing. This patches in updates without causing any side effects via\n   * `persistSessionHandler`.\n   */\n  partialRefreshSession: () => Promise<void>\n}",
+          "graph_context": "Depends on: state/persisted, analytics/metrics\nDepended on by: agent.ts, logging.ts, moderation.ts, reducer.ts, util.ts",
+          "relevance": 0.6241
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 99.55,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 10,
+            "query": "useSessionId"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 5,
+            "query": "src/analytics/identifiers/session.ts"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 20,
+            "query": "src/analytics/identifiers/session.ts"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 5,
+            "query": "src/analytics/identifiers/session.ts#useSessionId"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "File",
+            "n_results": 2,
+            "query": "src/analytics/identifiers/session.ts"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q3",
+      "question": "What does the InnerApp component in src/App.tsx render at the top level of the app?",
+      "expected_answer": "Several top-level providers/wrappers, including an Alf provider, a ThemeProvider, a ContextMenuProvider, a Splash screen, and a VideoVolumeProvider.",
+      "expected_entities": [
+        "src/App.tsx#InnerApp"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The **InnerApp** component (defined in `src/App.tsx`) renders a top\u2011level **React\u202fFragment** that wraps a series of context\u2011 and UI\u2011providers for the whole application.\u202fAccording to the graph of its `renders` edges, the fragment contains:\n\n* `Alf`  \n* `ThemeProvider` (from `lib/ThemeContext`)  \n* `ContextMenuProvider` (from `components/ContextMenu`)  \n* `Splash`  \n* `VideoVolumeProvider` (from `components/Post/Embed/VideoEmbed/VideoEmbed`)  \n* `AnalyticsFeaturesContext`  \n* `QueryProvider` (from `lib/react\u2011query`)  \n* `PolicyUpdateOverlayProvider` (from `components/PolicyUpdateOverlay`)  \n* `LiveEventsProvider` (from `features/liveEvents/context`)  \n* `AgeAssuranceV2Provider` (from `ageAssurance`)  \n* `ComposerProvider` (from `state/shell/composer`)  \n* `MessagesProvider` (from `state/messages`)  \n* `LabelDefsProvider` (from `state/preferences/label\u2011defs`)  \n* `ModerationOptsProvider` (from `state/preferences/moderation\u2011opts`)  \n\nAll of these are rendered inside a single `Fragment` (external)\u202f\u2014\u202fthe top\u2011level structure of the app\u202f\u3010get_related_entities\u202fresult\u3011.",
+      "confidence": "Medium",
+      "confidence_rationale": "1 of 7 retrieved entities scored >=0.6 relevance; top match scored 0.61.",
+      "sources": [
+        {
+          "id": "src/components/Dialog/index.tsx#Inner",
+          "type": "Component",
+          "name": "Inner",
+          "file": "src/components/Dialog/index.tsx",
+          "start_line": 199,
+          "end_line": 217,
+          "snippet": "export function Inner({children, style, header}: DialogInnerProps) {\n  const insets = useSafeAreaInsets()\n  return (\n    <>\n      {header}\n      <View\n        style={[\n          a.pt_2xl,\n          a.px_xl,\n          IS_LIQUID_GLASS\n            ? a.pb_2xl\n            : {paddingBottom: insets.bottom + insets.top},\n          style,\n        ]}>\n        {children}\n      </View>\n    </>\n  )\n}",
+          "graph_context": "Renders: View (external)\nCalls: useSafeAreaInsets (external)",
+          "relevance": 0.6063
+        },
+        {
+          "id": "src/view/com/util/LoadingPlaceholder.tsx#FeedFeedLoadingPlaceholder",
+          "type": "Component",
+          "name": "FeedFeedLoadingPlaceholder",
+          "file": "src/view/com/util/LoadingPlaceholder.tsx",
+          "start_line": 255,
+          "end_line": 271,
+          "snippet": "export function FeedFeedLoadingPlaceholder() {\n  return (\n    <>\n      <FeedLoadingPlaceholder />\n      <FeedLoadingPlaceholder />\n      <FeedLoadingPlaceholder />\n      <FeedLoadingPlaceholder />\n      <FeedLoadingPlaceholder />\n      <FeedLoadingPlaceholder />\n      <FeedLoadingPlaceholder />\n      <FeedLoadingPlaceholder />\n      <FeedLoadingPlaceholder />\n      <FeedLoadingPlaceholder />\n      <FeedLoadingPlaceholder />\n    </>\n  )\n}",
+          "graph_context": "Renders: FeedLoadingPlaceholder",
+          "relevance": 0.5834
+        },
+        {
+          "id": "src/components/FeedCard.tsx#AvatarPlaceholder",
+          "type": "Component",
+          "name": "AvatarPlaceholder",
+          "file": "src/components/FeedCard.tsx",
+          "start_line": 107,
+          "end_line": 121,
+          "snippet": "export function AvatarPlaceholder({size = 40}: Omit<AvatarProps, 'src'>) {\n  const t = useTheme()\n  return (\n    <View\n      style={[\n        t.atoms.bg_contrast_25,\n        {\n          width: size,\n          height: size,\n          borderRadius: 8,\n        },\n      ]}\n    />\n  )\n}",
+          "graph_context": "Renders: View (external)\nCalls: useTheme",
+          "relevance": 0.5703
+        },
+        {
+          "id": "src/App.tsx#InnerApp",
+          "type": "Component",
+          "name": "InnerApp",
+          "file": "src/App.tsx",
+          "start_line": 109,
+          "end_line": 213
+        },
+        {
+          "id": "src/App.web.tsx#InnerApp",
+          "type": "Component",
+          "name": "InnerApp",
+          "file": "src/App.web.tsx",
+          "start_line": 88,
+          "end_line": 192
+        },
+        {
+          "id": "src/view/com/util/LoadingPlaceholder.tsx#ProfileCardFeedLoadingPlaceholder",
+          "type": "Component",
+          "name": "ProfileCardFeedLoadingPlaceholder",
+          "file": "src/view/com/util/LoadingPlaceholder.tsx",
+          "start_line": 197,
+          "end_line": 213,
+          "snippet": "export function ProfileCardFeedLoadingPlaceholder() {\n  return (\n    <>\n      <ProfileCardLoadingPlaceholder />\n      <ProfileCardLoadingPlaceholder />\n      <ProfileCardLoadingPlaceholder />\n      <ProfileCardLoadingPlaceholder />\n      <ProfileCardLoadingPlaceholder />\n      <ProfileCardLoadingPlaceholder />\n      <ProfileCardLoadingPlaceholder />\n      <ProfileCardLoadingPlaceholder />\n      <ProfileCardLoadingPlaceholder />\n      <ProfileCardLoadingPlaceholder />\n      <ProfileCardLoadingPlaceholder />\n    </>\n  )\n}",
+          "graph_context": "Renders: ProfileCardLoadingPlaceholder",
+          "relevance": 0.5413
+        },
+        {
+          "id": "alf#Alf",
+          "type": "Unknown",
+          "name": "Alf",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "lib/ThemeContext#ThemeProvider",
+          "type": "Unknown",
+          "name": "ThemeProvider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "components/ContextMenu#ContextMenuProvider",
+          "type": "Unknown",
+          "name": "ContextMenuProvider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "Splash#Splash",
+          "type": "Unknown",
+          "name": "Splash",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "components/Post/Embed/VideoEmbed/VideoVolumeContext#VideoVolumeProvider",
+          "type": "Unknown",
+          "name": "VideoVolumeProvider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "external:react#Fragment",
+          "type": "External",
+          "name": "Fragment (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "analytics#AnalyticsFeaturesContext",
+          "type": "Unknown",
+          "name": "AnalyticsFeaturesContext",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "lib/react-query#QueryProvider",
+          "type": "Unknown",
+          "name": "QueryProvider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "components/PolicyUpdateOverlay#PolicyUpdateOverlayProvider",
+          "type": "Unknown",
+          "name": "PolicyUpdateOverlayProvider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "features/liveEvents/context#LiveEventsProvider",
+          "type": "Unknown",
+          "name": "LiveEventsProvider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "ageAssurance#AgeAssuranceV2Provider",
+          "type": "Unknown",
+          "name": "AgeAssuranceV2Provider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "state/shell/composer#ComposerProvider",
+          "type": "Unknown",
+          "name": "ComposerProvider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "state/messages#MessagesProvider",
+          "type": "Unknown",
+          "name": "MessagesProvider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "state/preferences/label-defs#LabelDefsProvider",
+          "type": "Unknown",
+          "name": "LabelDefsProvider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "state/preferences/moderation-opts#ModerationOptsProvider",
+          "type": "Unknown",
+          "name": "ModerationOptsProvider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "src/components/ageAssurance/AgeAssuranceInitDialog.tsx#Inner",
+          "type": "Component",
+          "name": "Inner",
+          "file": "src/components/ageAssurance/AgeAssuranceInitDialog.tsx",
+          "start_line": 65,
+          "end_line": 331,
+          "snippet": "function Inner() {\n  const {_} = useLingui()\n  const ax = useAnalytics()\n  const {currentAccount} = useSession()\n  const langPrefs = useLanguagePrefs()\n  const cleanError = useCleanError()\n  const {close} = Dialog.useDialogContext()\n  const aa = useAgeAssurance()\n  const lastInitiatedAt = aa.state.lastInitiatedAt\n  const getTimeAgo = useGetTimeAgo()\n  const tlds = useTLDs()\n  const createSupportLink = useCreateSupportLink()\n\n  const wasRecentlyInitiated =\n    lastInitiatedAt &&\n    new Date(lastInitiatedAt).getTime() > Date.now() - 5 * 60 * 1000 // 5 minutes\n\n  const [success, setSuccess] = useState(false)\n  const [email, setEmail] = useState(currentAccount?.email || '')\n  const [emailError, setEmailError] = useState<string>('')\n  const [languageError, setLanguageError] = useState(false)\n  const [disabled, setDisabled] = useState(false)\n  const [language, setLanguage] = useState<string | undefined>(\n    convertToKWSSupportedLanguage(langPrefs.appLanguage),\n  )\n  const [error, setError] = useState<React.ReactNode>(null)\n\n  const {mutateAsync: begin, isPending} = useBeginAgeAssurance()\n\n  const runEmailValidation = () => {\n    if (validateEmail(email)) {\n      setEmailError('')\n      setDisabled(false)\n\n      if (tlds && isEmailMaybeInvalid(email, tlds)) {\n        setEmailError(\n          _(\n            msg`Please double-check that you have entered your email address correctly.`,\n          ),\n        )\n        return {status: 'maybe'}\n      }\n\n      return {status: 'valid'}\n    }\n\n    setEmailError(_(msg`Please enter a valid email address.`))\n    setDisabled(true)\n\n    return {status: 'invalid'}\n  }\n\n  const onSubmit = async () => {\n    setLanguageError(false)\n\n    ax.metric('ageAssurance:initDialogSubmit', {})\n\n    try {\n      const {status} = runEmailValidation()\n\n# ... truncated ...",
+          "graph_context": "Renders: Trans (external), SimpleInlineLinkText, View (external), AgeAssuranceBadge, Text, Button, ButtonText, Divider (+4 more)\nCalls: useLingui (external), useAnalytics, useSession, useLanguagePrefs, useCleanError, useAgeAssurance, useGetTimeAgo, useTLDs (+3 more)\nRendered by: AgeAssuranceInitDialog",
+          "relevance": 0.421
+        },
+        {
+          "id": "src/components/ageAssurance/AgeAssuranceAppealDialog.tsx#Inner",
+          "type": "Component",
+          "name": "Inner",
+          "file": "src/components/ageAssurance/AgeAssuranceAppealDialog.tsx",
+          "start_line": 40,
+          "end_line": 146,
+          "snippet": "function Inner({control}: {control: Dialog.DialogControlProps}) {\n  const {_} = useLingui()\n  const ax = useAnalytics()\n  const {currentAccount} = useSession()\n  const {gtPhone} = useBreakpoints()\n  const agent = useAgent()\n\n  const [details, setDetails] = useState('')\n  const isInvalid = details.length > 1000\n\n  const {mutate, isPending} = useMutation({\n    mutationFn: async () => {\n      ax.metric('ageAssurance:appealDialogSubmit', {})\n\n      await agent.createModerationReport(\n        {\n          reasonType: ToolsOzoneReportDefs.REASONAPPEAL,\n          subject: {\n            $type: 'com.atproto.admin.defs#repoRef',\n            did: currentAccount?.did,\n          },\n          reason: `AGE_ASSURANCE_INQUIRY: ` + details,\n        },\n        {\n          encoding: 'application/json',\n          headers: BLUESKY_MOD_SERVICE_HEADERS,\n        },\n      )\n    },\n    onError: err => {\n      logger.error('AgeAssuranceAppealDialog failed', {safeMessage: err})\n      Toast.show(\n        _(msg`Age assurance inquiry failed to send, please try again.`),\n        {\n          type: 'error',\n        },\n      )\n    },\n    onSuccess: () => {\n      control.close()\n      Toast.show(\n        _(\n          msg({\n            message: 'Age assurance inquiry was submitted',\n            context: 'toast',\n          }),\n        ),\n      )\n    },\n  })\n\n  return (\n    <View>\n      <View style={[a.align_start]}>\n        <AgeAssuranceBadge />\n      </View>\n\n      <Text style={[a.text_2xl, a.font_bold, a.pt_md, a.leading_tight]}>\n        <Trans>Contact us</Trans>\n      </Text>\n# ... truncated ...",
+          "graph_context": "Renders: View (external), AgeAssuranceBadge, Text, Trans (external), Dialog, Button, ButtonText, ButtonIcon\nCalls: useLingui (external), useAnalytics, useSession, useBreakpoints, useAgent, useState (external), useMutation (external)\nRendered by: AgeAssuranceAppealDialog",
+          "relevance": 0.4112
+        },
+        {
+          "id": "src/components/ageAssurance/AgeAssuranceAccountCard.tsx#Inner",
+          "type": "Component",
+          "name": "Inner",
+          "file": "src/components/ageAssurance/AgeAssuranceAccountCard.tsx",
+          "start_line": 45,
+          "end_line": 210,
+          "snippet": "\nfunction Inner({style}: ViewStyleProp & {}) {\n  const t = useTheme()\n  const {t: l, i18n} = useLingui()\n  const ax = useAnalytics()\n  const control = useDialogControl()\n  const appealControl = Dialog.useDialogControl()\n  const getTimeAgo = useGetTimeAgo()\n  const {gtPhone} = useBreakpoints()\n\n  const copy = useAgeAssuranceCopy()\n  const aa = useAgeAssurance()\n  const {status, lastInitiatedAt} = aa.state\n  const isBlocked = status === aa.Status.Blocked\n  const hasInitiated = !!lastInitiatedAt\n  const hasCompletedFlow = status === aa.Status.Assured\n  const timeAgo = lastInitiatedAt\n    ? getTimeAgo(lastInitiatedAt, new Date())\n    : null\n  const diff = lastInitiatedAt\n    ? dateDiff(lastInitiatedAt, new Date(), 'down')\n    : null\n  const {\n    onPressVerify,\n    openInitDialog,\n    isVerifying,\n    verifyCta,\n    deviceSignalsFailed,\n  } = useAgeAssuranceVerificationFlow({initDialogControl: control})\n  const useDeviceSignals =\n    aa.flags.allowsDeviceVerification && !deviceSignalsFailed\n\n  return (\n    <>\n      <AgeAssuranceInitDialog control={control} />\n      <AgeAssuranceAppealDialog control={appealControl} />\n\n      <View style={style}>\n        <View\n          style={[a.p_lg, a.rounded_md, a.border, t.atoms.border_contrast_low]}>\n          <View\n            style={[\n              a.flex_row,\n              a.justify_between,\n              a.align_center,\n              a.gap_lg,\n              a.pb_md,\n              a.z_10,\n            ]}>\n            <View style={[a.align_start]}>\n              <AgeAssuranceBadge />\n            </View>\n          </View>\n\n          <View style={[a.pb_md, a.gap_sm]}>\n            <Text style={[a.text_sm, a.leading_snug]}>{copy.notice}</Text>\n            {hasCompletedFlow && (\n              <Text style={[a.text_sm, a.leading_snug]}>\n                <Trans>\n                  If you are 18 years of age or older and want to try again,\n# ... truncated ...",
+          "graph_context": "Renders: AgeAssuranceInitDialog, AgeAssuranceAppealDialog, View (external), AgeAssuranceBadge, Text, Trans (external), InlineLinkText, RegionNotice (+5 more)\nCalls: useTheme, useLingui (external), useAnalytics, useDialogControl, useGetTimeAgo, useBreakpoints, useAgeAssuranceCopy, useAgeAssurance (+1 more)\nRendered by: AgeAssuranceAccountCard",
+          "relevance": 0.4087
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 110.54,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 5,
+            "query": "InnerApp component src/App.tsx"
+          }
+        },
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Component",
+            "query": "InnerApp"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 5,
+            "query": "src/App.tsx#InnerApp"
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "edge_type": "renders",
+            "entity_id": "src/App.tsx#InnerApp"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 5,
+            "query": "function InnerApp"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q4",
+      "question": "Which screen implements the Bookmarks feature, and what does it depend on for fetching bookmark data?",
+      "expected_answer": "BookmarksScreen in src/screens/Bookmarks.tsx, which depends on useBookmarksQuery and useBookmarkMutation from state/queries/bookmarks.",
+      "expected_entities": [
+        "src/screens/Bookmarks.tsx#BookmarksScreen",
+        "src/screens/Bookmarks.tsx"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "**Screen:** The Bookmarks feature is implemented by **`BookmarksScreen`** in `src/screens/Bookmarks.tsx`\u30100\u2020src/screens/Bookmarks.tsx#BookmarksScreen\u3011. This screen renders the inner component `BookmarksInner`.\n\n**Data\u2011fetching dependency:** `BookmarksInner` fetches the bookmarked posts by calling the hook **`useBookmarksQuery`** (defined in `src/state/queries/bookmarks/useBookmarksQuery.ts`)\u30101\u2020src/screens/Bookmarks.tsx#BookmarksInner\u3011\u30102\u2020src/state/queries/bookmarks/useBookmarksQuery.ts#useBookmarksQuery\u3011. This hook uses the app\u2019s agent and an infinite query to retrieve the bookmark data.",
+      "confidence": "Medium",
+      "confidence_rationale": "3 of 6 retrieved entities scored >=0.6 relevance; top match scored 0.65.",
+      "sources": [
+        {
+          "id": "src/screens/Bookmarks.tsx#BookmarksScreen",
+          "type": "Screen",
+          "name": "BookmarksScreen",
+          "file": "src/screens/Bookmarks.tsx",
+          "start_line": 44,
+          "end_line": 67,
+          "snippet": "export function BookmarksScreen({}: Props) {\n  const ax = useAnalytics()\n\n  useFocusEffect(\n    useCallback(() => {\n      ax.metric('bookmarks:view', {})\n    }, [ax]),\n  )\n\n  return (\n    <Layout.Screen testID=\"bookmarksScreen\">\n      <Layout.Header.Outer>\n        <Layout.Header.BackButton />\n        <Layout.Header.Content>\n          <Layout.Header.TitleText>\n            <Trans>Saved Posts</Trans>\n          </Layout.Header.TitleText>\n        </Layout.Header.Content>\n        <Layout.Header.Slot />\n      </Layout.Header.Outer>\n      <BookmarksInner />\n    </Layout.Screen>\n  )\n}",
+          "graph_context": "Renders: Layout, Trans (external), BookmarksInner\nCalls: useAnalytics, useFocusEffect (external), useCallback (external)",
+          "relevance": 0.6473
+        },
+        {
+          "id": "src/screens/Bookmarks.tsx#BookmarksInner",
+          "type": "Screen",
+          "name": "BookmarksInner",
+          "file": "src/screens/Bookmarks.tsx",
+          "start_line": 93,
+          "end_line": 195,
+          "snippet": "function BookmarksInner() {\n  const initialNumToRender = useInitialNumToRender()\n  const [isPTRing, setIsPTRing] = useState(false)\n  const trackPostView = usePostViewTracking('Bookmarks')\n  const {\n    data,\n    isLoading,\n    isFetchingNextPage,\n    hasNextPage,\n    fetchNextPage,\n    error,\n    refetch,\n  } = useBookmarksQuery()\n\n  const onRefresh = useCallback(async () => {\n    setIsPTRing(true)\n    try {\n      await refetch()\n    } finally {\n      setIsPTRing(false)\n    }\n  }, [refetch, setIsPTRing])\n\n  const onEndReached = useCallback(async () => {\n    if (isFetchingNextPage || !hasNextPage || error) return\n    try {\n      await fetchNextPage()\n    } catch {}\n  }, [isFetchingNextPage, hasNextPage, error, fetchNextPage])\n\n  const items = useMemo(() => {\n    const i: ListItem[] = []\n\n    if (isLoading) {\n      i.push({type: 'loading', key: 'loading'})\n    } else if (error || !data) {\n      // handled in Footer\n    } else {\n      const bookmarks = data.pages.flatMap(p => p.bookmarks)\n\n      if (bookmarks.length > 0) {\n        for (const bookmark of bookmarks) {\n          if (AppBskyFeedDefs.isNotFoundPost(bookmark.item)) {\n            i.push({\n              type: 'bookmarkNotFound',\n              key: bookmark.item.uri,\n              bookmark: {\n                ...bookmark,\n                item: bookmark.item,\n              },\n            })\n          }\n          if (AppBskyFeedDefs.isPostView(bookmark.item)) {\n            i.push({\n              type: 'bookmark',\n              key: bookmark.item.uri,\n              bookmark: {\n                ...bookmark,\n                item: bookmark.item,\n              },\n# ... truncated ...",
+          "graph_context": "Renders: List, ListFooter\nCalls: useInitialNumToRender, useState (external), usePostViewTracking, useBookmarksQuery, useCallback (external), useMemo (external)\nRendered by: BookmarksScreen",
+          "relevance": 0.6404
+        },
+        {
+          "id": "src/screens/Bookmarks.tsx#BookmarkNotFound",
+          "type": "Screen",
+          "name": "BookmarkNotFound",
+          "file": "src/screens/Bookmarks.tsx",
+          "start_line": 197,
+          "end_line": 263,
+          "snippet": "function BookmarkNotFound({\n  hideTopBorder,\n  post,\n}: {\n  hideTopBorder: boolean\n  post: $Typed<AppBskyFeedDefs.NotFoundPost>\n}) {\n  const t = useTheme()\n  const {_} = useLingui()\n  const {mutateAsync: bookmark} = useBookmarkMutation()\n\n  const remove = async () => {\n    try {\n      await bookmark({action: 'delete', uri: post.uri})\n      toast.show(_(msg`Removed from saved posts`), {\n        type: 'info',\n      })\n    } catch (err) {\n      toast.show(cleanError(err), {\n        type: 'error',\n      })\n    }\n  }\n\n  return (\n    <View\n      style={[\n        a.flex_row,\n        a.align_start,\n        a.px_xl,\n        a.py_lg,\n        a.gap_sm,\n        !hideTopBorder && a.border_t,\n        t.atoms.border_contrast_low,\n      ]}>\n      <Skele.Circle size={42}>\n        <QuestionIcon size=\"lg\" fill={t.atoms.text_contrast_low.color} />\n      </Skele.Circle>\n      <View style={[a.flex_1, a.gap_2xs]}>\n        <View style={[a.flex_row, a.gap_xs]}>\n          <Skele.Text style={[a.text_md, {width: 80}]} />\n          <Skele.Text style={[a.text_md, {width: 100}]} />\n        </View>\n\n        <Text\n          style={[\n            a.text_md,\n            a.leading_snug,\n            a.italic,\n            t.atoms.text_contrast_medium,\n          ]}>\n          <Trans>This post was deleted by its author</Trans>\n        </Text>\n      </View>\n      <Button\n        label={_(msg`Remove from saved posts`)}\n        size=\"tiny\"\n        color=\"secondary\"\n        onPress={() => void remove()}>\n        <ButtonIcon icon={BookmarkFilled} />\n# ... truncated ...",
+          "graph_context": "Renders: View (external), Skele, QuestionIcon, Text, Trans (external), Button, ButtonIcon, ButtonText\nCalls: useTheme, useLingui (external), useBookmarkMutation",
+          "relevance": 0.5238
+        },
+        {
+          "id": "lib/hooks/useInitialNumToRender#useInitialNumToRender",
+          "type": "Unknown",
+          "name": "useInitialNumToRender",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "calls",
+          "direction": "out"
+        },
+        {
+          "id": "external:react#useState",
+          "type": "External",
+          "name": "useState (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "calls",
+          "direction": "out"
+        },
+        {
+          "id": "lib/hooks/usePostViewTracking#usePostViewTracking",
+          "type": "Unknown",
+          "name": "usePostViewTracking",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "calls",
+          "direction": "out"
+        },
+        {
+          "id": "state/queries/bookmarks/useBookmarksQuery#useBookmarksQuery",
+          "type": "Unknown",
+          "name": "useBookmarksQuery",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "calls",
+          "direction": "out"
+        },
+        {
+          "id": "external:react#useCallback",
+          "type": "External",
+          "name": "useCallback (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "calls",
+          "direction": "out"
+        },
+        {
+          "id": "external:react#useMemo",
+          "type": "External",
+          "name": "useMemo (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "calls",
+          "direction": "out"
+        },
+        {
+          "id": "src/state/queries/bookmarks/useBookmarksQuery.ts#useBookmarksQuery",
+          "type": "Hook",
+          "name": "useBookmarksQuery",
+          "file": "src/state/queries/bookmarks/useBookmarksQuery.ts",
+          "start_line": 25,
+          "end_line": 45,
+          "snippet": "export function useBookmarksQuery() {\n  const agent = useAgent()\n\n  return useInfiniteQuery<\n    AppBskyBookmarkGetBookmarks.OutputSchema,\n    Error,\n    InfiniteData<AppBskyBookmarkGetBookmarks.OutputSchema>,\n    QueryKey,\n    string | undefined\n  >({\n    queryKey: createBookmarksQueryKey(),\n    async queryFn({pageParam}) {\n      const res = await agent.app.bsky.bookmark.getBookmarks({\n        cursor: pageParam,\n      })\n      return res.data\n    },\n    initialPageParam: undefined,\n    getNextPageParam: lastPage => lastPage.cursor,\n  })\n}",
+          "graph_context": "Calls: useAgent, useInfiniteQuery (external)",
+          "relevance": 0.6356
+        },
+        {
+          "id": "src/state/queries/bookmarks/useBookmarkMutation.ts#useBookmarkMutation",
+          "type": "Hook",
+          "name": "useBookmarkMutation",
+          "file": "src/state/queries/bookmarks/useBookmarkMutation.ts",
+          "start_line": 24,
+          "end_line": 65,
+          "snippet": "export function useBookmarkMutation() {\n  const qc = useQueryClient()\n  const agent = useAgent()\n\n  return useMutation({\n    async mutationFn(args: MutationArgs) {\n      if (args.action === 'create') {\n        updatePostShadow(qc, args.post.uri, {bookmarked: true})\n        await agent.app.bsky.bookmark.createBookmark({\n          uri: args.post.uri,\n          cid: args.post.cid,\n        })\n      } else if (args.action === 'delete') {\n        updatePostShadow(qc, args.uri, {bookmarked: false})\n        await agent.app.bsky.bookmark.deleteBookmark({\n          uri: args.uri,\n        })\n      }\n    },\n    onSuccess(_, args) {\n      if (args.action === 'create') {\n        optimisticallySaveBookmark(qc, args.post)\n      } else if (args.action === 'delete') {\n        optimisticallyDeleteBookmark(qc, {uri: args.uri})\n      }\n    },\n    onError(e, args) {\n      if (args.action === 'create') {\n        updatePostShadow(qc, args.post.uri, {bookmarked: false})\n      } else if (args.action === 'delete') {\n        updatePostShadow(qc, args.uri, {bookmarked: true})\n      }\n\n      if (!isNetworkError(e)) {\n        logger.error('bookmark mutation failed', {\n          bookmarkAction: args.action,\n          safeMessage: e,\n        })\n      }\n    },\n  })\n}",
+          "graph_context": "Calls: useQueryClient (external), useAgent, useMutation (external)",
+          "relevance": 0.5238
+        },
+        {
+          "id": "src/state/queries/post-liked-by.ts#useLikedByQuery",
+          "type": "Hook",
+          "name": "useLikedByQuery",
+          "file": "src/state/queries/post-liked-by.ts",
+          "start_line": 18,
+          "end_line": 40,
+          "snippet": "export function useLikedByQuery(resolvedUri: string | undefined) {\n  const agent = useAgent()\n  return useInfiniteQuery<\n    AppBskyFeedGetLikes.OutputSchema,\n    Error,\n    InfiniteData<AppBskyFeedGetLikes.OutputSchema>,\n    QueryKey,\n    RQPageParam\n  >({\n    queryKey: RQKEY(resolvedUri || ''),\n    async queryFn({pageParam}: {pageParam: RQPageParam}) {\n      const res = await agent.getLikes({\n        uri: resolvedUri || '',\n        limit: PAGE_SIZE,\n        cursor: pageParam,\n      })\n      return res.data\n    },\n    initialPageParam: undefined,\n    getNextPageParam: lastPage => lastPage.cursor,\n    enabled: !!resolvedUri,\n  })\n}",
+          "graph_context": "Calls: useAgent, useInfiniteQuery (external)",
+          "relevance": 0.3443
+        },
+        {
+          "id": "components/Layout#Layout",
+          "type": "Unknown",
+          "name": "Layout",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "external:@lingui/react/macro#Trans",
+          "type": "External",
+          "name": "Trans (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 84.09,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 5,
+            "query": "Bookmarks screen"
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "out",
+            "edge_type": "calls",
+            "entity_id": "src/screens/Bookmarks.tsx#BookmarksInner",
+            "limit": 20
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 5,
+            "query": "useBookmarksQuery"
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "out",
+            "edge_type": "renders",
+            "entity_id": "src/screens/Bookmarks.tsx#BookmarksScreen",
+            "limit": 20
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 5,
+            "query": "BookmarksInner"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q5",
+      "question": "What breaks if useSession changes its behavior -- who calls it directly?",
+      "expected_answer": "Several call sites, including useRequireAuth (same file), useMigrateMutes (state/cache/thread-mutes.tsx), useFeedTuners (state/preferences/feed-tuners.tsx), and usePinnedPostMutation (state/queries/pinned-post.ts).",
+      "expected_entities": [
+        "src/state/session/index.tsx#useSession",
+        "src/state/session/index.tsx#useRequireAuth",
+        "src/state/cache/thread-mutes.tsx#useMigrateMutes"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "`useSession` is called directly by four other hooks in the codebase:\n\n| Direct caller | File / line range |\n|---------------|-------------------|\n| `useMigrateMutes` \u2013 a hook that migrates thread\u2011mute data | `src/state/cache/thread-mutes.tsx#useMigrateMutes` (lines\u202f58\u2011104)\u30103\u2020L1-L4\u3011 |\n| `useFeedTuners` \u2013 a hook that manages feed\u2011tuning preferences | `src/state/preferences/feed-tuners.tsx#useFeedTuners` (lines\u202f9\u201152)\u30103\u2020L2-L4\u3011 |\n| `usePinnedPostMutation` \u2013 a hook that provides a mutation for pinning posts | `src/state/queries/pinned\u2011post.ts#usePinnedPostMutation` (lines\u202f12\u201187)\u30103\u2020L3-L4\u3011 |\n| `useRequireAuth` \u2013 a hook that enforces authentication before rendering | `src/state/session/index.tsx#useRequireAuth` (lines\u202f438\u2011454)\u30103\u2020L4-L5\u3011 |\n\nIf the behavior of `useSession` were changed, any of these four hooks would be affected because they invoke `useSession` directly.",
+      "confidence": "Low",
+      "confidence_rationale": "0 of 4 retrieved entities scored >=0.6 relevance; top match scored 0.38.",
+      "sources": [
+        {
+          "id": "src/components/dms/MessageContext.tsx#useIsWithinMessage",
+          "type": "Hook",
+          "name": "useIsWithinMessage",
+          "file": "src/components/dms/MessageContext.tsx",
+          "start_line": 16,
+          "end_line": 18,
+          "snippet": "export function useIsWithinMessage() {\n  return useContext(MessageContext)\n}",
+          "graph_context": "Calls: useContext (external)",
+          "relevance": 0.372
+        },
+        {
+          "id": "src/components/dms/ChatInvite/Context.tsx#useChatInvite",
+          "type": "Hook",
+          "name": "useChatInvite",
+          "file": "src/components/dms/ChatInvite/Context.tsx",
+          "start_line": 51,
+          "end_line": 57,
+          "snippet": "export function useChatInvite(): ChatInviteContextValue {\n  const ctx = useContext(ChatInviteContext)\n  if (!ctx) {\n    throw new Error('useChatInvite must be used within a ChatInvite.Root')\n  }\n  return ctx\n}",
+          "graph_context": "Calls: useContext (external)\nCalled by: Card, JoinButton, Unavailable",
+          "relevance": 0.3566
+        },
+        {
+          "id": "src/components/hooks/useDelayedLoading.ts#useDelayedLoading",
+          "type": "Hook",
+          "name": "useDelayedLoading",
+          "file": "src/components/hooks/useDelayedLoading.ts",
+          "start_line": 3,
+          "end_line": 14,
+          "snippet": "export function useDelayedLoading(delay: number, isActuallyLoading: boolean) {\n  const [isDelayActive, setIsDelayActive] = useState(isActuallyLoading)\n\n  useEffect(() => {\n    if (!isDelayActive) return\n\n    const timeout = setTimeout(() => setIsDelayActive(false), delay)\n    return () => clearTimeout(timeout)\n  }, [isDelayActive, delay])\n\n  return isDelayActive || isActuallyLoading\n}",
+          "graph_context": "Calls: useState (external), useEffect (external)",
+          "relevance": 0.3472
+        },
+        {
+          "id": "src/state/session/index.tsx#useSession",
+          "type": "Hook",
+          "name": "useSession",
+          "file": "src/state/session/index.tsx",
+          "start_line": 430,
+          "end_line": 432
+        },
+        {
+          "id": "src/analytics/identifiers/session.ts#useSessionId",
+          "type": "Hook",
+          "name": "useSessionId",
+          "file": "src/analytics/identifiers/session.ts",
+          "start_line": 31,
+          "end_line": 50
+        },
+        {
+          "id": "src/analytics/identifiers/session.web.ts#useSessionId",
+          "type": "Hook",
+          "name": "useSessionId",
+          "file": "src/analytics/identifiers/session.web.ts",
+          "start_line": 34,
+          "end_line": 54
+        },
+        {
+          "id": "src/state/session/index.tsx#useSessionApi",
+          "type": "Hook",
+          "name": "useSessionApi",
+          "file": "src/state/session/index.tsx",
+          "start_line": 434,
+          "end_line": 436
+        },
+        {
+          "id": "src/state/cache/thread-mutes.tsx#useMigrateMutes",
+          "type": "Hook",
+          "name": "useMigrateMutes",
+          "file": "src/state/cache/thread-mutes.tsx",
+          "start_line": 58,
+          "end_line": 104,
+          "relation": "calls",
+          "direction": "in"
+        },
+        {
+          "id": "src/state/preferences/feed-tuners.tsx#useFeedTuners",
+          "type": "Hook",
+          "name": "useFeedTuners",
+          "file": "src/state/preferences/feed-tuners.tsx",
+          "start_line": 9,
+          "end_line": 52,
+          "relation": "calls",
+          "direction": "in"
+        },
+        {
+          "id": "src/state/queries/pinned-post.ts#usePinnedPostMutation",
+          "type": "Hook",
+          "name": "usePinnedPostMutation",
+          "file": "src/state/queries/pinned-post.ts",
+          "start_line": 12,
+          "end_line": 87,
+          "relation": "calls",
+          "direction": "in"
+        },
+        {
+          "id": "src/state/session/index.tsx#useRequireAuth",
+          "type": "Hook",
+          "name": "useRequireAuth",
+          "file": "src/state/session/index.tsx",
+          "start_line": 438,
+          "end_line": 454,
+          "relation": "calls",
+          "direction": "in"
+        },
+        {
+          "id": "src/components/hooks/useDelayedLoading.ts",
+          "type": "File",
+          "name": "useDelayedLoading.ts",
+          "file": "src/components/hooks/useDelayedLoading.ts",
+          "start_line": 1,
+          "end_line": 15,
+          "snippet": "import {useEffect, useState} from 'react'\n\nexport function useDelayedLoading(delay: number, isActuallyLoading: boolean) {\n  const [isDelayActive, setIsDelayActive] = useState(isActuallyLoading)\n\n  useEffect(() => {\n    if (!isDelayActive) return\n\n    const timeout = setTimeout(() => setIsDelayActive(false), delay)\n    return () => clearTimeout(timeout)\n  }, [isDelayActive, delay])\n\n  return isDelayActive || isActuallyLoading\n}",
+          "graph_context": "Defines: useDelayedLoading",
+          "relevance": 0.3824
+        },
+        {
+          "id": "src/state/session/index.tsx",
+          "type": "File",
+          "name": "index.tsx",
+          "file": "src/state/session/index.tsx",
+          "start_line": 1,
+          "end_line": 463,
+          "relation": "defines",
+          "direction": "in"
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 74.06,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 10,
+            "query": "useSession"
+          }
+        },
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Hook",
+            "limit": 20,
+            "query": "useSession"
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "edge_type": "calls",
+            "entity_id": "src/state/session/index.tsx#useSession",
+            "limit": 50
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": null,
+            "n_results": 20,
+            "query": "useSession("
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "entity_id": "src/state/session/index.tsx#useSession",
+            "limit": 100
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q6",
+      "question": "Where is HashtagScreen defined?",
+      "expected_answer": "src/screens/Hashtag.tsx#HashtagScreen.",
+      "expected_entities": [
+        "src/screens/Hashtag.tsx#HashtagScreen"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "`HashtagScreen` is defined in **src/screens/Hashtag.tsx**, spanning lines\u202f42\u2011154.  \n\nFile and location: `src/screens/Hashtag.tsx#HashtagScreen` (lines\u202f42\u2011154).",
+      "confidence": "Low",
+      "confidence_rationale": "No semantically-scored evidence was retrieved for this answer.",
+      "sources": [
+        {
+          "id": "src/screens/Hashtag.tsx#HashtagScreen",
+          "type": "Screen",
+          "name": "HashtagScreen",
+          "file": "src/screens/Hashtag.tsx",
+          "start_line": 42,
+          "end_line": 154
+        },
+        {
+          "id": "src/screens/Hashtag.tsx#HashtagScreenTab",
+          "type": "Screen",
+          "name": "HashtagScreenTab",
+          "file": "src/screens/Hashtag.tsx",
+          "start_line": 156,
+          "end_line": 286
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 27.66,
+      "tool_calls": [
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Screen",
+            "limit": 10,
+            "query": "HashtagScreen"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q7",
+      "question": "What top-level entities does src/App.tsx define?",
+      "expected_answer": "Two: InnerApp and App.",
+      "expected_entities": [
+        "src/App.tsx#InnerApp",
+        "src/App.tsx#App"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "`src/App.tsx` defines two top\u2011level components:\n\n* **InnerApp** \u2013 a component defined from line\u202f109 to\u202f213 in the file\u3010src/App.tsx#InnerApp:109-213\u3011  \n* **App** \u2013 the main component defined from line\u202f215 to\u202f268 in the file\u3010src/App.tsx#App:215-268\u3011\n\nThese are the only top\u2011level entities that the file declares.",
+      "confidence": "Medium",
+      "confidence_rationale": "0 of 4 retrieved entities scored >=0.6 relevance; top match scored 0.59.",
+      "sources": [
+        {
+          "id": "index.web.ts",
+          "type": "File",
+          "name": "index.web.ts",
+          "file": "index.web.ts",
+          "start_line": 1,
+          "end_line": 9,
+          "snippet": "import '#/platform/markBundleStartTime'\nimport '#/platform/polyfills'\n\nimport {registerRootComponent} from 'expo'\n\nimport App from '#/App'\n\nregisterRootComponent(App)",
+          "graph_context": "Depends on: platform/markBundleStartTime, platform/polyfills, App",
+          "relevance": 0.5923
+        },
+        {
+          "id": "src/screens/Settings/AppIconSettings/index.web.tsx",
+          "type": "File",
+          "name": "index.web.tsx",
+          "file": "src/screens/Settings/AppIconSettings/index.web.tsx",
+          "start_line": 1,
+          "end_line": 4,
+          "snippet": "export function AppIconSettingsScreen() {\n  throw new Error('Not supported on web')\n}",
+          "graph_context": "Defines: AppIconSettingsScreen",
+          "relevance": 0.5921
+        },
+        {
+          "id": "src/screens/Settings/AppIconSettings/SettingsListItem.web.tsx",
+          "type": "File",
+          "name": "SettingsListItem.web.tsx",
+          "file": "src/screens/Settings/AppIconSettings/SettingsListItem.web.tsx",
+          "start_line": 1,
+          "end_line": 2,
+          "snippet": "export function SettingsListItem() {}",
+          "graph_context": "Defines: SettingsListItem",
+          "relevance": 0.5783
+        },
+        {
+          "id": "src/screens/Onboarding/StepFinished/index.tsx",
+          "type": "File",
+          "name": "index.tsx",
+          "file": "src/screens/Onboarding/StepFinished/index.tsx",
+          "start_line": 1,
+          "end_line": 351,
+          "snippet": "import {useCallback, useState} from 'react'\nimport {View} from 'react-native'\nimport {\n  type AppBskyActorDefs,\n  type AppBskyActorProfile,\n  type AppBskyGraphDefs,\n  AppBskyGraphStarterpack,\n  type Un$Typed,\n} from '@atproto/api'\nimport {TID} from '@atproto/common-web'\nimport {msg} from '@lingui/core/macro'\nimport {useLingui} from '@lingui/react'\nimport {Trans} from '@lingui/react/macro'\nimport {useQueryClient} from '@tanstack/react-query'\n\nimport {uploadBlob} from '#/lib/api'\nimport {\n  BSKY_APP_ACCOUNT_DID,\n  DISCOVER_SAVED_FEED,\n  TIMELINE_SAVED_FEED,\n  VIDEO_SAVED_FEED,\n} from '#/lib/constants'\nimport {useRequestNotificationsPermission} from '#/lib/notifications/notifications'\nimport {logger} from '#/logger'\nimport {useSetHasCheckedForStarterPack} from '#/state/preferences/used-starter-packs'\nimport {getAllListMembers} from '#/state/queries/list-members'\nimport {preferencesQueryKey} from '#/state/queries/preferences'\nimport {RQKEY as profileRQKey} from '#/state/queries/profile'\nimport {useAgent} from '#/state/session'\nimport {useOnboardingDispatch} from '#/state/shell'\nimport {\n  useActiveStarterPack,\n  useSetActiveStarterPack,\n} from '#/state/shell/landing'\nimport {useProgressGuideControls} from '#/state/shell/progress-guide'\nimport {\n  OnboardingControls,\n  OnboardingHeaderSlot,\n} from '#/screens/Onboarding/Layout'\nimport {\n  type OnboardingState,\n  useOnboardingInternalState,\n} from '#/screens/Onboarding/state'\nimport {bulkWriteFollows} from '#/screens/Onboarding/util'\nimport {atoms as a, useBreakpoints} from '#/alf'\nimport {Button, ButtonIcon, ButtonText} from '#/components/Button'\nimport {ArrowRight_Stroke2_Corner0_Rounded as ArrowRight} from '#/components/icons/Arrow'\nimport {Loader} from '#/components/Loader'\nimport {useAnalytics} from '#/analytics'\nimport {IS_WEB} from '#/env'\nimport * as bsky from '#/types/bsky'\nimport {ValuePropositionPager} from './ValuePropositionPager'\n\nexport function StepFinished() {\n  const {state, dispatch} = useOnboardingInter",
+          "graph_context": "Depends on: lib/api, lib/constants, lib/notifications/notifications, logger, state/preferences/used-starter-packs, state/queries/list-members, state/queries/preferences, state/queries/profile (+15 more)\nDefines: StepFinished, ValueProposition",
+          "relevance": 0.5607
+        },
+        {
+          "id": "src/App.tsx",
+          "type": "File",
+          "name": "App.tsx",
+          "file": "src/App.tsx",
+          "start_line": 1,
+          "end_line": 271
+        },
+        {
+          "id": "src/App.tsx#InnerApp",
+          "type": "Component",
+          "name": "InnerApp",
+          "file": "src/App.tsx",
+          "start_line": 109,
+          "end_line": 213,
+          "relation": "defines",
+          "direction": "out"
+        },
+        {
+          "id": "src/App.tsx#App",
+          "type": "Component",
+          "name": "App",
+          "file": "src/App.tsx",
+          "start_line": 215,
+          "end_line": 268,
+          "relation": "defines",
+          "direction": "out"
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 63.75,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "File",
+            "n_results": 5,
+            "query": "src/App.tsx"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "File",
+            "n_results": 5,
+            "query": "App.tsx"
+          }
+        },
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": null,
+            "limit": 10,
+            "query": "src/App.tsx"
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "out",
+            "edge_type": "defines",
+            "entity_id": "src/App.tsx",
+            "limit": 50
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q8",
+      "question": "Which screen handles the deactivated-account state?",
+      "expected_answer": "Deactivated, in src/screens/Deactivated.tsx.",
+      "expected_entities": [
+        "src/screens/Deactivated.tsx#Deactivated"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The **`Deactivated`** screen (implemented in `src/screens/Deactivated.tsx`) is the component that handles the deactivated\u2011account state\u3010src/screens/Deactivated.tsx#Deactivated:31-210\u3011.",
+      "confidence": "Medium",
+      "confidence_rationale": "0 of 7 retrieved entities scored >=0.6 relevance; top match scored 0.56.",
+      "sources": [
+        {
+          "id": "src/screens/Deactivated.tsx#Deactivated",
+          "type": "Screen",
+          "name": "Deactivated",
+          "file": "src/screens/Deactivated.tsx",
+          "start_line": 31,
+          "end_line": 210,
+          "snippet": "export function Deactivated() {\n  const {_} = useLingui()\n  const t = useTheme()\n  const insets = useSafeAreaInsets()\n  const {currentAccount, accounts} = useSession()\n  const {onPressSwitchAccount, pendingDid} = useAccountSwitcher()\n  const {setShowLoggedOut} = useLoggedOutViewControls()\n  const hasOtherAccounts = accounts.length > 1\n  const {logoutCurrentAccount} = useSessionApi()\n  const agent = useAgent()\n  const [pending, setPending] = useState(false)\n  const [error, setError] = useState<string | undefined>()\n  const queryClient = useQueryClient()\n\n  const onSelectAccount = useCallback(\n    (account: SessionAccount) => {\n      if (account.did !== currentAccount?.did) {\n        onPressSwitchAccount(account, 'SwitchAccount')\n      }\n    },\n    [currentAccount, onPressSwitchAccount],\n  )\n\n  const onPressAddAccount = useCallback(() => {\n    setShowLoggedOut(true)\n  }, [setShowLoggedOut])\n\n  const onPressLogout = useCallback(() => {\n    if (IS_WEB) {\n      // We're switching accounts, which remounts the entire app.\n      // On mobile, this gets us Home, but on the web we also need reset the URL.\n      // We can't change the URL via a navigate() call because the navigator\n      // itself is about to unmount, and it calls pushState() too late.\n      // So we change the URL ourselves. The navigator will pick it up on remount.\n      history.pushState(null, '', '/')\n    }\n    logoutCurrentAccount('Deactivated')\n  }, [logoutCurrentAccount])\n\n  const handleActivate = useCallback(async () => {\n    try {\n      setPending(true)\n      await agent.com.atproto.server.activateAccount()\n      await queryClient.resetQueries()\n      await agent.resumeSession(agent.session!)\n    } catch (e: any) {\n      switch (e.message) {\n        case 'Bad token scope':\n          setError(\n            _(\n              msg`You're signed in with an App Password. Please sign in with your main password to continue deactivating your account.`,\n            ),\n          )\n          break\n        default:\n",
+          "graph_context": "Renders: View (external), Layout, Logo, Text, Trans (external), Button, ButtonText, ButtonIcon (+3 more)\nCalls: useLingui (external), useTheme, useSafeAreaInsets (external), useSession, useAccountSwitcher, useLoggedOutViewControls, useSessionApi, useAgent (+3 more)",
+          "relevance": 0.5561
+        },
+        {
+          "id": "src/screens/Settings/Settings.tsx#AccountRow",
+          "type": "Screen",
+          "name": "AccountRow",
+          "file": "src/screens/Settings/Settings.tsx",
+          "start_line": 584,
+          "end_line": 678,
+          "snippet": "function AccountRow({\n  profile,\n  account,\n  pendingDid,\n  onPressSwitchAccount,\n}: {\n  profile?: AppBskyActorDefs.ProfileViewDetailed\n  account: SessionAccount\n  pendingDid: string | null\n  onPressSwitchAccount: (\n    account: SessionAccount,\n    logContext: 'Settings',\n  ) => void\n}) {\n  const {t: l} = useLingui()\n  const t = useTheme()\n\n  const moderationOpts = useModerationOpts()\n  const removePromptControl = Prompt.usePromptControl()\n  const {removeAccount} = useSessionApi()\n  const {isActive: live} = useActorStatus(profile)\n\n  const onSwitchAccount = () => {\n    if (pendingDid) return\n    onPressSwitchAccount(account, 'Settings')\n  }\n\n  return (\n    <View style={[a.relative]}>\n      <SettingsList.PressableItem\n        onPress={onSwitchAccount}\n        label={l`Switch account`}>\n        {moderationOpts && profile ? (\n          <UserAvatar\n            size={28}\n            avatar={profile.avatar}\n            moderation={moderateProfile(profile, moderationOpts).ui('avatar')}\n            type={profile.associated?.labeler ? 'labeler' : 'user'}\n            live={live}\n            hideLiveBadge\n          />\n        ) : (\n          <View style={[{width: 28}]} />\n        )}\n        <SettingsList.ItemText\n          numberOfLines={1}\n          style={[a.pr_2xl, a.leading_snug]}>\n          {sanitizeHandle(account.handle, '@')}\n        </SettingsList.ItemText>\n        {pendingDid === account.did && <SettingsList.ItemIcon icon={Loader} />}\n      </SettingsList.PressableItem>\n      {!pendingDid && (\n        <Menu.Root>\n          <Menu.Trigger label={l`Account options`}>\n            {({props, state}) => (\n              <Pressable\n                {...props}\n                style={[\n                  a.absolute,\n                  {top: 10, right: tokens.space.lg},\n# ... truncated ...",
+          "graph_context": "Renders: View (external), SettingsList, UserAvatar, Menu, Pressable (external), DotsHorizontal, Trans (external), Prompt\nCalls: useLingui (external), useTheme, useModerationOpts, useSessionApi, useActorStatus\nRendered by: SettingsScreen",
+          "relevance": 0.499
+        },
+        {
+          "id": "src/screens/Settings/components/DeactivateAccountDialog.tsx#DeactivateAccountDialogInner",
+          "type": "Screen",
+          "name": "DeactivateAccountDialogInner",
+          "file": "src/screens/Settings/components/DeactivateAccountDialog.tsx",
+          "start_line": 30,
+          "end_line": 129,
+          "snippet": "function DeactivateAccountDialogInner({\n  control,\n}: {\n  control: DialogOuterProps['control']\n}) {\n  const t = useTheme()\n  const {_} = useLingui()\n  const agent = useAgent()\n  const {logoutCurrentAccount} = useSessionApi()\n  const [pending, setPending] = useState(false)\n  const [error, setError] = useState<string | undefined>()\n\n  const handleDeactivate = useCallback(async () => {\n    try {\n      setPending(true)\n      await agent.com.atproto.server.deactivateAccount({})\n      control.close(() => {\n        logoutCurrentAccount('Deactivated')\n      })\n    } catch (e: any) {\n      switch (e.message) {\n        case 'Bad token scope':\n          setError(\n            _(\n              msg`You're signed in with an App Password. Please sign in with your main password to continue deactivating your account.`,\n            ),\n          )\n          break\n        default:\n          setError(_(msg`Something went wrong, please try again`))\n          break\n      }\n\n      logger.error(e, {\n        message: 'Failed to deactivate account',\n      })\n    } finally {\n      setPending(false)\n    }\n  }, [agent, control, logoutCurrentAccount, _, setPending])\n\n  return (\n    <>\n      <Prompt.TitleText>{_(msg`Deactivate account`)}</Prompt.TitleText>\n      <Prompt.DescriptionText>\n        <Trans>\n          Your profile, posts, feeds, and lists will no longer be visible to\n          other Bluesky users. You can reactivate your account at any time by\n          logging in.\n        </Trans>\n      </Prompt.DescriptionText>\n\n      <View style={[a.pb_xl]}>\n        <Divider />\n        <View style={[a.gap_sm, a.pt_lg, a.pb_xl]}>\n          <Text style={[t.atoms.text_contrast_medium, a.leading_snug]}>\n            <Trans>\n              There is no time limit for account deactivation, come back any\n              time.\n            </Trans>\n# ... truncated ...",
+          "graph_context": "Renders: Prompt, Trans (external), View (external), Divider, Text, Button, ButtonText, ButtonIcon (+1 more)\nCalls: useTheme, useLingui (external), useAgent, useSessionApi, useState (external), useCallback (external)\nRendered by: DeactivateAccountDialog",
+          "relevance": 0.4474
+        },
+        {
+          "id": "src/screens/Settings/AccountSettings.tsx#AccountSettingsScreen",
+          "type": "Screen",
+          "name": "AccountSettingsScreen",
+          "file": "src/screens/Settings/AccountSettings.tsx",
+          "start_line": 37,
+          "end_line": 212,
+          "snippet": "export function AccountSettingsScreen({}: Props) {\n  const t = useTheme()\n  const {_} = useLingui()\n  const {currentAccount} = useSession()\n  const {data: profile} = useProfileQuery({did: currentAccount?.did})\n  const emailDialogControl = useEmailDialogControl()\n  const birthdayControl = useDialogControl()\n  const changeHandleControl = useDialogControl()\n  const changePasswordControl = useDialogControl()\n  const exportCarControl = useDialogControl()\n  const deactivateAccountControl = useDialogControl()\n  const deleteAccountControl = useDialogControl()\n\n  return (\n    <Layout.Screen>\n      <Layout.Header.Outer>\n        <Layout.Header.BackButton />\n        <Layout.Header.Content>\n          <Layout.Header.TitleText>\n            <Trans>Account</Trans>\n          </Layout.Header.TitleText>\n        </Layout.Header.Content>\n        <Layout.Header.Slot />\n      </Layout.Header.Outer>\n      <Layout.Content>\n        <SettingsList.Container>\n          <SettingsList.Item>\n            <SettingsList.ItemIcon icon={EnvelopeIcon} />\n            {/* Tricky flexbox situation here: we want the email to truncate, but by default it will make the \"Email\" text wrap instead.\n                For numberOfLines to work, we need flex: 1 on the BadgeText, but that means it goes to width: 50% because the\n                ItemText is also flex: 1. So we need to set flex: 0 on the ItemText to prevent it from growing, but if we did that everywhere\n                it wouldn't push the BadgeText/Chevron/whatever to the right.\n                TODO: find a general solution for this. workaround in this case is to set the ItemText to flex: 1 and BadgeText to flex: 0 -sfn */}\n            <SettingsList.ItemText style={[a.flex_0]}>\n              <Trans>Email</Trans>\n            </SettingsList.ItemText>\n            {currentAccount && (\n              <>\n                <SettingsList.BadgeText style={[a.flex_1]}>\n                  {currentAccount.email || <Trans>(no email)</Trans>}\n                </SettingsList",
+          "graph_context": "Renders: Layout, Trans (external), SettingsList, ShieldIcon, AgeAssuranceAccountCard, BirthDateSettingsDialog, ChangeHandleDialog, ChangePasswordDialog (+3 more)\nCalls: useTheme, useLingui (external), useSession, useProfileQuery, useEmailDialogControl, useDialogControl",
+          "relevance": 0.4472
+        },
+        {
+          "id": "src/screens/Settings/components/DeleteAccountDialog.tsx#DeleteAccountDialogInner",
+          "type": "Screen",
+          "name": "DeleteAccountDialogInner",
+          "file": "src/screens/Settings/components/DeleteAccountDialog.tsx",
+          "start_line": 64,
+          "end_line": 357,
+          "snippet": "function DeleteAccountDialogInner({\n  control,\n  deactivateDialogControl,\n}: {\n  control: DialogOuterProps['control']\n  deactivateDialogControl: DialogOuterProps['control']\n}) {\n  const passwordRef = useRef<TextInput | null>(null)\n  const t = useTheme()\n  const {_} = useLingui()\n  const cleanError = useCleanError()\n  const agent = useAgent()\n  const {currentAccount} = useSession()\n  const {removeAccount} = useSessionApi()\n\n  const [emailState, setEmailState] = useState(EmailState.DEFAULT)\n  const [emailSentCount, setEmailSentCount] = useState(0)\n  const [step, setStep] = useState(Step.SEND_CODE)\n  const [confirmCode, setConfirmCode] = useState('')\n  const [password, setPassword] = useState('')\n  const [error, setError] = useState('')\n\n  const sendEmail = useCallback(async () => {\n    if (emailState === EmailState.PENDING) {\n      return\n    }\n    try {\n      setEmailState(EmailState.PENDING)\n      await agent.com.atproto.server.requestAccountDelete()\n      setError('')\n      setEmailSentCount(prevCount => prevCount + 1)\n      setStep(Step.VERIFY_CODE)\n    } catch (e: any) {\n      const {clean, raw} = cleanError(e)\n      const error = clean || raw || e\n      setError(error)\n      logger.error(raw || e, {\n        message: 'Failed to send account deletion verification email',\n      })\n    } finally {\n      setEmailState(EmailState.DEFAULT)\n    }\n  }, [agent, cleanError, emailState, setEmailState])\n\n  const confirmDeletion = useCallback(async () => {\n    try {\n      setError('')\n      if (!currentAccount?.did) {\n        throw new Error('Invalid did')\n      }\n      const token = confirmCode.replace(WHITESPACE_RE, '')\n      // Inform chat service of intent to delete account.\n      const {success} = await agent.chat.bsky.actor.deleteAccount(undefined, {\n        headers: DM_SERVICE_HEADERS,\n      })\n      if (!success) {\n        throw new Error('Failed to inform chat service of account deletion')\n      }\n      await agent.com.atproto.server.deleteAccount({\n        did: curr",
+          "graph_context": "Renders: Prompt, Trans (external), Span, Admonition, Text, SimpleInlineLinkText, View (external), TextField (+2 more)\nCalls: useRef (external), useTheme, useLingui (external), useCleanError, useAgent, useSession, useSessionApi, useState (external) (+1 more)\nRendered by: DeleteAccountDialog",
+          "relevance": 0.4426
+        },
+        {
+          "id": "src/screens/Settings/components/ExportCarDialog.tsx#ExportCarDialog",
+          "type": "Screen",
+          "name": "ExportCarDialog",
+          "file": "src/screens/Settings/components/ExportCarDialog.tsx",
+          "start_line": 18,
+          "end_line": 183,
+          "snippet": "export function ExportCarDialog({\n  control,\n}: {\n  control: Dialog.DialogControlProps\n}) {\n  const {t: l} = useLingui()\n  const t = useTheme()\n  const agent = useAgent()\n  const [loading, setLoading] = useState<'repo' | 'chat' | false>(false)\n\n  const download = useCallback(async () => {\n    if (!agent.session) {\n      return // shouldn't ever happen\n    }\n    try {\n      setLoading('repo')\n      const did = agent.session.did\n      const downloadRes = await agent.com.atproto.sync.getRepo({did})\n      const saveRes = await saveBytesToDisk(\n        'repo.car',\n        downloadRes.data,\n        downloadRes.headers['content-type'] || 'application/vnd.ipld.car',\n      )\n\n      if (saveRes) {\n        Toast.show(l`File saved successfully!`)\n      }\n    } catch (e) {\n      logger.error('Error occurred while downloading CAR file', {message: e})\n      Toast.show(l`Error occurred while saving file`, {type: 'error'})\n    } finally {\n      setLoading(false)\n    }\n  }, [l, agent])\n\n  const downloadChatData = useCallback(async () => {\n    if (!agent.session) {\n      return\n    }\n    try {\n      setLoading('chat')\n      // Using raw fetch because the XRPC client incorrectly tries to JSON-parse\n      // application/jsonl responses (substring match on application/json).\n      const res = await agent.sessionManager.fetchHandler(\n        '/xrpc/chat.bsky.actor.exportAccountData',\n        {headers: DM_SERVICE_HEADERS},\n      )\n      if (!res.ok) {\n        throw new Error(`HTTP ${res.status}`)\n      }\n      const data = new Uint8Array(await res.arrayBuffer())\n      const saveRes = await saveBytesToDisk(\n        'chat.jsonl',\n        data,\n        res.headers.get('content-type') || 'application/jsonl',\n      )\n\n      if (saveRes) {\n        Toast.show(l`File saved successfully!`)\n      }\n# ... truncated ...",
+          "graph_context": "Renders: Dialog, View (external), Text, Trans (external), Button, ButtonIcon, ButtonText, InlineLinkText\nCalls: useLingui (external), useTheme, useAgent, useState (external), useCallback (external)\nRendered by: AccountSettingsScreen",
+          "relevance": 0.4027
+        },
+        {
+          "id": "src/screens/Settings/components/DeactivateAccountDialog.tsx#DeactivateAccountDialog",
+          "type": "Screen",
+          "name": "DeactivateAccountDialog",
+          "file": "src/screens/Settings/components/DeactivateAccountDialog.tsx",
+          "start_line": 18,
+          "end_line": 28,
+          "snippet": "export function DeactivateAccountDialog({\n  control,\n}: {\n  control: DialogOuterProps['control']\n}) {\n  return (\n    <Prompt.Outer control={control}>\n      <DeactivateAccountDialogInner control={control} />\n    </Prompt.Outer>\n  )\n}",
+          "graph_context": "Renders: Prompt, DeactivateAccountDialogInner\nRendered by: AccountSettingsScreen",
+          "relevance": 0.4958
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 89.58,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "query": "deactivated account screen",
+            "top_n": 10
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 1,
+            "query": "export function Deactivated"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 5,
+            "query": "Deactivated.tsx"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 5,
+            "query": "Deactivated()"
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "edge_type": "renders",
+            "entity_id": "src/screens/Deactivated.tsx#Deactivated",
+            "limit": 20
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q9",
+      "question": "Which screen handles the find-contacts flow?",
+      "expected_answer": "FindContactsFlowScreen, in src/screens/FindContactsFlowScreen.tsx.",
+      "expected_entities": [
+        "src/screens/FindContactsFlowScreen.tsx#FindContactsFlowScreen"
+      ],
+      "entity_hit": false,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The **FindContactsSettingsScreen** implements the find\u2011contacts flow. It is defined in `src/screens/Settings/FindContactsSettings.tsx` (lines\u202f59\u2011112) and renders the onboarding intro, sync status, and related UI for the find\u2011contacts feature\u3010src/screens/Settings/FindContactsSettings.tsx#FindContactsSettingsScreen\u3011.",
+      "confidence": "Low",
+      "confidence_rationale": "0 of 7 retrieved entities scored >=0.6 relevance; top match scored 0.50.",
+      "sources": [
+        {
+          "id": "src/components/contacts/screens/ViewMatches.tsx#ContactItem",
+          "type": "Screen",
+          "name": "ContactItem",
+          "file": "src/components/contacts/screens/ViewMatches.tsx",
+          "start_line": 512,
+          "end_line": 594,
+          "snippet": "function ContactItem({\n  contact,\n  context,\n}: {\n  contact: Contact\n  context: 'Onboarding' | 'Standalone'\n}) {\n  const gutter = useGutters([0, 'wide'])\n  const t = useTheme()\n  const {_} = useLingui()\n  const ax = useAnalytics()\n  const {currentAccount} = useSession()\n\n  const name = contact.name ?? contact.firstName ?? contact.lastName\n  const phone =\n    contact.phoneNumbers?.find(phone => phone.isPrimary) ??\n    contact.phoneNumbers?.[0]\n  const phoneNumber = phone?.number\n\n  return (\n    <View style={[gutter, a.py_md, a.border_t, t.atoms.border_contrast_low]}>\n      <ProfileCard.Header>\n        {contact.image ? (\n          <UserAvatar size={40} avatar={contact.image.uri} type=\"user\" />\n        ) : (\n          <View\n            style={[\n              {width: 40, height: 40},\n              a.rounded_full,\n              a.justify_center,\n              a.align_center,\n              t.atoms.bg_contrast_400,\n            ]}>\n            <Text\n              style={[\n                a.text_lg,\n                a.font_semi_bold,\n                {color: t.palette.contrast_0},\n              ]}>\n              {name?.[0]?.toLocaleUpperCase()}\n            </Text>\n          </View>\n        )}\n        <Text\n          style={[\n            a.flex_1,\n            a.text_md,\n            a.font_medium,\n            !name && [t.atoms.text_contrast_medium, a.italic],\n          ]}\n          numberOfLines={2}>\n          {name ?? <Trans>No name</Trans>}\n        </Text>\n        {phoneNumber && currentAccount && (\n          <Button\n            label={_(msg`Invite ${name} to join Bluesky`)}\n            color=\"secondary\"\n            size=\"small\"\n            onPress={async () => {\n              ax.metric('contacts:matches:invite', {\n# ... truncated ...",
+          "graph_context": "Renders: View (external), ProfileCard, UserAvatar, Text, Trans (external), Button, ButtonText\nCalls: useGutters, useTheme, useLingui (external), useAnalytics, useSession\nRendered by: ViewMatches",
+          "relevance": 0.4971
+        },
+        {
+          "id": "src/screens/Settings/FindContactsSettings.tsx#Intro",
+          "type": "Screen",
+          "name": "Intro",
+          "file": "src/screens/Settings/FindContactsSettings.tsx",
+          "start_line": 114,
+          "end_line": 187,
+          "snippet": "function Intro() {\n  const gutter = useGutters(['base'])\n  const t = useTheme()\n  const {_} = useLingui()\n  const ax = useAnalytics()\n  const inviteFriendsControl = useDialogControl()\n\n  const {data: isAvailable, isSuccess} = useQuery({\n    queryKey: ['contacts-available'],\n    queryFn: async () => await Contacts.isAvailableAsync(),\n  })\n\n  return (\n    <Layout.Content contentContainerStyle={[gutter, a.gap_lg]}>\n      <ContactsHeroImage />\n      <Text style={[a.text_xl, a.font_bold]}>\n        <Trans>Find people you know</Trans>\n      </Text>\n      <Text style={[a.text_md, a.leading_snug, t.atoms.text_contrast_medium]}>\n        <Trans>\n          Find your friends on Bluesky by verifying your phone number and\n          matching with your contacts. We protect your information and you\n          control what happens next.{' '}\n          <InlineLinkText\n            to={urls.website.blog.findFriendsAnnouncement}\n            label={_(\n              msg({\n                message: `Learn more about importing contacts`,\n                context: `english-only-resource`,\n              }),\n            )}\n            style={[a.text_md, a.leading_snug]}>\n            <Trans context=\"english-only-resource\">Learn more</Trans>\n          </InlineLinkText>\n        </Trans>\n      </Text>\n      {isAvailable ? (\n        <Link\n          to={{screen: 'FindContactsFlow'}}\n          label={_(msg`Import contacts`)}\n          size=\"large\"\n          color=\"primary\"\n          style={[a.flex_1, a.justify_center]}>\n          <ButtonText>\n            <Trans>Import contacts</Trans>\n          </ButtonText>\n        </Link>\n      ) : (\n        isSuccess && (\n          <Admonition type=\"error\">\n            <Trans>\n              Contact sync is not available on this device, as the app is unable\n              to access your contacts.\n            </Trans>\n          </Admonition>\n        )\n      )}\n      <Button\n        label={_(msg`Share my profile`)}\n        size=\"large\"\n# ... truncated ...",
+          "graph_context": "Renders: Layout, ContactsHeroImage, Text, Trans (external), InlineLinkText, Link, ButtonText, Admonition (+2 more)\nCalls: useGutters, useTheme, useLingui (external), useAnalytics, useDialogControl, useQuery (external)\nRendered by: FindContactsSettingsScreen",
+          "relevance": 0.4969
+        },
+        {
+          "id": "src/components/contacts/screens/ViewMatches.tsx#TotallyEmptyState",
+          "type": "Screen",
+          "name": "TotallyEmptyState",
+          "file": "src/components/contacts/screens/ViewMatches.tsx",
+          "start_line": 665,
+          "end_line": 685,
+          "snippet": "function TotallyEmptyState() {\n  const t = useTheme()\n\n  return (\n    <View\n      style={[\n        a.flex_1,\n        a.flex_col,\n        a.align_center,\n        a.justify_center,\n        a.gap_lg,\n        {paddingTop: 140},\n        a.px_5xl,\n      ]}>\n      <PersonXIcon width={64} style={[t.atoms.text_contrast_low]} />\n      <Text style={[a.text_xl, a.font_bold, a.leading_snug, a.text_center]}>\n        <Trans>No contacts found</Trans>\n      </Text>\n    </View>\n  )\n}",
+          "graph_context": "Renders: View (external), PersonXIcon, Text, Trans (external)\nCalls: useTheme\nRendered by: ViewMatches",
+          "relevance": 0.4847
+        },
+        {
+          "id": "src/screens/Settings/FindContactsSettings.tsx#FindContactsSettingsScreen",
+          "type": "Screen",
+          "name": "FindContactsSettingsScreen",
+          "file": "src/screens/Settings/FindContactsSettings.tsx",
+          "start_line": 59,
+          "end_line": 112
+        },
+        {
+          "id": "src/screens/Settings/AppIconSettings/SettingsListItem.web.tsx#SettingsListItem",
+          "type": "Screen",
+          "name": "SettingsListItem",
+          "file": "src/screens/Settings/AppIconSettings/SettingsListItem.web.tsx",
+          "start_line": 1,
+          "end_line": 1,
+          "snippet": "export function SettingsListItem() {}",
+          "graph_context": "",
+          "relevance": 0.4972
+        },
+        {
+          "id": "components/Layout#Layout",
+          "type": "Unknown",
+          "name": "Layout",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "external:@lingui/react/macro#Trans",
+          "type": "External",
+          "name": "Trans (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "src/screens/Settings/FindContactsSettings.tsx#SyncStatus",
+          "type": "Screen",
+          "name": "SyncStatus",
+          "file": "src/screens/Settings/FindContactsSettings.tsx",
+          "start_line": 189,
+          "end_line": 289,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "view/com/util/error/ErrorScreen#ErrorScreen",
+          "type": "Unknown",
+          "name": "ErrorScreen",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "external:react-native#View",
+          "type": "External",
+          "name": "View (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "components/Loader#Loader",
+          "type": "Unknown",
+          "name": "Loader",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "external:@lingui/react#useLingui",
+          "type": "External",
+          "name": "useLingui (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "calls",
+          "direction": "out"
+        },
+        {
+          "id": "analytics#useAnalytics",
+          "type": "Unknown",
+          "name": "useAnalytics",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "calls",
+          "direction": "out"
+        },
+        {
+          "id": "state/queries/find-contacts#useContactsSyncStatusQuery",
+          "type": "Unknown",
+          "name": "useContactsSyncStatusQuery",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "calls",
+          "direction": "out"
+        },
+        {
+          "id": "external:@react-navigation/native#useIsFocused",
+          "type": "External",
+          "name": "useIsFocused (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "calls",
+          "direction": "out"
+        },
+        {
+          "id": "external:react#useEffect",
+          "type": "External",
+          "name": "useEffect (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "calls",
+          "direction": "out"
+        },
+        {
+          "id": "src/state/queries/find-contacts.ts",
+          "type": "File",
+          "name": "find-contacts.ts",
+          "file": "src/state/queries/find-contacts.ts",
+          "start_line": 1,
+          "end_line": 129,
+          "snippet": "import {type AppBskyContactGetMatches} from '@atproto/api'\nimport {\n  type InfiniteData,\n  type QueryClient,\n  useInfiniteQuery,\n  useQuery,\n} from '@tanstack/react-query'\n\nimport {useAgent} from '#/state/session'\nimport {type Match} from '#/components/contacts/state'\nimport type * as bsky from '#/types/bsky'\nimport {STALE} from '.'\n\nconst RQ_KEY_ROOT = 'find-contacts'\nexport const findContactsStatusQueryKey = [RQ_KEY_ROOT, 'sync-status']\n\nexport function useContactsSyncStatusQuery() {\n  const agent = useAgent()\n\n  return useQuery({\n    queryKey: findContactsStatusQueryKey,\n    queryFn: async () => {\n      const status = await agent.app.bsky.contact.getSyncStatus()\n      return status.data\n    },\n    staleTime: STALE.SECONDS.THIRTY,\n  })\n}\n\nexport const findContactsGetMatchesQueryKey = [RQ_KEY_ROOT, 'matches']\n\nexport function useContactsMatchesQuery() {\n  const agent = useAgent()\n\n  return useInfiniteQuery({\n    queryKey: findContactsGetMatchesQueryKey,\n    queryFn: async ({pageParam}) => {\n      const matches = await agent.app.bsky.contact.getMatches({\n        cursor: pageParam,\n      })\n      return matches.data\n    },\n    initialPageParam: undefined as string | undefined,\n    getNextPageParam: lastPage => lastPage.cursor,\n    staleTime: STALE.MINUTES.ONE,\n  })\n}\n\nexport function optimisticRemoveMatch(queryClient: QueryClient, did: string) {\n  queryClient.setQueryData<InfiniteData<AppBskyContactGetMatches.OutputSchema>>(\n    findContactsGetMatchesQueryKey,\n    old => {\n      if (!old) return old\n\n      return {\n        ...old,\n        pages: old.pages.map(page => ({\n          ...page,\n          matches: page.matches.filter(match => match.did !== did),\n        })),\n# ... truncated ...",
+          "graph_context": "Depends on: state/session, components/contacts/state, types/bsky, index.ts\nDefines: useContactsSyncStatusQuery, useContactsMatchesQuery, useMatchesPassthroughQuery",
+          "relevance": 0.4393
+        },
+        {
+          "id": "src/components/contacts/contacts.ts",
+          "type": "File",
+          "name": "contacts.ts",
+          "file": "src/components/contacts/contacts.ts",
+          "start_line": 1,
+          "end_line": 101,
+          "snippet": "import {type AppBskyContactDefs} from '@atproto/api'\n\nimport {type CountryCode} from '#/lib/international-telephone-codes'\nimport {normalizePhoneNumber} from './phone-number'\nimport {type Contact, type Match} from './state'\n\n/**\n * Filters out contacts that do not have any associated phone numbers,\n * as well as businesses\n */\nexport function contactsWithPhoneNumbersOnly(contacts: Contact[]) {\n  return contacts.filter(\n    contact =>\n      contact.phoneNumbers &&\n      contact.phoneNumbers.length > 0 &&\n      contact.contactType !== 'company',\n  )\n}\n\n/**\n * Takes the raw contact book and returns a plain list of numbers in E.164 format, along\n * with a mapping to retrieve the contact ID when we get the results back.\n *\n * `countryCode` is used as a fallback for local numbers that don't have a country code associated with them.\n * I'm making the assumption that most local numbers in someone's phone book will be the same as theirs.\n */\nexport function normalizeContactBook(\n  contacts: Contact[],\n  countryCode: CountryCode,\n  ownNumber: string,\n): {\n  phoneNumbers: string[]\n  indexToContactId: Map<number, Contact['id']>\n} {\n  const phoneNumbers: string[] = []\n  const indexToContactId = new Map<number, Contact['id']>()\n\n  for (const contact of contacts) {\n    for (const number of contact.phoneNumbers ?? []) {\n      let rawNumber: string\n\n      if (number.number) {\n        rawNumber = number.number\n      } else if (number.digits) {\n        rawNumber = number.digits\n      } else {\n        continue\n      }\n\n      const normalized = normalizePhoneNumber(\n        rawNumber,\n        number.countryCode,\n        countryCode,\n      )\n      if (normalized === null) continue\n\n      // skip if it's your own number\n      if (normalized === ownNumber) continue\n\n      phoneNumbers.push(normalized)\n# ... truncated ...",
+          "graph_context": "Depends on: lib/international-telephone-codes, phone-number.ts, state.ts\nDepended on by: GetContacts.tsx",
+          "relevance": 0.4355
+        },
+        {
+          "id": "src/state/queries/find-contacts.ts#useContactsMatchesQuery",
+          "type": "Hook",
+          "name": "useContactsMatchesQuery",
+          "file": "src/state/queries/find-contacts.ts",
+          "start_line": 32,
+          "end_line": 47,
+          "snippet": "export function useContactsMatchesQuery() {\n  const agent = useAgent()\n\n  return useInfiniteQuery({\n    queryKey: findContactsGetMatchesQueryKey,\n    queryFn: async ({pageParam}) => {\n      const matches = await agent.app.bsky.contact.getMatches({\n        cursor: pageParam,\n      })\n      return matches.data\n    },\n    initialPageParam: undefined as string | undefined,\n    getNextPageParam: lastPage => lastPage.cursor,\n    staleTime: STALE.MINUTES.ONE,\n  })\n}",
+          "graph_context": "Calls: useAgent, useInfiniteQuery (external)",
+          "relevance": 0.4029
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 69.94,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 10,
+            "query": "find contacts screen"
+          }
+        },
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Screen",
+            "query": "FindContactsSettings"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 5,
+            "query": "FindContactsSettingsScreen"
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "out",
+            "entity_id": "src/screens/Settings/FindContactsSettings.tsx#FindContactsSettingsScreen"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": null,
+            "n_results": 10,
+            "query": "find-contacts"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q10",
+      "question": "What does src/screens/Bookmarks.tsx depend on for rendering individual posts and tracking views?",
+      "expected_answer": "It depends on view/com/post/Post for rendering and usePostViewTracking / useInitialNumToRender hooks for view tracking and list rendering behavior.",
+      "expected_entities": [
+        "src/screens/Bookmarks.tsx"
+      ],
+      "entity_hit": false,
+      "error": "Error code: 400 - {'error': {'message': 'Tool choice is none, but model called a tool', 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{\"name\": \"search_code\", \"arguments\": {\"entity_type\": \"Screen\", \"n_results\": 5, \"path\": \"src/screens/Bookmarks.tsx\", \"query\": \"function BookmarkItem\"}}'}}",
+      "blank_answer": false,
+      "answer": null,
+      "confidence": null,
+      "confidence_rationale": null,
+      "sources": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": null,
+      "tool_calls": []
+    }
+  ],
+  "summary": {
+    "openai/gpt-oss-120b": {
+      "total": 10,
+      "errors": 1,
+      "blank_answers": 0,
+      "entity_hit_rate": 0.8,
+      "avg_latency_s": 74.08,
+      "confidence_counts": {
+        "Medium": 5,
+        "High": 1,
+        "Low": 3
+      }
+    }
+  }
+}

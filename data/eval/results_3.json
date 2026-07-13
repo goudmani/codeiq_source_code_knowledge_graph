@@ -1,0 +1,1592 @@
+{
+  "runs": [
+    {
+      "question_id": "q21",
+      "question": "Which component renders an individual post in the main app, and where is it defined?",
+      "expected_answer": "Post, defined in src/view/com/post/Post.tsx (lines 44-98). (A separate embed-widget Post exists in bskyembed/src/components/post.tsx.)",
+      "expected_entities": [
+        "src/view/com/post/Post.tsx#Post",
+        "src/view/com/post/Post.tsx"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The component that renders an individual post in the main app is **`Post`**. It is defined in the file **`src/view/com/post/Post.tsx`** (lines\u202f44\u201198)\u3010bskyembed/src/components/post.tsx#Post\u3011\u3010src/view/com/post/Post.tsx#Post\u3011. The `Post` component internally renders the `PostInner` component, which contains the detailed UI for a single post\u3010src/view/com/post/Post.tsx#PostInner\u3011.",
+      "confidence": "Medium",
+      "confidence_rationale": "0 of 4 retrieved entities scored >=0.6 relevance; top match scored 0.57.",
+      "sources": [
+        {
+          "id": "src/view/com/post/Post.tsx#PostInner",
+          "type": "Component",
+          "name": "PostInner",
+          "file": "src/view/com/post/Post.tsx",
+          "start_line": 100,
+          "end_line": 275,
+          "snippet": "function PostInner({\n  post,\n  record,\n  richText,\n  moderation,\n  showReplyLine,\n  hideTopBorder,\n  style,\n  onBeforePress: outerOnBeforePress,\n}: {\n  post: Shadow<AppBskyFeedDefs.PostView>\n  record: AppBskyFeedPost.Record\n  richText: RichTextAPI\n  moderation: ModerationDecision\n  showReplyLine?: boolean\n  hideTopBorder?: boolean\n  style?: StyleProp<ViewStyle>\n  onBeforePress?: () => void\n}) {\n  const queryClient = useQueryClient()\n  const t = useTheme()\n  const {openComposer} = useOpenComposer()\n  const [limitLines, setLimitLines] = useState(\n    () => countLines(richText?.text) >= MAX_POST_LINES,\n  )\n  const itemUrip = new AtUri(post.uri)\n  const itemHref = makeProfileLink(post.author, 'post', itemUrip.rkey)\n  let replyAuthorDid = ''\n  if (record.reply) {\n    const urip = new AtUri(record.reply.parent?.uri || record.reply.root.uri)\n    replyAuthorDid = urip.hostname\n  }\n\n  const onPressReply = useCallback(() => {\n    openComposer({\n      replyTo: {\n        uri: post.uri,\n        cid: post.cid,\n        text: record.text,\n        author: post.author,\n        embed: post.embed,\n        moderation,\n        langs: record.langs,\n      },\n      logContext: 'PostReply',\n    })\n  }, [openComposer, post, record, moderation])\n\n  const onPressShowMore = useCallback(() => {\n    setLimitLines(false)\n  }, [setLimitLines])\n\n  const onBeforePress = useCallback(() => {\n    unstableCacheProfileView(queryClient, post.author)\n    outerOnBeforePress?.()\n  }, [queryClient, post.author, outerOnBeforePress])\n\n  const [hover, setHover] = useState(false)\n\n  return (\n# ... truncated ...",
+          "graph_context": "Renders: GalleryBleed, Link, SubtleHover, View (external), PreviewableUserAvatar, PostMeta, PostRepliedTo, LabelsOnMyPost (+7 more)\nCalls: useQueryClient (external), useTheme, useOpenComposer, useState (external), useCallback (external)\nRendered by: Post",
+          "relevance": 0.5637
+        },
+        {
+          "id": "src/components/PostControls/PostControlButton.tsx#PostControlButtonIcon",
+          "type": "Component",
+          "name": "PostControlButtonIcon",
+          "file": "src/components/PostControls/PostControlButton.tsx",
+          "start_line": 108,
+          "end_line": 124,
+          "snippet": "export function PostControlButtonIcon({\n  icon: Comp,\n  style,\n  ...rest\n}: SVGIconProps & {\n  icon: React.ComponentType<SVGIconProps>\n}) {\n  const {big, color} = useContext(PostControlContext)\n\n  return (\n    <Comp\n      style={[color, a.pointer_events_none, style]}\n      {...rest}\n      width={big ? 22 : 18}\n    />\n  )\n}",
+          "graph_context": "Renders: Comp\nCalls: useContext (external)\nRendered by: PostControls, RepostButton, RepostButton, PostMenuButton, ShareMenuButton",
+          "relevance": 0.5535
+        },
+        {
+          "id": "src/view/com/util/LoadingPlaceholder.tsx#PostFeedLoadingPlaceholder",
+          "type": "Component",
+          "name": "PostFeedLoadingPlaceholder",
+          "file": "src/view/com/util/LoadingPlaceholder.tsx",
+          "start_line": 117,
+          "end_line": 130,
+          "snippet": "export function PostFeedLoadingPlaceholder() {\n  return (\n    <View>\n      <PostLoadingPlaceholder />\n      <PostLoadingPlaceholder />\n      <PostLoadingPlaceholder />\n      <PostLoadingPlaceholder />\n      <PostLoadingPlaceholder />\n      <PostLoadingPlaceholder />\n      <PostLoadingPlaceholder />\n      <PostLoadingPlaceholder />\n    </View>\n  )\n}",
+          "graph_context": "Renders: View (external), PostLoadingPlaceholder",
+          "relevance": 0.5526
+        },
+        {
+          "id": "src/view/com/post-thread/PostRepostedBy.tsx#PostRepostedBy",
+          "type": "Component",
+          "name": "PostRepostedBy",
+          "file": "src/view/com/post-thread/PostRepostedBy.tsx",
+          "start_line": 35,
+          "end_line": 125,
+          "snippet": "export function PostRepostedBy({uri}: {uri: string}) {\n  const {_} = useLingui()\n  const initialNumToRender = useInitialNumToRender()\n\n  const [isPTRing, setIsPTRing] = useState(false)\n\n  const {\n    data: resolvedUri,\n    error: resolveError,\n    isLoading: isLoadingUri,\n  } = useResolveUriQuery(uri)\n  const {\n    data,\n    isLoading: isLoadingRepostedBy,\n    isFetchingNextPage,\n    hasNextPage,\n    fetchNextPage,\n    error,\n    refetch,\n  } = usePostRepostedByQuery(resolvedUri?.uri)\n\n  const isError = Boolean(resolveError || error)\n\n  const repostedBy = useMemo(() => {\n    if (data?.pages) {\n      return data.pages.flatMap(page => page.repostedBy)\n    }\n    return []\n  }, [data])\n\n  const onRefresh = useCallback(async () => {\n    setIsPTRing(true)\n    try {\n      await refetch()\n    } catch (err) {\n      logger.error('Failed to refresh reposts', {message: err})\n    }\n    setIsPTRing(false)\n  }, [refetch, setIsPTRing])\n\n  const onEndReached = useCallback(async () => {\n    if (isFetchingNextPage || !hasNextPage || isError) return\n    try {\n      await fetchNextPage()\n    } catch (err) {\n      logger.error('Failed to load more reposts', {message: err})\n    }\n  }, [isFetchingNextPage, hasNextPage, isError, fetchNextPage])\n\n  if (repostedBy.length < 1) {\n    return (\n      <ListMaybePlaceholder\n        isLoading={isLoadingUri || isLoadingRepostedBy}\n        isError={isError}\n        emptyType=\"results\"\n        emptyTitle={_(msg`No reposts yet`)}\n        emptyMessage={_(\n          msg`Nobody has reposted this yet. Maybe you should be the first!`,\n        )}\n        errorMessage={cleanError(resolveError || error)}\n# ... truncated ...",
+          "graph_context": "Renders: ListMaybePlaceholder, List, ListFooter\nCalls: useLingui (external), useInitialNumToRender, useState (external), useResolveUriQuery, usePostRepostedByQuery, useMemo (external), useCallback (external)",
+          "relevance": 0.5712
+        },
+        {
+          "id": "src/view/com/post/Post.tsx#Post",
+          "type": "Component",
+          "name": "Post",
+          "file": "src/view/com/post/Post.tsx",
+          "start_line": 44,
+          "end_line": 98,
+          "relation": "renders",
+          "direction": "in"
+        },
+        {
+          "id": "bskyembed/src/components/post.tsx#Post",
+          "type": "Component",
+          "name": "Post",
+          "file": "bskyembed/src/components/post.tsx",
+          "start_line": 29,
+          "end_line": 154
+        },
+        {
+          "id": "src/components/VideoPostCard.tsx#VideoPostCard",
+          "type": "Component",
+          "name": "VideoPostCard",
+          "file": "src/components/VideoPostCard.tsx",
+          "start_line": 40,
+          "end_line": 254
+        },
+        {
+          "id": "src/components/VideoPostCard.tsx#VideoPostCardPlaceholder",
+          "type": "Component",
+          "name": "VideoPostCardPlaceholder",
+          "file": "src/components/VideoPostCard.tsx",
+          "start_line": 256,
+          "end_line": 276
+        },
+        {
+          "id": "src/components/VideoPostCard.tsx#VideoPostCardTextPlaceholder",
+          "type": "Component",
+          "name": "VideoPostCardTextPlaceholder",
+          "file": "src/components/VideoPostCard.tsx",
+          "start_line": 278,
+          "end_line": 353
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 21.53,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 3,
+            "query": "post component renders individual post"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 5,
+            "query": "component Post renders post"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 5,
+            "query": "Post component"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "edge_type": "renders",
+            "entity_id": "src/view/com/post/Post.tsx#PostInner",
+            "limit": 20
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Component",
+            "limit": 5,
+            "query": "Post"
+          },
+          "duplicate": false
+        }
+      ]
+    },
+    {
+      "question_id": "q22",
+      "question": "Which component renders the BottomBar (the bottom tab bar)?",
+      "expected_answer": "TabsNavigator in src/Navigation.tsx renders BottomBar (defined in src/view/shell/bottom-bar/BottomBar.tsx).",
+      "expected_entities": [
+        "src/view/shell/bottom-bar/BottomBar.tsx#BottomBar",
+        "src/Navigation.tsx#TabsNavigator"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "Based on the retrieved evidence, the codebase contains a `BottomBar` component defined in `src/view/shell/bottom-bar/BottomBar.tsx` (lines\u202f63\u2011374). However, the available relationship data does not show any other component that renders this `BottomBar`. Consequently, the specific component that renders the bottom tab bar cannot be identified from the evidence that has been retrieved.",
+      "confidence": "Low",
+      "confidence_rationale": "0 of 3 retrieved entities scored >=0.6 relevance; top match scored 0.47.",
+      "sources": [
+        {
+          "id": "src/view/shell/bottom-bar/BottomBar.tsx#BottomBar",
+          "type": "Component",
+          "name": "BottomBar",
+          "file": "src/view/shell/bottom-bar/BottomBar.tsx",
+          "start_line": 63,
+          "end_line": 374,
+          "snippet": "export function BottomBar({navigation}: BottomTabBarProps) {\n  const {hasSession, currentAccount} = useSession()\n  const t = useTheme()\n  const {t: l} = useLingui()\n  const ax = useAnalytics()\n  const safeAreaInsets = useSafeAreaInsets()\n  const {footerHeight} = useShellLayout()\n  const {isAtHome, isAtSearch, isAtNotifications, isAtMyProfile, isAtMessages} =\n    useNavigationTabState()\n  const numUnreadNotifications = useUnreadNotifications()\n  const numUnreadMessages = useUnreadMessageCount()\n  const aa = useAgeAssurance()\n  const footerMinimalShellTransform = useMinimalShellFooterTransform()\n  const {data: profile} = useProfileQuery({did: currentAccount?.did})\n  const {requestSwitchToAccount} = useLoggedOutViewControls()\n  const closeAllActiveElements = useCloseAllActiveElements()\n  const dedupe = useDedupe()\n  const accountSwitchControl = useDialogControl()\n  const messagesMenuControl = Menu.useMenuControl()\n  const playHaptic = useHaptics()\n  const hideBorder = useHideBottomBarBorder()\n  const iconWidth = 28\n\n  const showSignIn = useCallback(() => {\n    closeAllActiveElements()\n    requestSwitchToAccount({requestedAccount: 'none'})\n  }, [requestSwitchToAccount, closeAllActiveElements])\n\n  const showCreateAccount = useCallback(() => {\n    closeAllActiveElements()\n    requestSwitchToAccount({requestedAccount: 'new'})\n    // setShowLoggedOut(true)\n  }, [requestSwitchToAccount, closeAllActiveElements])\n\n  const onPressTab = useCallback(\n    (tab: SharedNavTab) => {\n      ax.metric('nav:click', {\n        item: TAB_TO_NAV_ITEM[tab],\n        surface: 'bottomBar',\n      })\n      const state = navigation.getState()\n      const tabState = getTabState(state, tab)\n      if (tabState === TabState.InsideAtRoot) {\n        emitSoftReset()\n      } else if (tabState === TabState.Inside) {\n        // find the correct navigator in which to pop-to-top\n        const target = state.routes.find(route => route.name === `${tab}Tab`)\n          ?.state?.key\n        dedupe(() => {\n         ",
+          "graph_context": "Renders: SwitchAccountDialog, MessagesTabMenu, Animated (external), Btn, HomeFilled, Home, MagnifyingGlassFilled, MagnifyingGlass (+11 more)\nCalls: useSession, useTheme, useLingui (external), useAnalytics, useSafeAreaInsets (external), useShellLayout, useNavigationTabState, useUnreadNotifications (+13 more)",
+          "relevance": 0.4683
+        },
+        {
+          "id": "src/view/shell/bottom-bar/BottomBarWeb.tsx#BottomBarWeb",
+          "type": "Component",
+          "name": "BottomBarWeb",
+          "file": "src/view/shell/bottom-bar/BottomBarWeb.tsx",
+          "start_line": 52,
+          "end_line": 265,
+          "snippet": "export function BottomBarWeb() {\n  const {_} = useLingui()\n  const {hasSession, currentAccount} = useSession()\n  const t = useTheme()\n  const footerMinimalShellTransform = useMinimalShellFooterTransform()\n  const {requestSwitchToAccount} = useLoggedOutViewControls()\n  const closeAllActiveElements = useCloseAllActiveElements()\n  const {footerHeight} = useShellLayout()\n  const hideBorder = useHideBottomBarBorder()\n  const accountSwitchControl = useDialogControl()\n  const {data: profile} = useProfileQuery({did: currentAccount?.did})\n  const iconWidth = 26\n\n  const unreadMessageCount = useUnreadMessageCount()\n  const notificationCountStr = useUnreadNotifications()\n  const aa = useAgeAssurance()\n  const isLabeler = profile?.associated?.labeler\n\n  const showSignIn = useCallback(() => {\n    closeAllActiveElements()\n    requestSwitchToAccount({requestedAccount: 'none'})\n  }, [requestSwitchToAccount, closeAllActiveElements])\n\n  const showCreateAccount = useCallback(() => {\n    closeAllActiveElements()\n    requestSwitchToAccount({requestedAccount: 'new'})\n    // setShowLoggedOut(true)\n  }, [requestSwitchToAccount, closeAllActiveElements])\n\n  const onLongPressProfile = useCallback(() => {\n    accountSwitchControl.open()\n  }, [accountSwitchControl])\n\n  return (\n    <>\n      <SwitchAccountDialog control={accountSwitchControl} />\n\n      <Animated.View\n        role=\"navigation\"\n        style={[\n          styles.bottomBar,\n          styles.bottomBarWeb,\n          t.atoms.bg,\n          hideBorder\n            ? {borderColor: t.atoms.bg.backgroundColor}\n            : t.atoms.border_contrast_low,\n          footerMinimalShellTransform,\n        ]}\n        onLayout={event => footerHeight.set(event.nativeEvent.layout.height)}>\n        {hasSession ? (\n          <>\n            <NavItem routeName=\"Home\" href=\"/\" navItem=\"home\">\n              {({isActive}) => {\n                const Icon = isActive ? HomeFilled : Home\n                return (\n                  <Icon\n                    aria-hi",
+          "graph_context": "Renders: SwitchAccountDialog, Animated (external), NavItem, Icon, View (external), UserAvatar, Logo, Logotype (+3 more)\nCalls: useLingui (external), useSession, useTheme, useMinimalShellFooterTransform, useLoggedOutViewControls, useCloseAllActiveElements, useShellLayout, useHideBottomBarBorder (+6 more)\nRendered by: NativeStackNavigator",
+          "relevance": 0.434
+        },
+        {
+          "id": "src/view/shell/bottom-bar/BottomBar.tsx#Btn",
+          "type": "Component",
+          "name": "Btn",
+          "file": "src/view/shell/bottom-bar/BottomBar.tsx",
+          "start_line": 391,
+          "end_line": 437,
+          "snippet": "function Btn({\n  testID,\n  icon,\n  hasNew,\n  notificationCount,\n  onPress,\n  onLongPress,\n  accessible,\n  accessibilityHint,\n  accessibilityLabel,\n}: BtnProps) {\n  const t = useTheme()\n\n  return (\n    <PressableScale\n      testID={testID}\n      style={[styles.ctrl, a.flex_1]}\n      onPress={onPress}\n      onLongPress={onLongPress}\n      accessible={accessible}\n      accessibilityLabel={accessibilityLabel}\n      accessibilityHint={accessibilityHint}\n      targetScale={0.8}\n      accessibilityLargeContentTitle={accessibilityLabel}\n      accessibilityShowsLargeContentViewer>\n      {icon}\n      {notificationCount ? (\n        <View\n          style={[\n            styles.notificationCount,\n            a.rounded_full,\n            {backgroundColor: t.palette.primary_500},\n          ]}>\n          <Text\n            style={styles.notificationCountLabel}\n            maxFontSizeMultiplier={1.5}>\n            {notificationCount}\n          </Text>\n        </View>\n      ) : hasNew ? (\n        <View\n          style={[styles.hasNewBadge, {backgroundColor: t.palette.primary_500}]}\n        />\n      ) : null}\n    </PressableScale>\n  )\n}",
+          "graph_context": "Renders: PressableScale, View (external), Text\nCalls: useTheme\nRendered by: BottomBar",
+          "relevance": 0.3826
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 99.02,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 3,
+            "query": "BottomBar"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 3,
+            "query": "BottomBar"
+          },
+          "duplicate": true
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "edge_type": "renders",
+            "entity_id": "src/view/shell/bottom-bar/BottomBar.tsx#BottomBar",
+            "limit": 20
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 5,
+            "query": "BottomBar"
+          },
+          "duplicate": true
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 3,
+            "query": "BottomBar"
+          },
+          "duplicate": true
+        }
+      ]
+    },
+    {
+      "question_id": "q23",
+      "question": "Where is the post composer (ComposePost) implemented, and which shell components render it?",
+      "expected_answer": "ComposePost in src/view/com/composer/Composer.tsx (lines 252-1555), rendered by the platform Composer shells: src/view/shell/Composer.ios.tsx, src/view/shell/Composer.tsx, and src/view/shell/Composer.web.tsx.",
+      "expected_entities": [
+        "src/view/com/composer/Composer.tsx#ComposePost",
+        "src/view/com/composer/Composer.tsx"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The model exhausted its tool-call budget before producing a final synthesis. The cited sources below were still retrieved and are valid evidence for this question.",
+      "confidence": "Low",
+      "confidence_rationale": "0 of 2 retrieved entities scored >=0.6 relevance; top match scored 0.39.",
+      "sources": [
+        {
+          "id": "src/view/com/composer/Composer.tsx#ComposePost",
+          "type": "Component",
+          "name": "ComposePost",
+          "file": "src/view/com/composer/Composer.tsx",
+          "start_line": 252,
+          "end_line": 1555
+        },
+        {
+          "id": "src/view/com/composer/Composer.tsx",
+          "type": "File",
+          "name": "Composer.tsx",
+          "file": "src/view/com/composer/Composer.tsx",
+          "start_line": 1,
+          "end_line": 2722,
+          "relation": "defines",
+          "direction": "in"
+        },
+        {
+          "id": "src/view/com/post/Post.tsx#PostInner",
+          "type": "Component",
+          "name": "PostInner",
+          "file": "src/view/com/post/Post.tsx",
+          "start_line": 100,
+          "end_line": 275,
+          "snippet": "function PostInner({\n  post,\n  record,\n  richText,\n  moderation,\n  showReplyLine,\n  hideTopBorder,\n  style,\n  onBeforePress: outerOnBeforePress,\n}: {\n  post: Shadow<AppBskyFeedDefs.PostView>\n  record: AppBskyFeedPost.Record\n  richText: RichTextAPI\n  moderation: ModerationDecision\n  showReplyLine?: boolean\n  hideTopBorder?: boolean\n  style?: StyleProp<ViewStyle>\n  onBeforePress?: () => void\n}) {\n  const queryClient = useQueryClient()\n  const t = useTheme()\n  const {openComposer} = useOpenComposer()\n  const [limitLines, setLimitLines] = useState(\n    () => countLines(richText?.text) >= MAX_POST_LINES,\n  )\n  const itemUrip = new AtUri(post.uri)\n  const itemHref = makeProfileLink(post.author, 'post', itemUrip.rkey)\n  let replyAuthorDid = ''\n  if (record.reply) {\n    const urip = new AtUri(record.reply.parent?.uri || record.reply.root.uri)\n    replyAuthorDid = urip.hostname\n  }\n\n  const onPressReply = useCallback(() => {\n    openComposer({\n      replyTo: {\n        uri: post.uri,\n        cid: post.cid,\n        text: record.text,\n        author: post.author,\n        embed: post.embed,\n        moderation,\n        langs: record.langs,\n      },\n      logContext: 'PostReply',\n    })\n  }, [openComposer, post, record, moderation])\n\n  const onPressShowMore = useCallback(() => {\n    setLimitLines(false)\n  }, [setLimitLines])\n\n  const onBeforePress = useCallback(() => {\n    unstableCacheProfileView(queryClient, post.author)\n    outerOnBeforePress?.()\n  }, [queryClient, post.author, outerOnBeforePress])\n\n  const [hover, setHover] = useState(false)\n\n  return (\n# ... truncated ...",
+          "graph_context": "Renders: GalleryBleed, Link, SubtleHover, View (external), PreviewableUserAvatar, PostMeta, PostRepliedTo, LabelsOnMyPost (+7 more)\nCalls: useQueryClient (external), useTheme, useOpenComposer, useState (external), useCallback (external)\nRendered by: Post",
+          "relevance": 0.3862
+        },
+        {
+          "id": "src/view/com/posts/PostFeedItem.tsx#PostFeedItem",
+          "type": "Component",
+          "name": "PostFeedItem",
+          "file": "src/view/com/posts/PostFeedItem.tsx",
+          "start_line": 80,
+          "end_line": 140,
+          "snippet": "export function PostFeedItem({\n  post,\n  record,\n  reason,\n  feedContext,\n  reqId,\n  moderation,\n  parentAuthor,\n  showReplyTo,\n  isThreadChild,\n  isThreadLastChild,\n  isThreadParent,\n  hideTopBorder,\n  isParentBlocked,\n  isParentNotFound,\n  rootPost,\n  onShowLess,\n}: FeedItemProps & {\n  post: AppBskyFeedDefs.PostView\n  rootPost: AppBskyFeedDefs.PostView\n  onShowLess?: (interaction: AppBskyFeedDefs.Interaction) => void\n}): React.ReactNode {\n  const postShadowed = usePostShadow(post)\n  const richText = useMemo(\n    () =>\n      new RichTextAPI({\n        text: record.text,\n        facets: record.facets,\n      }),\n    [record],\n  )\n  if (postShadowed === POST_TOMBSTONE) {\n    return null\n  }\n  if (richText && moderation) {\n    return (\n      <FeedItemInner\n        // Safeguard from clobbering per-post state below:\n        key={postShadowed.uri}\n        post={postShadowed}\n        record={record}\n        reason={reason}\n        feedContext={feedContext}\n        reqId={reqId}\n        richText={richText}\n        parentAuthor={parentAuthor}\n        showReplyTo={showReplyTo}\n        moderation={moderation}\n        isThreadChild={isThreadChild}\n        isThreadLastChild={isThreadLastChild}\n        isThreadParent={isThreadParent}\n        hideTopBorder={hideTopBorder}\n        isParentBlocked={isParentBlocked}\n        isParentNotFound={isParentNotFound}\n        rootPost={rootPost}\n        onShowLess={onShowLess}\n      />\n    )\n  }\n  return null\n# ... truncated ...",
+          "graph_context": "Renders: FeedItemInner\nCalls: usePostShadow, useMemo (external)\nRendered by: MockPostFeedItem, PostFeed",
+          "relevance": 0.3746
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 84.11,
+      "tool_calls": [
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Component",
+            "limit": 10,
+            "query": "ComposePost"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "edge_type": "renders",
+            "entity_id": "src/view/com/composer/Composer.tsx#ComposePost"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "entity_id": "src/view/com/composer/Composer.tsx#ComposePost"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 3,
+            "query": "ComposePost"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 10,
+            "query": "ComposePost"
+          },
+          "duplicate": true
+        }
+      ]
+    },
+    {
+      "question_id": "q24",
+      "question": "Does the app have a reusable error boundary component? Where is it defined?",
+      "expected_answer": "Yes -- ErrorBoundary in src/view/com/util/ErrorBoundary.tsx (lines 21-50), rendered by several shell/screen components.",
+      "expected_entities": [
+        "src/view/com/util/ErrorBoundary.tsx#ErrorBoundary"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "Yes. The app includes a reusable **ErrorBoundary** component that can be used to catch rendering errors in any part of the UI.\n\n* **Definition** \u2013 `src/view/com/util/ErrorBoundary.tsx` (component `ErrorBoundary`, lines\u202f21\u201150)\u3010src/view/com/util/ErrorBoundary.tsx#ErrorBoundary\u3011.  \n\nThis component is a generic error\u2011boundary wrapper that can be imported and used throughout the application. (A feature\u2011specific wrapper, `GifPickerErrorBoundary`, is also defined in `src/features/gifPicker/components/GifPickerErrorBoundary.tsx`, but the reusable core is the one above.)",
+      "confidence": "Low",
+      "confidence_rationale": "No semantically-scored evidence was retrieved for this answer.",
+      "sources": [
+        {
+          "id": "src/view/com/util/ErrorBoundary.tsx#ErrorBoundary",
+          "type": "Component",
+          "name": "ErrorBoundary",
+          "file": "src/view/com/util/ErrorBoundary.tsx",
+          "start_line": 21,
+          "end_line": 50
+        },
+        {
+          "id": "src/features/gifPicker/components/GifPickerErrorBoundary.tsx#GifPickerErrorBoundary",
+          "type": "Component",
+          "name": "GifPickerErrorBoundary",
+          "file": "src/features/gifPicker/components/GifPickerErrorBoundary.tsx",
+          "start_line": 8,
+          "end_line": 52
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 27.16,
+      "tool_calls": [
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Component",
+            "limit": 10,
+            "query": "ErrorBoundary"
+          },
+          "duplicate": false
+        }
+      ]
+    },
+    {
+      "question_id": "q25",
+      "question": "Which hook handles incoming push notifications, and which other hooks does it call to do its job?",
+      "expected_answer": "useNotificationsHandler in src/lib/hooks/useNotificationHandler.ts (lines 108-427); it calls useSession, useAccountSwitcher, useCurrentConvoId, useNavigation and react-query's useQueryClient among others.",
+      "expected_entities": [
+        "src/lib/hooks/useNotificationHandler.ts#useNotificationsHandler"
+      ],
+      "entity_hit": false,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The hook that is responsible for handling incoming push\u2011notifications is **`useNotificationsRegistration`** (defined in `src/lib/notifications/notifications.ts`).  \n\nWhen it runs, it composes several other hooks to perform the registration work:\n\n* **`useSession`** \u2013 to obtain the current account context.  \n* **`useRegisterPushToken`** \u2013 the low\u2011level hook that actually registers a device token with the server.  \n* **`useGetAndRegisterPushToken`** \u2013 a helper that first obtains a token (and performs age\u2011assurance checks) and then calls `useRegisterPushToken`.  \n* **`useAgeAssurance`** \u2013 used inside `useGetAndRegisterPushToken` to ensure the user meets the required age.  \n* **React\u2019s `useEffect`** \u2013 to trigger the registration side\u2011effect when the component mounts.\n\nThese relationships are shown in the code graph for `useNotificationsRegistration`:\n\n* `useNotificationsRegistration` **Calls**: `useSession`, `useRegisterPushToken`, `useGetAndRegisterPushToken`, `useAgeAssurance`, `useEffect`\u3010src/lib/notifications/notifications.ts#useNotificationsRegistration\u3011.  \n\n* `useGetAndRegisterPushToken` **Calls**: `useAgeAssurance`, `useRegisterPushToken`, `useCallback` (external)\u3010src/lib/notifications/notifications.ts#useGetAndRegisterPushToken\u3011.  \n\nThus, `useNotificationsRegistration` is the entry point for incoming push\u2011notification handling, and it delegates its work to the hooks listed above.",
+      "confidence": "Medium",
+      "confidence_rationale": "0 of 9 retrieved entities scored >=0.6 relevance; top match scored 0.53.",
+      "sources": [
+        {
+          "id": "src/lib/notifications/notifications.e2e.ts#useNotificationsRegistration",
+          "type": "Hook",
+          "name": "useNotificationsRegistration",
+          "file": "src/lib/notifications/notifications.e2e.ts",
+          "start_line": 3,
+          "end_line": 3,
+          "snippet": "export function useNotificationsRegistration() {}",
+          "graph_context": "",
+          "relevance": 0.5266
+        },
+        {
+          "id": "src/lib/notifications/notifications.ts#useNotificationsRegistration",
+          "type": "Hook",
+          "name": "useNotificationsRegistration",
+          "file": "src/lib/notifications/notifications.ts",
+          "start_line": 179,
+          "end_line": 226,
+          "snippet": "export function useNotificationsRegistration() {\n  const {currentAccount} = useSession()\n  const registerPushToken = useRegisterPushToken()\n  const getAndRegisterPushToken = useGetAndRegisterPushToken()\n  const aa = useAgeAssurance()\n\n  useEffect(() => {\n    /**\n     * We want this to init right away _after_ we have a logged in user, and\n     * _after_ we've loaded their age assurance state.\n     */\n    if (!currentAccount) return\n\n    notyLogger.debug(`useNotificationsRegistration`)\n\n    /**\n     * Init push token, if permissions are granted already. If they weren't,\n     * they'll be requested by the `useRequestNotificationsPermission` hook\n     * below.\n     */\n    getAndRegisterPushToken()\n\n    /**\n     * Register the push token with the Bluesky server, whenever it changes.\n     * This is also fired any time `getDevicePushTokenAsync` is called.\n     *\n     * Since this is registered immediately after `getAndRegisterPushToken`, it\n     * should also detect that getter and be fired almost immediately after this.\n     *\n     * According to the Expo docs, there is a chance that the token will change\n     * while the app is open in some rare cases. This will fire\n     * `registerPushToken` whenever that happens.\n     *\n     * @see https://docs.expo.dev/versions/latest/sdk/notifications/#addpushtokenlistenerlistener\n     */\n    const subscription = Notifications.addPushTokenListener(async token => {\n      registerPushToken({\n        token,\n        isAgeRestricted: aa.state.access !== aa.Access.Full,\n      })\n      notyLogger.debug(`addPushTokenListener callback`, {token})\n    })\n\n    return () => {\n      subscription.remove()\n    }\n  }, [currentAccount, getAndRegisterPushToken, registerPushToken, aa])\n}",
+          "graph_context": "Calls: useSession, useRegisterPushToken, useGetAndRegisterPushToken, useAgeAssurance, useEffect (external)",
+          "relevance": 0.4716
+        },
+        {
+          "id": "src/lib/notifications/notifications.ts#useRegisterPushToken",
+          "type": "Hook",
+          "name": "useRegisterPushToken",
+          "file": "src/lib/notifications/notifications.ts",
+          "start_line": 76,
+          "end_line": 100,
+          "snippet": "export function useRegisterPushToken() {\n  const agent = useAgent()\n  const {currentAccount} = useSession()\n\n  return useCallback(\n    ({\n      token,\n      isAgeRestricted,\n    }: {\n      token: Notifications.DevicePushToken\n      isAgeRestricted: boolean\n    }) => {\n      if (!currentAccount) return\n      return _registerPushTokenDebounced({\n        agent,\n        currentAccount,\n        token,\n        extra: {\n          ageRestricted: isAgeRestricted,\n        },\n      })\n    },\n    [agent, currentAccount],\n  )\n}",
+          "graph_context": "Calls: useAgent, useSession, useCallback (external)\nCalled by: useGetAndRegisterPushToken, useNotificationsRegistration",
+          "relevance": 0.4707
+        },
+        {
+          "id": "src/lib/hooks/useOTAUpdates.ts#useApplyPullRequestOTAUpdate",
+          "type": "Hook",
+          "name": "useApplyPullRequestOTAUpdate",
+          "file": "src/lib/hooks/useOTAUpdates.ts",
+          "start_line": 68,
+          "end_line": 122,
+          "snippet": "export function useApplyPullRequestOTAUpdate() {\n  const {currentlyRunning} = useUpdates()\n  const [pending, setPending] = useState(false)\n  const currentChannel = currentlyRunning?.channel\n  const isCurrentlyRunningPullRequestDeployment =\n    currentChannel?.startsWith('pull-request')\n\n  const tryApplyUpdate = async (channel: string) => {\n    setPending(true)\n    await setExtraParamsPullRequest(channel)\n    const res = await checkForUpdateAsync()\n    if (res.isAvailable) {\n      Alert.alert(\n        'Deployment Available',\n        `A deployment of ${channel} is availalble. Applying this deployment may result in a bricked installation, in which case you will need to reinstall the app and may lose local data. Are you sure you want to proceed?`,\n        [\n          {\n            text: 'No',\n            style: 'cancel',\n          },\n          {\n            text: 'Relaunch',\n            style: 'default',\n            onPress: async () => {\n              await fetchUpdateAsync()\n              await reloadAsync()\n            },\n          },\n        ],\n      )\n    } else {\n      Alert.alert(\n        'No Deployment Available',\n        `No new deployments of ${channel} are currently available for your current native build.`,\n      )\n    }\n    setPending(false)\n  }\n\n  const revertToEmbedded = async () => {\n    try {\n      await updateTestflight()\n    } catch (e: any) {\n      logger.error('Internal OTA Update Error', {error: `${e}`})\n    }\n  }\n\n  return {\n    tryApplyUpdate,\n    revertToEmbedded,\n    isCurrentlyRunningPullRequestDeployment,\n    currentChannel,\n    pending,\n  }\n}",
+          "graph_context": "Calls: useUpdates (external), useState (external)\nCalled by: useIntentHandler",
+          "relevance": 0.2529
+        },
+        {
+          "id": "src/components/contacts/state.ts#useFindContactsFlowState",
+          "type": "Hook",
+          "name": "useFindContactsFlowState",
+          "file": "src/components/contacts/state.ts",
+          "start_line": 180,
+          "end_line": 184,
+          "snippet": "export function useFindContactsFlowState(\n  initialState: State = {step: '1: phone input'},\n) {\n  return useReducer(reducer, initialState)\n}",
+          "graph_context": "Calls: useReducer (external)",
+          "relevance": 0.2189
+        },
+        {
+          "id": "src/features/liveEvents/preferences.ts#useUpdateLiveEventPreferences",
+          "type": "Hook",
+          "name": "useUpdateLiveEventPreferences",
+          "file": "src/features/liveEvents/preferences.ts",
+          "start_line": 59,
+          "end_line": 162,
+          "snippet": "export function useUpdateLiveEventPreferences(props: {\n  feed?: LiveEventFeed\n  metricContext: LiveEventFeedMetricContext\n  onUpdateSuccess?: (props: {\n    undoAction: LiveEventPreferencesAction | null\n  }) => void\n}) {\n  const ax = useAnalytics()\n  const queryClient = useQueryClient()\n  const agent = useAgent()\n\n  return useMutation<\n    AppBskyActorDefs.LiveEventPreferences,\n    Error,\n    LiveEventPreferencesAction,\n    {undoAction: LiveEventPreferencesAction | null}\n  >({\n    onSettled(data, error, variables) {\n      /*\n       * `onSettled` runs after the mutation completes, success or no. The idea\n       * here is that we want to invert the action that was just passed in, and\n       * provide it as an `undoAction` to the `onUpdateSuccess` callback.\n       *\n       * If the operation was not a success, we don't provide the `undoAction`.\n       *\n       * Upon the first call of the mutation, the `__canUndo` flag is undefined,\n       * so we allow the undo. However, when we create the `undoAction`, we\n       * set its `__canUndo` flag to false, so that if the user were to call\n       * the undo action, we would not provide another undo for that.\n       */\n      const canUndo = variables.__canUndo === undefined ? true : false\n      let undoAction: LiveEventPreferencesAction | null = null\n\n      switch (variables.type) {\n        case 'hideFeed':\n          undoAction = {type: 'unhideFeed', id: variables.id, __canUndo: false}\n          break\n        case 'unhideFeed':\n          undoAction = {type: 'hideFeed', id: variables.id, __canUndo: false}\n          break\n        case 'toggleHideAllFeeds':\n          undoAction = {type: 'toggleHideAllFeeds', __canUndo: false}\n          break\n      }\n\n      if (data && !error) {\n        props?.onUpdateSuccess?.({\n          undoAction: canUndo ? undoAction : null,\n        })\n      }\n    },\n    mutationFn: async action => {\n      const updated = await agent.updateLiveEventPreferences(action)\n      const prefs = updated.find(p =>\n    ",
+          "graph_context": "Calls: useAnalytics, useQueryClient (external), useAgent, useMutation (external)",
+          "relevance": 0.2128
+        },
+        {
+          "id": "src/storage/hooks/activity-subscriptions-nudged.ts#useActivitySubscriptionsNudged",
+          "type": "Hook",
+          "name": "useActivitySubscriptionsNudged",
+          "file": "src/storage/hooks/activity-subscriptions-nudged.ts",
+          "start_line": 3,
+          "end_line": 8,
+          "snippet": "export function useActivitySubscriptionsNudged() {\n  const [activitySubscriptionsNudged = false, setActivitySubscriptionsNudged] =\n    useStorage(device, ['activitySubscriptionsNudged'])\n\n  return [activitySubscriptionsNudged, setActivitySubscriptionsNudged] as const\n}",
+          "graph_context": "Calls: useStorage",
+          "relevance": 0.1773
+        },
+        {
+          "id": "src/lib/notifications/notifications.ts#useGetAndRegisterPushToken",
+          "type": "Hook",
+          "name": "useGetAndRegisterPushToken",
+          "file": "src/lib/notifications/notifications.ts",
+          "start_line": 133,
+          "end_line": 170,
+          "snippet": "export function useGetAndRegisterPushToken() {\n  const aa = useAgeAssurance()\n  const registerPushToken = useRegisterPushToken()\n  return useCallback(\n    async ({\n      isAgeRestricted: isAgeRestrictedOverride,\n    }: {\n      isAgeRestricted?: boolean\n    } = {}) => {\n      if (!IS_NATIVE || IS_DEV) return\n\n      /**\n       * This will also fire the listener added via `addPushTokenListener`. That\n       * listener also handles registration.\n       */\n      const token = await getPushToken()\n\n      notyLogger.debug(`useGetAndRegisterPushToken`, {\n        token: token ?? 'undefined',\n      })\n\n      if (token) {\n        /**\n         * The listener should have registered the token already, but just in\n         * case, call the debounced function again.\n         */\n        registerPushToken({\n          token,\n          isAgeRestricted:\n            isAgeRestrictedOverride ?? aa.state.access !== aa.Access.Full,\n        })\n      }\n\n      return token\n    },\n    [registerPushToken, aa],\n  )\n}",
+          "graph_context": "Calls: useAgeAssurance, useRegisterPushToken, useCallback (external)\nCalled by: useNotificationsRegistration, useRequestNotificationsPermission",
+          "relevance": 0.4278
+        },
+        {
+          "id": "src/lib/notifications/notifications.e2e.ts#useRequestNotificationsPermission",
+          "type": "Hook",
+          "name": "useRequestNotificationsPermission",
+          "file": "src/lib/notifications/notifications.e2e.ts",
+          "start_line": 5,
+          "end_line": 9,
+          "snippet": "export function useRequestNotificationsPermission() {\n  return async (\n    _context: 'StartOnboarding' | 'AfterOnboarding' | 'Login' | 'Home',\n  ) => {}\n}",
+          "graph_context": "",
+          "relevance": 0.4235
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 75.85,
+      "tool_calls": [
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Hook",
+            "limit": 10,
+            "query": "usePush"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 3,
+            "query": "push notification hook"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 5,
+            "query": "incoming push"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 10,
+            "query": "push"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 10,
+            "query": "push notification"
+          },
+          "duplicate": false
+        }
+      ]
+    },
+    {
+      "question_id": "q26",
+      "question": "Which screen shows the user's saved feeds?",
+      "expected_answer": "FeedsScreen in src/view/screens/Feeds.tsx (lines 105-551).",
+      "expected_entities": [
+        "src/view/screens/Feeds.tsx#FeedsScreen"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The **SavedFeeds** screen is responsible for displaying the user\u2019s saved feeds.\n\n- Defined in `src/screens/SavedFeeds.tsx` as the `SavedFeeds` component, which renders the saved\u2011feed UI and calls hooks such as `usePreferencesQuery` and `useA11y` to load the user\u2019s saved feed data\u3010src/screens/SavedFeeds.tsx:48-58\u3011.",
+      "confidence": "Medium",
+      "confidence_rationale": "2 of 6 retrieved entities scored >=0.6 relevance; top match scored 0.67.",
+      "sources": [
+        {
+          "id": "src/view/screens/Feeds.tsx#FeedOrFollowing",
+          "type": "Screen",
+          "name": "FeedOrFollowing",
+          "file": "src/view/screens/Feeds.tsx",
+          "start_line": 553,
+          "end_line": 559,
+          "snippet": "function FeedOrFollowing({savedFeed}: {savedFeed: SavedFeedItem}) {\n  return savedFeed.type === 'timeline' ? (\n    <FollowingFeed />\n  ) : (\n    <SavedFeed savedFeed={savedFeed} />\n  )\n}",
+          "graph_context": "Renders: FollowingFeed, SavedFeed\nRendered by: FeedsScreen",
+          "relevance": 0.6748
+        },
+        {
+          "id": "src/view/screens/Feeds.tsx#SavedFeedPlaceholder",
+          "type": "Screen",
+          "name": "SavedFeedPlaceholder",
+          "file": "src/view/screens/Feeds.tsx",
+          "start_line": 652,
+          "end_line": 669,
+          "snippet": "function SavedFeedPlaceholder() {\n  const t = useTheme()\n  return (\n    <View\n      style={[\n        a.flex_1,\n        a.px_lg,\n        a.py_md,\n        a.border_b,\n        t.atoms.border_contrast_low,\n      ]}>\n      <FeedCard.Header>\n        <FeedCard.AvatarPlaceholder size={28} />\n        <FeedCard.TitleAndBylinePlaceholder />\n      </FeedCard.Header>\n    </View>\n  )\n}",
+          "graph_context": "Renders: View (external), FeedCard\nCalls: useTheme\nRendered by: FeedsScreen",
+          "relevance": 0.6609
+        },
+        {
+          "id": "src/view/screens/Feeds.tsx#FeedsScreen",
+          "type": "Screen",
+          "name": "FeedsScreen",
+          "file": "src/view/screens/Feeds.tsx",
+          "start_line": 105,
+          "end_line": 551,
+          "snippet": "export function FeedsScreen(_props: Props) {\n  const pal = usePalette('default')\n  const t = useTheme()\n  const {openComposer} = useOpenComposer()\n  const {isMobile} = useWebMediaQueries()\n  const [query, setQuery] = useState('')\n  const [isPTR, setIsPTR] = useState(false)\n  const {\n    data: savedFeeds,\n    isPlaceholderData: isSavedFeedsPlaceholder,\n    error: savedFeedsError,\n    refetch: refetchSavedFeeds,\n  } = useSavedFeeds()\n  const {\n    data: popularFeeds,\n    isFetching: isPopularFeedsFetching,\n    error: popularFeedsError,\n    refetch: refetchPopularFeeds,\n    fetchNextPage: fetchNextPopularFeedsPage,\n    isFetchingNextPage: isPopularFeedsFetchingNextPage,\n    hasNextPage: hasNextPopularFeedsPage,\n  } = useGetPopularFeedsQuery()\n  const {_} = useLingui()\n  const {\n    data: searchResults,\n    mutate: search,\n    reset: resetSearch,\n    isPending: isSearchPending,\n    error: searchError,\n  } = useSearchPopularFeedsMutation()\n  const {hasSession} = useSession()\n  const listRef = useRef<ListMethods>(null)\n\n  /**\n   * A search query is present. We may not have search results yet.\n   */\n  const isUserSearching = query.length > 1\n  const debouncedSearch = useMemo(\n    () => debounce(q => search(q), 500), // debounce for 500ms\n    [search],\n  )\n  const onPressCompose = useCallback(() => {\n    openComposer({logContext: 'Fab'})\n  }, [openComposer])\n  const onChangeQuery = useCallback(\n    (text: string) => {\n      setQuery(text)\n      if (text.length > 1) {\n        debouncedSearch(text)\n      } else {\n        refetchPopularFeeds()\n        resetSearch()\n      }\n    },\n    [setQuery, refetchPopularFeeds, debouncedSearch, resetSearch],\n  )\n  const onPressCancelSearch = useCallback(() => {\n    setQuery('')\n    refetchPopularFeeds()\n    resetSearch()\n# ... truncated ...",
+          "graph_context": "Renders: ErrorMessage, View (external), ActivityIndicator (external), FeedsSavedHeader, NoSavedFeedsOfAnyType, SavedFeedPlaceholder, FeedOrFollowing, FeedsAboutHeader (+13 more)\nCalls: usePalette, useTheme, useOpenComposer, useWebMediaQueries, useState (external), useSavedFeeds, useGetPopularFeedsQuery, useLingui (external) (+5 more)",
+          "relevance": 0.5772
+        },
+        {
+          "id": "view/com/util/error/ErrorMessage#ErrorMessage",
+          "type": "Unknown",
+          "name": "ErrorMessage",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "external:react-native#View",
+          "type": "External",
+          "name": "View (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "external:react-native#ActivityIndicator",
+          "type": "External",
+          "name": "ActivityIndicator (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "src/view/screens/Feeds.tsx#FeedsSavedHeader",
+          "type": "Screen",
+          "name": "FeedsSavedHeader",
+          "file": "src/view/screens/Feeds.tsx",
+          "start_line": 671,
+          "end_line": 705,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "screens/Feeds/NoSavedFeedsOfAnyType#NoSavedFeedsOfAnyType",
+          "type": "Unknown",
+          "name": "NoSavedFeedsOfAnyType",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "src/view/screens/Feeds.tsx#FeedsAboutHeader",
+          "type": "Screen",
+          "name": "FeedsAboutHeader",
+          "file": "src/view/screens/Feeds.tsx",
+          "start_line": 707,
+          "end_line": 734,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "components/forms/SearchInput#SearchInput",
+          "type": "Unknown",
+          "name": "SearchInput",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "view/com/util/LoadingPlaceholder#FeedFeedLoadingPlaceholder",
+          "type": "Unknown",
+          "name": "FeedFeedLoadingPlaceholder",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "components/FeedCard#FeedCard",
+          "type": "Unknown",
+          "name": "FeedCard",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "components/Divider#Divider",
+          "type": "Unknown",
+          "name": "Divider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "view/com/util/text/Text#Text",
+          "type": "Unknown",
+          "name": "Text",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "external:@lingui/react/macro#Trans",
+          "type": "External",
+          "name": "Trans (external)",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "screens/Feeds/NoFollowingFeed#NoFollowingFeed",
+          "type": "Unknown",
+          "name": "NoFollowingFeed",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "components/Layout#Layout",
+          "type": "Unknown",
+          "name": "Layout",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "components/Link#Link",
+          "type": "Unknown",
+          "name": "Link",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "components/Button#ButtonIcon",
+          "type": "Unknown",
+          "name": "ButtonIcon",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "view/com/util/List#List",
+          "type": "Unknown",
+          "name": "List",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "view/com/util/fab/FAB#FAB",
+          "type": "Unknown",
+          "name": "FAB",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "src/screens/SavedFeeds.tsx#SavedFeeds",
+          "type": "Screen",
+          "name": "SavedFeeds",
+          "file": "src/screens/SavedFeeds.tsx",
+          "start_line": 48,
+          "end_line": 58,
+          "snippet": "export function SavedFeeds({}: Props) {\n  const {data: preferences} = usePreferencesQuery()\n  const {screenReaderEnabled} = useA11y()\n  if (!preferences) {\n    return <View />\n  }\n  if (screenReaderEnabled) {\n    return <SavedFeedsA11y preferences={preferences} />\n  }\n  return <SavedFeedsInner preferences={preferences} />\n}",
+          "graph_context": "Renders: View (external), SavedFeedsA11y, SavedFeedsInner\nCalls: usePreferencesQuery, useA11y",
+          "relevance": 0.4343
+        },
+        {
+          "id": "src/screens/SavedFeeds.tsx#SavedFeedsInner",
+          "type": "Screen",
+          "name": "SavedFeedsInner",
+          "file": "src/screens/SavedFeeds.tsx",
+          "start_line": 60,
+          "end_line": 244,
+          "snippet": "function SavedFeedsInner({\n  preferences,\n}: {\n  preferences: UsePreferencesQueryResponse\n}) {\n  const t = useTheme()\n  const {_} = useLingui()\n  const {gtMobile} = useBreakpoints()\n  const {mutateAsync: overwriteSavedFeeds, isPending: isOverwritePending} =\n    useOverwriteSavedFeedsMutation()\n  const navigation = useNavigation<NavigationProp>()\n  const scrollRef = useAnimatedRef<Animated.ScrollView>()\n  const scrollOffset = useScrollViewOffset(scrollRef)\n\n  /*\n   * Use optimistic data if exists and no error, otherwise fallback to remote\n   * data\n   */\n  const [currentFeeds, setCurrentFeeds] = useState(\n    () => preferences.savedFeeds || [],\n  )\n  const hasUnsavedChanges = currentFeeds !== preferences.savedFeeds\n  const pinnedFeeds = currentFeeds.filter(f => f.pinned)\n  const unpinnedFeeds = currentFeeds.filter(f => !f.pinned)\n  const noSavedFeedsOfAnyType = pinnedFeeds.length + unpinnedFeeds.length === 0\n  const noFollowingFeed =\n    currentFeeds.every(f => f.type !== 'timeline') && !noSavedFeedsOfAnyType\n  const [isDragging, setIsDragging] = useState(false)\n\n  const onSaveChanges = async () => {\n    try {\n      await overwriteSavedFeeds(currentFeeds)\n      Toast.show(_(msg({message: 'Feeds updated!', context: 'toast'})))\n      if (navigation.canGoBack()) {\n        navigation.goBack()\n      } else {\n        navigation.navigate('Feeds')\n      }\n    } catch (e) {\n      Toast.show(_(msg`There was an issue contacting the server`), {\n        type: 'error',\n      })\n      logger.error('Failed to toggle pinned feed', {message: e})\n    }\n  }\n\n  return (\n    <Layout.Screen>\n      <Layout.Header.Outer>\n        <Layout.Header.BackButton />\n        <Layout.Header.Content align=\"left\">\n          <Layout.Header.TitleText>\n            <Trans>Feeds</Trans>\n          </Layout.Header.TitleText>\n        </Layout.Header.Content>\n        <Button\n          testID=\"saveChangesBtn\"\n          size=\"small\"\n          color={hasUnsavedChanges ? 'primary' : 'secondary'}\n          onPress={on",
+          "graph_context": "Renders: Layout, Trans (external), Button, ButtonIcon, ButtonText, View (external), NoSavedFeedsOfAnyType, SectionHeaderText (+8 more)\nCalls: useTheme, useLingui (external), useBreakpoints, useOverwriteSavedFeedsMutation, useNavigation (external), useAnimatedRef (external), useScrollViewOffset (external), useState (external)\nRendered by: SavedFeeds",
+          "relevance": 0.4238
+        },
+        {
+          "id": "src/screens/SavedFeeds.tsx#SavedFeedsA11y",
+          "type": "Screen",
+          "name": "SavedFeedsA11y",
+          "file": "src/screens/SavedFeeds.tsx",
+          "start_line": 246,
+          "end_line": 415,
+          "snippet": "function SavedFeedsA11y({\n  preferences,\n}: {\n  preferences: UsePreferencesQueryResponse\n}) {\n  const t = useTheme()\n  const {_} = useLingui()\n  const {gtMobile} = useBreakpoints()\n  const {mutateAsync: overwriteSavedFeeds, isPending: isOverwritePending} =\n    useOverwriteSavedFeedsMutation()\n  const navigation = useNavigation<NavigationProp>()\n\n  const [currentFeeds, setCurrentFeeds] = useState(\n    () => preferences.savedFeeds || [],\n  )\n  const hasUnsavedChanges = currentFeeds !== preferences.savedFeeds\n  const pinnedFeeds = currentFeeds.filter(f => f.pinned)\n  const unpinnedFeeds = currentFeeds.filter(f => !f.pinned)\n  const noSavedFeedsOfAnyType = pinnedFeeds.length + unpinnedFeeds.length === 0\n  const noFollowingFeed =\n    currentFeeds.every(f => f.type !== 'timeline') && !noSavedFeedsOfAnyType\n\n  const onSaveChanges = async () => {\n    try {\n      await overwriteSavedFeeds(currentFeeds)\n      Toast.show(_(msg({message: 'Feeds updated!', context: 'toast'})))\n      if (navigation.canGoBack()) {\n        navigation.goBack()\n      } else {\n        navigation.navigate('Feeds')\n      }\n    } catch (e) {\n      Toast.show(_(msg`There was an issue contacting the server`), {\n        type: 'error',\n      })\n      logger.error('Failed to toggle pinned feed', {message: e})\n    }\n  }\n\n  const onMoveUp = (index: number) => {\n    const pinned = [...pinnedFeeds]\n    ;[pinned[index - 1], pinned[index]] = [pinned[index], pinned[index - 1]]\n    setCurrentFeeds([...pinned, ...unpinnedFeeds])\n  }\n\n  const onMoveDown = (index: number) => {\n    const pinned = [...pinnedFeeds]\n    ;[pinned[index], pinned[index + 1]] = [pinned[index + 1], pinned[index]]\n    setCurrentFeeds([...pinned, ...unpinnedFeeds])\n  }\n\n  return (\n    <Layout.Screen>\n      <Layout.Header.Outer>\n        <Layout.Header.BackButton />\n        <Layout.Header.Content align=\"left\">\n          <Layout.Header.TitleText>\n            <Trans>Feeds</Trans>\n          </Layout.Header.TitleText>\n        </Layout.Header.Content>\n# ",
+          "graph_context": "Renders: Layout, Trans (external), Button, ButtonIcon, ButtonText, View (external), NoSavedFeedsOfAnyType, SectionHeaderText (+6 more)\nCalls: useTheme, useLingui (external), useBreakpoints, useOverwriteSavedFeedsMutation, useNavigation (external), useState (external)\nRendered by: SavedFeeds",
+          "relevance": 0.4057
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 77.74,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 3,
+            "query": "saved feeds screen"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "out",
+            "edge_type": "renders",
+            "entity_id": "src/view/screens/Feeds.tsx#FeedsScreen",
+            "limit": 20
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 5,
+            "query": "SavedFeeds"
+          },
+          "duplicate": false
+        }
+      ]
+    },
+    {
+      "question_id": "q27",
+      "question": "Is there a screen for viewing the app's internal system log? Where is it defined?",
+      "expected_answer": "Yes -- LogScreen in src/screens/Log.tsx (lines 24-128).",
+      "expected_entities": [
+        "src/screens/Log.tsx#LogScreen"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "Yes. The app includes a **LogScreen** that displays the internal system log.\n\n* **Definition** \u2013 `src/screens/Log.tsx` (entity `LogScreen`), lines\u202f24\u2011128.  \n  ```tsx\n  export function LogScreen({}: NativeStackScreenProps<\n    CommonNavigatorParams,\n    'Log'\n  >) {\n    \u2026\n  }\n  ```  \n  (see `src/screens/Log.tsx#LogScreen`\u30100\u2020src/screens/Log.tsx:24-128\u3011)\n\nThus the screen for viewing the app\u2019s internal log is defined in `src/screens/Log.tsx` as `LogScreen`.",
+      "confidence": "Low",
+      "confidence_rationale": "0 of 5 retrieved entities scored >=0.6 relevance; top match scored 0.41.",
+      "sources": [
+        {
+          "id": "src/screens/Log.tsx#LogScreen",
+          "type": "Screen",
+          "name": "LogScreen",
+          "file": "src/screens/Log.tsx",
+          "start_line": 24,
+          "end_line": 128,
+          "snippet": "export function LogScreen({}: NativeStackScreenProps<\n  CommonNavigatorParams,\n  'Log'\n>) {\n  const t = useTheme()\n  const {_} = useLingui()\n  const [expanded, setExpanded] = useState<string[]>([])\n  const timeAgo = useGetTimeAgo()\n  const tick = useTickEveryMinute()\n\n  const toggler = (id: string) => () => {\n    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)\n    if (expanded.includes(id)) {\n      setExpanded(expanded.filter(v => v !== id))\n    } else {\n      setExpanded([...expanded, id])\n    }\n  }\n\n  return (\n    <Layout.Screen>\n      <Layout.Header.Outer>\n        <Layout.Header.BackButton />\n        <Layout.Header.Content>\n          <Layout.Header.TitleText>\n            <Trans>System log</Trans>\n          </Layout.Header.TitleText>\n        </Layout.Header.Content>\n        <Layout.Header.Slot />\n      </Layout.Header.Outer>\n      <Layout.Content>\n        {getEntries()\n          .slice(0)\n          .map(entry => {\n            return (\n              <View key={`entry-${entry.id}`}>\n                <Pressable\n                  style={[\n                    a.flex_row,\n                    a.align_start,\n                    a.py_md,\n                    a.px_sm,\n                    a.border_b,\n                    t.atoms.border_contrast_low,\n                    t.atoms.bg,\n                    a.gap_sm,\n                  ]}\n                  onPress={toggler(entry.id)}\n                  accessibilityLabel={_(msg`View debug entry`)}\n                  accessibilityHint={_(\n                    msg`Opens additional details for a debug entry`,\n                  )}>\n                  {entry.level === 'warn' || entry.level === 'error' ? (\n                    <WarningIcon size=\"sm\" fill={t.palette.negative_500} />\n                  ) : (\n                    <CircleInfoIcon size=\"sm\" />\n                  )}\n                  <View style={[a.flex_1, a.gap_sm]}>\n                    {entry.context && (\n                      <Text style={[t.atoms.text_contrast_me",
+          "graph_context": "Renders: Layout, Trans (external), View (external), Pressable (external), WarningIcon, CircleInfoIcon, Text, ChevronTopIcon (+1 more)\nCalls: useTheme, useLingui (external), useState (external), useGetTimeAgo, useTickEveryMinute",
+          "relevance": 0.4148
+        },
+        {
+          "id": "src/screens/Login/components/AuthLayout/Header/index.web.tsx#Logo",
+          "type": "Screen",
+          "name": "Logo",
+          "file": "src/screens/Login/components/AuthLayout/Header/index.web.tsx",
+          "start_line": 17,
+          "end_line": 19,
+          "snippet": "export function Logo() {\n  return null\n}",
+          "graph_context": "",
+          "relevance": 0.3466
+        },
+        {
+          "id": "src/screens/Settings/components/ChangeHandleDialog.tsx#DidMismatchError",
+          "type": "Screen",
+          "name": "DidMismatchError",
+          "file": "src/screens/Settings/components/ChangeHandleDialog.tsx",
+          "start_line": 593,
+          "end_line": 600,
+          "snippet": "class DidMismatchError extends Error {\n  did: string\n  constructor(did: string) {\n    super('DID mismatch')\n    this.name = 'DidMismatchError'\n    this.did = did\n  }\n}",
+          "graph_context": "",
+          "relevance": 0.3414
+        },
+        {
+          "id": "src/screens/Login/components/HostingProviderDialog.tsx#HostingProviderDialog",
+          "type": "Screen",
+          "name": "HostingProviderDialog",
+          "file": "src/screens/Login/components/HostingProviderDialog.tsx",
+          "start_line": 28,
+          "end_line": 90,
+          "snippet": "export function HostingProviderDialog({\n  control,\n  currentOverride,\n  isEmail,\n  onSelectManual,\n  onSelectAutomatic,\n}: {\n  control: Dialog.DialogOuterProps['control']\n  /**\n   * The PDS URL currently forced by a manual override, or `null` when\n   * detection is automatic. Determines which tab the dialog opens on.\n   */\n  currentOverride: string | null\n  /**\n   * Whether the typed identifier is an email address. Emails cannot resolve\n   * to a PDS, so the Automatic tab explains that detection is unavailable and\n   * the default service will be used instead.\n   */\n  isEmail: boolean\n  onSelectManual: (url: string) => void\n  onSelectAutomatic: () => void\n}) {\n  const ax = useAnalytics()\n  const formRef = useRef<DialogInnerRef>(null)\n\n  // persist these options between dialog open/close\n  const [fixedOption, setFixedOption] = useState<SegmentedControlOptions>(\n    currentOverride ? 'manual' : 'automatic',\n  )\n  const [previousCustomAddress, setPreviousCustomAddress] = useState(\n    currentOverride ?? '',\n  )\n\n  const onClose = useCallback(() => {\n    const result = formRef.current?.getFormState()\n    const nextOverride = result ?? null\n    if (nextOverride) {\n      onSelectManual(nextOverride)\n      setPreviousCustomAddress(nextOverride)\n    } else {\n      onSelectAutomatic()\n    }\n    ax.metric('signin:hostingProviderPressed', {\n      hostingProviderDidChange: nextOverride !== currentOverride,\n    })\n  }, [ax, onSelectManual, onSelectAutomatic, currentOverride])\n\n  return (\n    <Dialog.Outer\n      control={control}\n      onClose={onClose}\n      nativeOptions={{preventExpansion: true}}>\n      <Dialog.Handle />\n      <DialogInner\n        formRef={formRef}\n        fixedOption={fixedOption}\n        setFixedOption={setFixedOption}\n        initialCustomAddress={previousCustomAddress}\n        isEmail={isEmail}\n      />\n# ... truncated ...",
+          "graph_context": "Renders: Dialog, DialogInner\nCalls: useAnalytics, useRef (external), useState (external), useCallback (external)\nRendered by: LoginForm",
+          "relevance": 0.3802
+        },
+        {
+          "id": "src/screens/Login/LoginForm.tsx#LoginForm",
+          "type": "Screen",
+          "name": "LoginForm",
+          "file": "src/screens/Login/LoginForm.tsx",
+          "start_line": 44,
+          "end_line": 589,
+          "snippet": "export const LoginForm = ({\n  error,\n  serviceUrl,\n  serviceDescription,\n  initialHandle,\n  setError,\n  setServiceUrl,\n  onPressRetryConnect,\n  onPressBack,\n  onPressForgotPassword,\n  onAttemptSuccess,\n  onAttemptFailed,\n  onPressCreateAccount,\n}: {\n  error: string\n  serviceUrl: string\n  serviceDescription: ServiceDescription | undefined\n  initialHandle: string\n  setError: (v: string) => void\n  setServiceUrl: (v: string) => void\n  onPressRetryConnect: () => void\n  onPressBack: () => void\n  onPressForgotPassword: () => void\n  onAttemptSuccess: () => void\n  onAttemptFailed: () => void\n  onPressCreateAccount: () => void\n}) => {\n  const t = useTheme()\n  const [isProcessing, setIsProcessing] = useState(false)\n  const [errorField, setErrorField] = useState<\n    'none' | 'identifier' | 'password' | '2fa'\n  >('none')\n  const [isAuthFactorTokenNeeded, setIsAuthFactorTokenNeeded] = useState(false)\n  const [showResolveError, setShowResolveError] = useState(false)\n  const identifierValueRef = useRef(initialHandle || '')\n  const passwordValueRef = useRef('')\n  const [identifier, setIdentifier] = useState(initialHandle || '')\n  const [identifierFocused, setIdentifierFocused] = useState(false)\n  const [authFactorToken, setAuthFactorToken] = useState('')\n  const identifierRef = useRef<TextInput>(null)\n  const passwordRef = useRef<TextInput>(null)\n  const hasFocusedOnce = useRef(false)\n  const [hasPassword, setHasPassword] = useState(false)\n  const [revealPassword, setRevealPassword] = useState(false)\n  const {t: l} = useLingui()\n  const {login} = useSessionApi()\n  const {accounts} = useSession()\n  const requestNotificationsPermission = useRequestNotificationsPermission()\n  const {setShowLoggedOut} = useLoggedOutViewControls()\n  const setHasCheckedForStarterPack = useSetHasCheckedForStarterPack()\n  const serverInputControl = useDialogControl()\n  const confirmHostingProviderControl = useDialogControl()\n  const [pendingLogin, setPendingLogin] = useState<{\n    service: string\n    fullI",
+          "graph_context": "Renders: FormContainer, Trans (external), HostingProviderDialog, ConfirmHostingProviderDialog, View (external), TextField, Text, InlineLinkText (+6 more)\nCalls: useTheme, useState (external), useRef (external), useLingui (external), useSessionApi, useSession, useRequestNotificationsPermission, useLoggedOutViewControls (+4 more)",
+          "relevance": 0.3799
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 40.26,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 3,
+            "query": "system log screen"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 5,
+            "query": "LogScreen internal system log"
+          },
+          "duplicate": false
+        }
+      ]
+    },
+    {
+      "question_id": "q28",
+      "question": "What is the useInitialNumToRender hook for, and roughly how widely is it used across the app?",
+      "expected_answer": "A list-rendering helper in src/lib/hooks/useInitialNumToRender.ts that computes the initial number of list items to render; it is called by ~18 components/screens (e.g. LikedByList, BookmarksInner, HashtagScreenTab, TopicScreenTab).",
+      "expected_entities": [
+        "src/lib/hooks/useInitialNumToRender.ts#useInitialNumToRender"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The **`useInitialNumToRender`** hook is a utility that calculates how many list items should be rendered initially, based on the height of a single item and the available screen height (optionally adjusted by a safe\u2011area inset or a bottom\u2011bar offset). It takes optional parameters `minItemHeight` (defaulting to a constant `MIN_POST_HEIGHT`) and `screenHeightOffset`, and internally uses `useWindowDimensions`, `useSafeAreaInsets`, and a custom `useBottomBarOffset` hook to determine the effective viewport size\u3010src/lib/hooks/useInitialNumToRender.ts:8-24\u3011.\n\nWhen we query the code graph for entities that **call** this hook, no inbound relationships are returned, indicating that the hook is not referenced elsewhere in the current codebase (or at least not captured in the graph). Therefore, its usage is minimal\u2014essentially limited to its own definition and not widely employed across the app.",
+      "confidence": "Low",
+      "confidence_rationale": "0 of 2 retrieved entities scored >=0.6 relevance; top match scored 0.30.",
+      "sources": [
+        {
+          "id": "src/lib/hooks/useInitialNumToRender.ts#useInitialNumToRender",
+          "type": "Hook",
+          "name": "useInitialNumToRender",
+          "file": "src/lib/hooks/useInitialNumToRender.ts",
+          "start_line": 8,
+          "end_line": 24
+        },
+        {
+          "id": "src/lib/hooks/useAnimatedValue.ts#useAnimatedValue",
+          "type": "Hook",
+          "name": "useAnimatedValue",
+          "file": "src/lib/hooks/useAnimatedValue.ts",
+          "start_line": 4,
+          "end_line": 12,
+          "snippet": "export function useAnimatedValue(initialValue: number) {\n  const lazyRef = useRef<Animated.Value>(undefined)\n\n  if (lazyRef.current === undefined) {\n    lazyRef.current = new Animated.Value(initialValue)\n  }\n\n  return lazyRef.current\n}",
+          "graph_context": "Calls: useRef (external)",
+          "relevance": 0.3037
+        },
+        {
+          "id": "src/lib/once.ts#useCallOnce",
+          "type": "Hook",
+          "name": "useCallOnce",
+          "file": "src/lib/once.ts",
+          "start_line": 14,
+          "end_line": 14,
+          "snippet": "export function useCallOnce(cb: Cb): () => void",
+          "graph_context": "Calls: useRef (external), useCallback (external)",
+          "relevance": 0.2469
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 70.1,
+      "tool_calls": [
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Hook",
+            "query": "useInitialNumToRender"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 3,
+            "query": "useInitialNumToRender"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 10,
+            "query": "useInitialNumToRender"
+          },
+          "duplicate": true
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "edge_type": "calls",
+            "entity_id": "src/lib/hooks/useInitialNumToRender.ts#useInitialNumToRender"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 1,
+            "query": "src/lib/hooks/useInitialNumToRender.ts"
+          },
+          "duplicate": false
+        }
+      ]
+    },
+    {
+      "question_id": "q29",
+      "question": "Are there any class-based components in the codebase? Name one and where it is defined.",
+      "expected_answer": "Yes, a few -- e.g. GifView, a class component defined in modules/expo-bluesky-gif-view/src/GifView.tsx (with a .web variant), and BottomSheetNativeComponent in modules/bottom-sheet/src/BottomSheetNativeComponent.tsx.",
+      "expected_entities": [
+        "modules/expo-bluesky-gif-view/src/GifView.tsx#GifView",
+        "modules/bottom-sheet/src/BottomSheetNativeComponent.tsx#BottomSheetNativeComponent"
+      ],
+      "entity_hit": false,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The codebase does not contain any class\u2011based React components. All of the component definitions that were found (e.g., `Provider` in `src/components/Tooltip/index.web.tsx`, `Provider` in `src/state/shell/landing.tsx`, `Outer` in `src/components/Toast/index.tsx`, `Admonition` in `src/components/Admonition.tsx`, etc.) are written as function components using the `function` keyword or arrow functions. No component definition using `class \u2026 extends React.Component` appears in the retrieved search results. Therefore, there are no class\u2011based components to name.",
+      "confidence": "Medium",
+      "confidence_rationale": "0 of 9 retrieved entities scored >=0.6 relevance; top match scored 0.54.",
+      "sources": [
+        {
+          "id": "src/components/Tooltip/index.web.tsx#Provider",
+          "type": "Component",
+          "name": "Provider",
+          "file": "src/components/Tooltip/index.web.tsx",
+          "start_line": 15,
+          "end_line": 17,
+          "snippet": "export function Provider({children}: {children: React.ReactNode}) {\n  return <>{children}</>\n}",
+          "graph_context": "",
+          "relevance": 0.5352
+        },
+        {
+          "id": "src/components/Toast/index.tsx#Outer",
+          "type": "Component",
+          "name": "Outer",
+          "file": "src/components/Toast/index.tsx",
+          "start_line": 28,
+          "end_line": 34,
+          "snippet": "export function Outer({children}: {children: React.ReactNode}) {\n  return (\n    <View style={[a.px_xl, a.w_full]}>\n      <BaseOuter>{children}</BaseOuter>\n    </View>\n  )\n}",
+          "graph_context": "Renders: View (external), BaseOuter",
+          "relevance": 0.5226
+        },
+        {
+          "id": "src/state/shell/landing.tsx#Provider",
+          "type": "Component",
+          "name": "Provider",
+          "file": "src/state/shell/landing.tsx",
+          "start_line": 32,
+          "end_line": 40,
+          "snippet": "export function Provider({children}: {children: React.ReactNode}) {\n  const [state, setState] = useState<LandingType>()\n\n  return (\n    <stateContext.Provider value={state}>\n      <setContext.Provider value={setState}>{children}</setContext.Provider>\n    </stateContext.Provider>\n  )\n}",
+          "graph_context": "Calls: useState (external)",
+          "relevance": 0.5198
+        },
+        {
+          "id": "bskyembed/src/icons/Robot.tsx#Robot",
+          "type": "Component",
+          "name": "Robot",
+          "file": "bskyembed/src/icons/Robot.tsx",
+          "start_line": 3,
+          "end_line": 22,
+          "snippet": "export const Robot = ({\n  size = 14,\n  className,\n}: {\n  size?: number\n  className?: string\n}) => (\n  <svg\n    className={className}\n    width={size}\n    height={size}\n    viewBox=\"0 0 24 24\"\n    fill=\"none\"\n    xmlns=\"http://www.w3.org/2000/svg\">\n    <path\n      d=\"M12 0C13.1046 0 14 0.89543 14 2C14 2.73976 13.5971 3.3835 13 3.72949V5H17.2002C18.8802 5 19.7206 5.00018 20.3623 5.32715C20.9265 5.61472 21.3853 6.07347 21.6729 6.6377C21.9998 7.27941 22 8.11978 22 9.7998V10.0498C23.1411 10.2814 24 11.2905 24 12.5C24 13.7094 23.141 14.7175 22 14.9492V15C22 17.8 21.9999 19.2 21.4551 20.2695C20.9757 21.2103 20.2103 21.9757 19.2695 22.4551C18.2 22.9999 16.8 23 14 23H10C7.20005 23 5.79998 22.9999 4.73047 22.4551C3.78966 21.9757 3.02429 21.2103 2.54492 20.2695C2.00013 19.2 2 17.8 2 15V14.9492C0.858955 14.7175 0 13.7094 0 12.5C0 11.2905 0.85886 10.2814 2 10.0498V9.7998C2 8.11978 2.00018 7.27941 2.32715 6.6377C2.61472 6.07347 3.07347 5.61472 3.6377 5.32715C4.27941 5.00018 5.11978 5 6.7998 5H11V3.72949C10.4029 3.3835 10 2.73976 10 2C10 0.89543 10.8954 0 12 0ZM8 10C6.89543 10 6 10.8954 6 12V14C6 15.1046 6.89543 16 8 16C9.10457 16 10 15.1046 10 14V12C10 10.8954 9.10457 10 8 10ZM16 10C14.8954 10 14 10.8954 14 12V14C14 15.1046 14.8954 16 16 16C17.1046 16 18 15.1046 18 14V12C18 10.8954 17.1046 10 16 10Z\"\n      fill=\"currentColor\"\n    />\n  </svg>\n)",
+          "graph_context": "",
+          "relevance": 0.1345
+        },
+        {
+          "id": "src/components/dms/InitiateChatFlow.tsx#NewGroupChatButton",
+          "type": "Component",
+          "name": "NewGroupChatButton",
+          "file": "src/components/dms/InitiateChatFlow.tsx",
+          "start_line": 788,
+          "end_line": 846,
+          "snippet": "function NewGroupChatButton({\n  onPress,\n  dimmed = false,\n}: {\n  onPress: () => void\n  dimmed?: boolean\n}) {\n  const t = useTheme()\n  const {t: l} = useLingui()\n\n  return (\n    <Button\n      label={l({\n        message: 'New group chat',\n        context: 'action',\n        comment: 'Button used to create a new group chat.',\n      })}\n      onPress={onPress}>\n      {({hovered, pressed, focused}) => (\n        <View\n          style={[\n            a.px_lg,\n            a.py_md,\n            a.flex_row,\n            a.flex_1,\n            a.justify_between,\n            a.align_center,\n            a.gap_sm,\n            pressed || focused || hovered ? t.atoms.bg_contrast_25 : t.atoms.bg,\n            dimmed && {opacity: 0.5},\n          ]}>\n          <View\n            style={[\n              a.rounded_full,\n              a.justify_center,\n              a.align_center,\n              {\n                backgroundColor: t.palette.contrast_50,\n                padding: 12,\n              },\n            ]}>\n            <PersonGroupIcon size=\"md\" fill={t.palette.contrast_1000} />\n          </View>\n          <View style={[a.flex_grow]}>\n            <Text\n              style={[a.text_md, a.font_medium, a.leading_snug, t.atoms.text]}>\n              <Trans\n                context=\"action\"\n                comment=\"Button used to create a new group chat.\">\n                New group chat\n              </Trans>\n            </Text>\n          </View>\n          <ChevronRightIcon size=\"md\" fill={t.palette.contrast_1000} />\n        </View>\n      )}\n    </Button>\n  )\n}",
+          "graph_context": "Renders: Button, View (external), PersonGroupIcon, Text, Trans (external), ChevronRightIcon\nCalls: useTheme, useLingui (external)\nRendered by: InitiateChatFlow",
+          "relevance": 0.1185
+        },
+        {
+          "id": "bskyembed/src/icons/Reply.tsx#Reply",
+          "type": "Component",
+          "name": "Reply",
+          "file": "bskyembed/src/icons/Reply.tsx",
+          "start_line": 3,
+          "end_line": 28,
+          "snippet": "export const Reply = ({\n  width = 16,\n  height = 17,\n  fill = 'currentColor',\n  className,\n}: {\n  width?: number\n  height?: number\n  fill?: string\n  className?: string\n}) => (\n  <svg\n    className={className}\n    width={width}\n    height={height}\n    viewBox=\"0 0 16 17\"\n    fill=\"none\"\n    xmlns=\"http://www.w3.org/2000/svg\">\n    <path\n      fillRule=\"evenodd\"\n      clipRule=\"evenodd\"\n      d=\"M1.3335 4.23242C1.3335 3.12785 2.22893 2.23242 3.3335 2.23242H12.6668C13.7714 2.23242 14.6668 3.12785 14.6668 4.23242V10.8991C14.6668 12.0037 13.7714 12.8991 12.6668 12.8991H8.18482L5.00983 14.8041C4.80387 14.9277 4.54737 14.9309 4.33836 14.8126C4.12936 14.6942 4.00016 14.4726 4.00016 14.2324V12.8991H3.3335C2.22893 12.8991 1.3335 12.0037 1.3335 10.8991V4.23242ZM3.3335 3.56576C2.96531 3.56576 2.66683 3.86423 2.66683 4.23242V10.8991C2.66683 11.2673 2.96531 11.5658 3.3335 11.5658H4.66683C5.03502 11.5658 5.3335 11.8642 5.3335 12.2324V13.055L7.65717 11.6608C7.76078 11.5986 7.87933 11.5658 8.00016 11.5658H12.6668C13.035 11.5658 13.3335 11.2673 13.3335 10.8991V4.23242C13.3335 3.86423 13.035 3.56576 12.6668 3.56576H3.3335Z\"\n      fill={fill}\n    />\n  </svg>\n)",
+          "graph_context": "",
+          "relevance": 0.114
+        },
+        {
+          "id": "src/components/Admonition.tsx#Admonition",
+          "type": "Component",
+          "name": "Admonition",
+          "file": "src/components/Admonition.tsx",
+          "start_line": 131,
+          "end_line": 150,
+          "snippet": "export function Admonition({\n  children,\n  type,\n  style,\n}: {\n  children: TextProps['children']\n  type?: Context['type']\n  style?: StyleProp<ViewStyle>\n}) {\n  return (\n    <Outer type={type} style={style}>\n      <Row>\n        <Icon />\n        <Content>\n          <Text>{children}</Text>\n        </Content>\n      </Row>\n    </Outer>\n  )\n}",
+          "graph_context": "Renders: Outer, Row, Icon, Content, Text\nRendered by: AppealForm",
+          "relevance": 0.4548
+        },
+        {
+          "id": "src/components/WhoCanReply.tsx#Icon",
+          "type": "Component",
+          "name": "Icon",
+          "file": "src/components/WhoCanReply.tsx",
+          "start_line": 184,
+          "end_line": 203,
+          "snippet": "function Icon({\n  color,\n  width,\n  settings,\n}: {\n  color: string\n  width?: number\n  settings: ThreadgateAllowUISetting[]\n}) {\n  const isEverybody =\n    settings.length === 0 ||\n    settings.every(setting => setting.type === 'everybody')\n  const isNobody = !!settings.find(gate => gate.type === 'nobody')\n  const IconComponent = isEverybody\n    ? EarthIcon\n    : isNobody\n      ? CircleBanSignIcon\n      : GroupIcon\n  return <IconComponent fill={color} width={width} />\n}",
+          "graph_context": "Renders: IconComponent\nRendered by: WhoCanReply",
+          "relevance": 0.4337
+        },
+        {
+          "id": "src/components/Skeleton.tsx#Col",
+          "type": "Component",
+          "name": "Col",
+          "file": "src/components/Skeleton.tsx",
+          "start_line": 95,
+          "end_line": 100,
+          "snippet": "export function Col({\n  children,\n  style,\n}: ViewStyleProp & {children?: React.ReactNode}) {\n  return <View style={[a.flex_1, style]}>{children}</View>\n}",
+          "graph_context": "Renders: View (external)",
+          "relevance": 0.4805
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 64.82,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 3,
+            "query": "class extends React.Component"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 10,
+            "query": "class"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 10,
+            "query": "extends React.Component"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 20,
+            "query": "class .*Component"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 10,
+            "query": "class .*extends React.Component"
+          },
+          "duplicate": false
+        }
+      ]
+    },
+    {
+      "question_id": "q30",
+      "question": "What does the file src/view/com/post/Post.tsx depend on for opening the composer and for post-state caching?",
+      "expected_answer": "It depends on lib/hooks/useOpenComposer (opening the composer) and state/cache/post-shadow (post-state caching), among other imports.",
+      "expected_entities": [
+        "src/view/com/post/Post.tsx"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The **Post** component (`src/view/com/post/Post.tsx`) opens the composer by using the **`useOpenComposer`** hook, and it caches post state by depending on the **post\u2011shadow cache** module.\n\n* **Opening the composer** \u2013 The file lists a dependency on `lib/hooks/useOpenComposer` (`src/lib/hooks/useOpenComposer.tsx`), which provides the `useOpenComposer` hook used by the post component to trigger the composer UI.\u202f\u3010get_related_entities\u20200-1\u3011\n\n* **Post\u2011state caching** \u2013 The file also depends on `state/cache/post-shadow` (`src/state/cache/post-shadow.ts`), the module that implements the shadow\u2011cache for posts.\u202f\u3010get_related_entities\u20204-5\u3011\n\nThus, `src/view/com/post/Post.tsx` relies on `useOpenComposer` for opening the composer and on `state/cache/post-shadow` for caching post state.",
+      "confidence": "Medium",
+      "confidence_rationale": "1 of 8 retrieved entities scored >=0.6 relevance; top match scored 0.67.",
+      "sources": [
+        {
+          "id": "src/view/com/post/Post.tsx",
+          "type": "File",
+          "name": "Post.tsx",
+          "file": "src/view/com/post/Post.tsx",
+          "start_line": 1,
+          "end_line": 313
+        },
+        {
+          "id": "lib/constants",
+          "type": "Unknown",
+          "name": "lib/constants",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "lib/hooks/useOpenComposer",
+          "type": "Unknown",
+          "name": "lib/hooks/useOpenComposer",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "lib/routes/links",
+          "type": "Unknown",
+          "name": "lib/routes/links",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "lib/strings/helpers",
+          "type": "Unknown",
+          "name": "lib/strings/helpers",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "state/cache/post-shadow",
+          "type": "Unknown",
+          "name": "state/cache/post-shadow",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "state/preferences/moderation-opts",
+          "type": "Unknown",
+          "name": "state/preferences/moderation-opts",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "state/queries/profile",
+          "type": "Unknown",
+          "name": "state/queries/profile",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "view/com/util/Link",
+          "type": "Unknown",
+          "name": "view/com/util/Link",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "view/com/util/PostMeta",
+          "type": "Unknown",
+          "name": "view/com/util/PostMeta",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "view/com/util/UserAvatar",
+          "type": "Unknown",
+          "name": "view/com/util/UserAvatar",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "alf",
+          "type": "Unknown",
+          "name": "alf",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "components/images/Gallery",
+          "type": "Unknown",
+          "name": "components/images/Gallery",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "components/moderation/ContentHider",
+          "type": "Unknown",
+          "name": "components/moderation/ContentHider",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "components/moderation/LabelsOnMe",
+          "type": "Unknown",
+          "name": "components/moderation/LabelsOnMe",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "components/moderation/PostAlerts",
+          "type": "Unknown",
+          "name": "components/moderation/PostAlerts",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "components/Post/Embed",
+          "type": "Unknown",
+          "name": "components/Post/Embed",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "components/Post/PostRepliedTo",
+          "type": "Unknown",
+          "name": "components/Post/PostRepliedTo",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "components/Post/ShowMoreTextButton",
+          "type": "Unknown",
+          "name": "components/Post/ShowMoreTextButton",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "components/Post/Translated",
+          "type": "Unknown",
+          "name": "components/Post/Translated",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "components/PostControls",
+          "type": "Unknown",
+          "name": "components/PostControls",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "src/state/shell/composer/index.tsx#useOpenComposer",
+          "type": "Hook",
+          "name": "useOpenComposer",
+          "file": "src/state/shell/composer/index.tsx",
+          "start_line": 167,
+          "end_line": 170,
+          "snippet": "export function useOpenComposer() {\n  const {openComposer} = useContext(controlsContext)\n  return useMemo(() => ({openComposer}), [openComposer])\n}",
+          "graph_context": "Calls: useContext (external), useMemo (external)",
+          "relevance": 0.6688
+        },
+        {
+          "id": "src/lib/hooks/useOpenComposer.tsx#useOpenComposer",
+          "type": "Hook",
+          "name": "useOpenComposer",
+          "file": "src/lib/hooks/useOpenComposer.tsx",
+          "start_line": 7,
+          "end_line": 22,
+          "snippet": "export function useOpenComposer() {\n  const {openComposer} = useRootOpenComposer()\n  const requireEmailVerification = useRequireEmailVerification()\n  return useMemo(() => {\n    return {\n      openComposer: requireEmailVerification(openComposer, {\n        instructions: [\n          <Trans key=\"pre-compose\">\n            Before creating a post or replying, you must first verify your\n            email.\n          </Trans>,\n        ],\n      }),\n    }\n  }, [openComposer, requireEmailVerification])\n}",
+          "graph_context": "Renders: Trans (external)\nCalls: useRootOpenComposer, useRequireEmailVerification, useMemo (external)",
+          "relevance": 0.4715
+        },
+        {
+          "id": "src/state/shell/composer/index.tsx#useComposerControls",
+          "type": "Hook",
+          "name": "useComposerControls",
+          "file": "src/state/shell/composer/index.tsx",
+          "start_line": 156,
+          "end_line": 159,
+          "snippet": "export function useComposerControls() {\n  const {closeComposer} = useContext(controlsContext)\n  return useMemo(() => ({closeComposer}), [closeComposer])\n}",
+          "graph_context": "Calls: useContext (external), useMemo (external)\nCalled by: useCloseAnyActiveElement, useCloseAllActiveElements",
+          "relevance": 0.4509
+        },
+        {
+          "id": "src/state/cache/post-shadow.ts",
+          "type": "File",
+          "name": "post-shadow.ts",
+          "file": "src/state/cache/post-shadow.ts",
+          "start_line": 1,
+          "end_line": 198,
+          "snippet": "import {useEffect, useMemo, useState} from 'react'\nimport {\n  AppBskyEmbedRecord,\n  AppBskyEmbedRecordWithMedia,\n  type AppBskyFeedDefs,\n} from '@atproto/api'\nimport {type QueryClient} from '@tanstack/react-query'\nimport {EventEmitter} from 'eventemitter3'\n\nimport {batchedUpdates} from '#/lib/batchedUpdates'\nimport {findAllPostsInQueryData as findAllPostsInBookmarksQueryData} from '#/state/queries/bookmarks/useBookmarksQuery'\nimport {findAllPostsInQueryData as findAllPostsInExploreFeedPreviewsQueryData} from '#/state/queries/explore-feed-previews'\nimport {findAllPostsInQueryData as findAllPostsInNotifsQueryData} from '#/state/queries/notifications/feed'\nimport {findAllPostsInQueryData as findAllPostsInFeedQueryData} from '#/state/queries/post-feed'\nimport {findAllPostsInQueryData as findAllPostsInQuoteQueryData} from '#/state/queries/post-quotes'\nimport {findAllPostsInQueryData as findAllPostsInSearchQueryData} from '#/state/queries/search-posts'\nimport {findAllPostsInQueryData as findAllPostsInThreadV2QueryData} from '#/state/queries/usePostThread/queryCache'\nimport {castAsShadow, type Shadow} from './types'\nexport type {Shadow} from './types'\n\nexport interface PostShadow {\n  likeUri: string | undefined\n  repostUri: string | undefined\n  isDeleted: boolean\n  embed: AppBskyEmbedRecord.View | AppBskyEmbedRecordWithMedia.View | undefined\n  pinned: boolean\n  optimisticReplyCount: number | undefined\n  bookmarked: boolean | undefined\n}\n\nexport const POST_TOMBSTONE = Symbol('PostTombstone')\n\nconst emitter = new EventEmitter()\nconst shadows: WeakMap<\n  AppBskyFeedDefs.PostView,\n  Partial<PostShadow>\n> = new WeakMap()\n\n/**\n * Use with caution! This function returns the raw shadow data for a post.\n * Prefer using `usePostShadow`.\n */\nexport function dangerousGetPostShadow(post: AppBskyFeedDefs.PostView) {\n  return shadows.get(post)\n}\n\nexport function usePostShadow(\n  post: AppBskyFeedDefs.PostView,\n): Shadow<AppBskyFeedDefs.PostView> | typeof POST_TOMBSTONE {\n  const [shadow,",
+          "graph_context": "Depends on: lib/batchedUpdates, state/queries/bookmarks/useBookmarksQuery, state/queries/explore-feed-previews, state/queries/notifications/feed, state/queries/post-feed, state/queries/post-quotes, state/queries/search-posts, state/queries/usePostThread/queryCache (+1 more)\nDefines: usePostShadow\nDepended on by: pinned-post.ts",
+          "relevance": 0.3652
+        },
+        {
+          "id": "src/state/cache/types.ts",
+          "type": "File",
+          "name": "types.ts",
+          "file": "src/state/cache/types.ts",
+          "start_line": 1,
+          "end_line": 8,
+          "snippet": "// This isn't a real property, but it prevents T being compatible with Shadow<T>.\ndeclare const shadowTag: unique symbol\nexport type Shadow<T> = T & {[shadowTag]: true}\n\nexport function castAsShadow<T>(value: T): Shadow<T> {\n  return value as any as Shadow<T>\n}",
+          "graph_context": "Depended on by: post-shadow.ts, profile-shadow.ts",
+          "relevance": 0.3424
+        },
+        {
+          "id": "src/view/screens/Storybook/Shadows.tsx",
+          "type": "File",
+          "name": "Shadows.tsx",
+          "file": "src/view/screens/Storybook/Shadows.tsx",
+          "start_line": 1,
+          "end_line": 53,
+          "snippet": "import {View} from 'react-native'\n\nimport {atoms as a, useTheme} from '#/alf'\nimport {H1, Text} from '#/components/Typography'\n\nexport function Shadows() {\n  const t = useTheme()\n\n  return (\n    <View style={[a.gap_md]}>\n      <H1>Shadows</H1>\n\n      <View style={[a.flex_row, a.gap_5xl]}>\n        <View\n          style={[\n            a.flex_1,\n            a.justify_center,\n            a.px_lg,\n            a.py_2xl,\n            t.atoms.bg,\n            t.atoms.shadow_sm,\n          ]}>\n          <Text>shadow_sm</Text>\n        </View>\n\n        <View\n          style={[\n            a.flex_1,\n            a.justify_center,\n            a.px_lg,\n            a.py_2xl,\n            t.atoms.bg,\n            t.atoms.shadow_md,\n          ]}>\n          <Text>shadow_md</Text>\n        </View>\n\n        <View\n          style={[\n            a.flex_1,\n            a.justify_center,\n            a.px_lg,\n            a.py_2xl,\n            t.atoms.bg,\n            t.atoms.shadow_lg,\n          ]}>\n          <Text>shadow_lg</Text>\n        </View>\n      </View>\n    </View>\n  )\n}",
+          "graph_context": "Depends on: alf, components/Typography\nDefines: Shadows\nDepended on by: Storybook.tsx",
+          "relevance": 0.3084
+        },
+        {
+          "id": "src/lib/hooks/useOpenComposer.tsx",
+          "type": "File",
+          "name": "useOpenComposer.tsx",
+          "file": "src/lib/hooks/useOpenComposer.tsx",
+          "start_line": 1,
+          "end_line": 23,
+          "snippet": "import {useMemo} from 'react'\nimport {Trans} from '@lingui/react/macro'\n\nimport {useRequireEmailVerification} from '#/lib/hooks/useRequireEmailVerification'\nimport {useOpenComposer as useRootOpenComposer} from '#/state/shell/composer'\n\nexport function useOpenComposer() {\n  const {openComposer} = useRootOpenComposer()\n  const requireEmailVerification = useRequireEmailVerification()\n  return useMemo(() => {\n    return {\n      openComposer: requireEmailVerification(openComposer, {\n        instructions: [\n          <Trans key=\"pre-compose\">\n            Before creating a post or replying, you must first verify your\n            email.\n          </Trans>,\n        ],\n      }),\n    }\n  }, [openComposer, requireEmailVerification])\n}",
+          "graph_context": "Depends on: lib/hooks/useRequireEmailVerification, state/shell/composer\nDefines: useOpenComposer",
+          "relevance": 0.5207
+        },
+        {
+          "id": "bskyembed/src/icons/Repost.tsx",
+          "type": "File",
+          "name": "Repost.tsx",
+          "file": "bskyembed/src/icons/Repost.tsx",
+          "start_line": 1,
+          "end_line": 27,
+          "snippet": "import {h} from 'preact'\n\nexport const Repost = ({\n  width = 16,\n  height = 17,\n  fill = 'currentColor',\n  className,\n}: {\n  width?: number\n  height?: number\n  fill?: string\n  className?: string\n}) => (\n  <svg\n    className={className}\n    width={width}\n    height={height}\n    viewBox=\"0 0 16 17\"\n    fill=\"none\"\n    xmlns=\"http://www.w3.org/2000/svg\">\n    <path\n      d=\"M3.86204 9.76164C4.12239 9.50134 4.54442 9.50131 4.80475 9.76164C5.06503 10.022 5.06503 10.444 4.80475 10.7044L3.94277 11.5663H11.3334C12.0697 11.5663 12.6667 10.9693 12.6667 10.233V8.89966C12.6667 8.53147 12.9652 8.233 13.3334 8.233C13.7015 8.23305 14.0001 8.53151 14.0001 8.89966V10.233C14.0001 11.7057 12.8061 12.8996 11.3334 12.8997H3.94277L4.80475 13.7616C5.06503 14.022 5.06503 14.444 4.80475 14.7044C4.54442 14.9647 4.12239 14.9646 3.86204 14.7044L2.3334 13.1757C1.8127 12.655 1.8127 11.811 2.3334 11.2903L3.86204 9.76164ZM2.00006 7.56633V6.233C2.00006 4.76024 3.19397 3.56633 4.66673 3.56633H12.0574L11.1954 2.70435C10.935 2.444 10.935 2.02199 11.1954 1.76164C11.4557 1.50134 11.8778 1.50131 12.1381 1.76164L13.6667 3.29029C14.1873 3.81096 14.1873 4.65503 13.6667 5.17571L12.1381 6.70435C11.8778 6.96468 11.4557 6.96465 11.1954 6.70435C10.935 6.444 10.935 6.02199 11.1954 5.76164L12.0574 4.89966H4.66673C3.93035 4.89966 3.3334 5.49662 3.3334 6.233V7.56633C3.3334 7.93449 3.03487 8.23294 2.66673 8.233C2.29854 8.233 2.00006 7.93452 2.00006 7.56633Z\"\n      fill={fill}\n    />\n  </svg>\n)",
+          "graph_context": "Defines: Repost\nDepended on by: post.tsx",
+          "relevance": 0.4991
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 99.81,
+      "tool_calls": [
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "File",
+            "limit": 5,
+            "query": "src/view/com/post/Post.tsx"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "out",
+            "edge_type": "depends_on",
+            "entity_id": "src/view/com/post/Post.tsx",
+            "limit": 20
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 3,
+            "query": "useOpenComposer"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "File",
+            "n_results": 3,
+            "query": "post-shadow"
+          },
+          "duplicate": false
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "File",
+            "n_results": 5,
+            "query": "src/view/com/post/Post.tsx useOpenComposer"
+          },
+          "duplicate": false
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "openai/gpt-oss-120b": {
+      "total": 10,
+      "errors": 0,
+      "blank_answers": 0,
+      "entity_hit_rate": 0.8,
+      "avg_latency_s": 66.04,
+      "confidence_counts": {
+        "Medium": 5,
+        "Low": 5
+      }
+    }
+  }
+}

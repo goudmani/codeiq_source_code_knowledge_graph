@@ -1,0 +1,74 @@
+[
+  {
+    "id": "q11",
+    "question": "Which component provides the session state to the rest of the app, and where is it defined?",
+    "expected_answer": "The Provider component in src/state/session/index.tsx (lines 105-416) wraps the app in the session StateContext/ApiContext.",
+    "expected_entities": ["src/state/session/index.tsx#Provider"]
+  },
+  {
+    "id": "q12",
+    "question": "There appear to be two different useTheme hooks in the codebase. Where is each defined?",
+    "expected_answer": "src/alf/index.tsx#useTheme (the alf design-system theme hook) and src/lib/ThemeContext.tsx#useTheme (the legacy ThemeContext hook).",
+    "expected_entities": ["src/alf/index.tsx#useTheme", "src/lib/ThemeContext.tsx#useTheme"]
+  },
+  {
+    "id": "q13",
+    "question": "What does the TabsNavigator component in src/Navigation.tsx render?",
+    "expected_answer": "It renders the BottomBar (from view/shell/bottom-bar/BottomBar) and Tab entries defined in the same file.",
+    "expected_entities": ["src/Navigation.tsx#TabsNavigator"]
+  },
+  {
+    "id": "q14",
+    "question": "Which tab navigator components does src/Navigation.tsx define?",
+    "expected_answer": "TabsNavigator plus per-tab navigators: HomeTabNavigator, SearchTabNavigator, NotificationsTabNavigator, MyProfileTabNavigator, MessagesTabNavigator, and a FlatNavigator.",
+    "expected_entities": [
+      "src/Navigation.tsx#TabsNavigator",
+      "src/Navigation.tsx#HomeTabNavigator",
+      "src/Navigation.tsx"
+    ]
+  },
+  {
+    "id": "q15",
+    "question": "What breaks if the useAgent hook changes its behavior -- who calls it directly?",
+    "expected_answer": "Direct callers include useFeedFeedback (state/feed-feedback.tsx), useMigrateMutes (state/cache/thread-mutes.tsx), and the app-passwords query/mutation hooks in state/queries/app-passwords.ts.",
+    "expected_entities": [
+      "src/state/session/index.tsx#useAgent",
+      "src/state/feed-feedback.tsx#useFeedFeedback",
+      "src/state/cache/thread-mutes.tsx#useMigrateMutes"
+    ]
+  },
+  {
+    "id": "q16",
+    "question": "Where is the MessagesScreen defined? Note the file name may not match the screen name.",
+    "expected_answer": "src/screens/Messages/ChatList.tsx#MessagesScreen (lines 82-107) -- the chat-list file defines the MessagesScreen.",
+    "expected_entities": ["src/screens/Messages/ChatList.tsx#MessagesScreen"]
+  },
+  {
+    "id": "q17",
+    "question": "Which screen shows the user's notifications, and which hooks does it call for unread-notification state?",
+    "expected_answer": "NotificationsScreen in src/view/screens/Notifications.tsx, which calls useUnreadNotifications and useUnreadNotificationsApi from state/queries/notifications/unread.",
+    "expected_entities": ["src/view/screens/Notifications.tsx#NotificationsScreen"]
+  },
+  {
+    "id": "q18",
+    "question": "Which components or screens use the useAccountSwitcher hook?",
+    "expected_answer": "RoutesContainer (src/Navigation.tsx), Deactivated (src/screens/Deactivated.tsx), SwitchAccountDialog (src/components/dialogs/SwitchAccount.tsx), useNotificationsHandler (src/lib/hooks/useNotificationHandler.ts), SettingsScreen (src/screens/Settings/Settings.tsx), and SwitchMenuItem (src/view/shell/desktop/LeftNav.tsx).",
+    "expected_entities": [
+      "src/lib/hooks/useAccountSwitcher.ts#useAccountSwitcher",
+      "src/screens/Settings/Settings.tsx#SettingsScreen",
+      "src/components/dialogs/SwitchAccount.tsx#SwitchAccountDialog"
+    ]
+  },
+  {
+    "id": "q19",
+    "question": "What does the SearchScreen's file (src/screens/Search/index.tsx) depend on?",
+    "expected_answer": "lib/routes/types and the Search Shell (src/screens/Search/Shell.tsx).",
+    "expected_entities": ["src/screens/Search/index.tsx", "src/screens/Search/index.tsx#SearchScreen"]
+  },
+  {
+    "id": "q20",
+    "question": "Is there an internal storybook or developer showcase screen in the app? Where is it defined?",
+    "expected_answer": "Yes -- Storybook, defined in src/view/screens/Storybook/Storybook.tsx (lines 31-160).",
+    "expected_entities": ["src/view/screens/Storybook/Storybook.tsx#Storybook"]
+  }
+]

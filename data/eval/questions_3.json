@@ -1,0 +1,65 @@
+[
+  {
+    "id": "q21",
+    "question": "Which component renders an individual post in the main app, and where is it defined?",
+    "expected_answer": "Post, defined in src/view/com/post/Post.tsx (lines 44-98). (A separate embed-widget Post exists in bskyembed/src/components/post.tsx.)",
+    "expected_entities": ["src/view/com/post/Post.tsx#Post", "src/view/com/post/Post.tsx"]
+  },
+  {
+    "id": "q22",
+    "question": "Which component renders the BottomBar (the bottom tab bar)?",
+    "expected_answer": "TabsNavigator in src/Navigation.tsx renders BottomBar (defined in src/view/shell/bottom-bar/BottomBar.tsx).",
+    "expected_entities": ["src/view/shell/bottom-bar/BottomBar.tsx#BottomBar", "src/Navigation.tsx#TabsNavigator"]
+  },
+  {
+    "id": "q23",
+    "question": "Where is the post composer (ComposePost) implemented, and which shell components render it?",
+    "expected_answer": "ComposePost in src/view/com/composer/Composer.tsx (lines 252-1555), rendered by the platform Composer shells: src/view/shell/Composer.ios.tsx, src/view/shell/Composer.tsx, and src/view/shell/Composer.web.tsx.",
+    "expected_entities": ["src/view/com/composer/Composer.tsx#ComposePost", "src/view/com/composer/Composer.tsx"]
+  },
+  {
+    "id": "q24",
+    "question": "Does the app have a reusable error boundary component? Where is it defined?",
+    "expected_answer": "Yes -- ErrorBoundary in src/view/com/util/ErrorBoundary.tsx (lines 21-50), rendered by several shell/screen components.",
+    "expected_entities": ["src/view/com/util/ErrorBoundary.tsx#ErrorBoundary"]
+  },
+  {
+    "id": "q25",
+    "question": "Which hook handles incoming push notifications, and which other hooks does it call to do its job?",
+    "expected_answer": "useNotificationsHandler in src/lib/hooks/useNotificationHandler.ts (lines 108-427); it calls useSession, useAccountSwitcher, useCurrentConvoId, useNavigation and react-query's useQueryClient among others.",
+    "expected_entities": ["src/lib/hooks/useNotificationHandler.ts#useNotificationsHandler"]
+  },
+  {
+    "id": "q26",
+    "question": "Which screen shows the user's saved feeds?",
+    "expected_answer": "FeedsScreen in src/view/screens/Feeds.tsx (lines 105-551).",
+    "expected_entities": ["src/view/screens/Feeds.tsx#FeedsScreen"]
+  },
+  {
+    "id": "q27",
+    "question": "Is there a screen for viewing the app's internal system log? Where is it defined?",
+    "expected_answer": "Yes -- LogScreen in src/screens/Log.tsx (lines 24-128).",
+    "expected_entities": ["src/screens/Log.tsx#LogScreen"]
+  },
+  {
+    "id": "q28",
+    "question": "What is the useInitialNumToRender hook for, and roughly how widely is it used across the app?",
+    "expected_answer": "A list-rendering helper in src/lib/hooks/useInitialNumToRender.ts that computes the initial number of list items to render; it is called by ~18 components/screens (e.g. LikedByList, BookmarksInner, HashtagScreenTab, TopicScreenTab).",
+    "expected_entities": ["src/lib/hooks/useInitialNumToRender.ts#useInitialNumToRender"]
+  },
+  {
+    "id": "q29",
+    "question": "Are there any class-based components in the codebase? Name one and where it is defined.",
+    "expected_answer": "Yes, a few -- e.g. GifView, a class component defined in modules/expo-bluesky-gif-view/src/GifView.tsx (with a .web variant), and BottomSheetNativeComponent in modules/bottom-sheet/src/BottomSheetNativeComponent.tsx.",
+    "expected_entities": [
+      "modules/expo-bluesky-gif-view/src/GifView.tsx#GifView",
+      "modules/bottom-sheet/src/BottomSheetNativeComponent.tsx#BottomSheetNativeComponent"
+    ]
+  },
+  {
+    "id": "q30",
+    "question": "What does the file src/view/com/post/Post.tsx depend on for opening the composer and for post-state caching?",
+    "expected_answer": "It depends on lib/hooks/useOpenComposer (opening the composer) and state/cache/post-shadow (post-state caching), among other imports.",
+    "expected_entities": ["src/view/com/post/Post.tsx"]
+  }
+]
