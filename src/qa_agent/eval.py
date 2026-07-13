@@ -167,6 +167,9 @@ def main():
     ap.add_argument("--questions", default=DEFAULT_QUESTIONS_PATH)
     ap.add_argument("--out-dir", default=DEFAULT_OUT_DIR)
     ap.add_argument("--models", nargs="+", default=[DEFAULT_MODEL], choices=list(MODELS))
+    ap.add_argument("--suffix", default="",
+                    help="Appended to output filenames (results<suffix>.json, RESULTS<suffix>.md) "
+                         "so a second question set doesn't overwrite the first run's report")
     args = ap.parse_args()
 
     load_dotenv()
@@ -177,10 +180,12 @@ def main():
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "results.json").write_text(json.dumps({"runs": runs, "summary": summary}, indent=2))
-    write_markdown_report(runs, summary, args.models, out_dir / "RESULTS.md")
+    results_path = out_dir / f"results{args.suffix}.json"
+    report_path = out_dir / f"RESULTS{args.suffix}.md"
+    results_path.write_text(json.dumps({"runs": runs, "summary": summary}, indent=2))
+    write_markdown_report(runs, summary, args.models, report_path)
 
-    print(f"\nWrote {out_dir / 'results.json'} and {out_dir / 'RESULTS.md'}")
+    print(f"\nWrote {results_path} and {report_path}")
     for model, s in summary.items():
         print(f"  {model}: hit_rate={s['entity_hit_rate']} avg_latency={s['avg_latency_s']}s "
               f"errors={s['errors']} blank_answers={s['blank_answers']}")
