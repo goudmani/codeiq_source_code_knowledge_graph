@@ -6,11 +6,10 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-SCRIPTS_DIR = Path(__file__).resolve().parent.parent
-PROJECT_ROOT = SCRIPTS_DIR.parent.parent.parent
-
-from dotenv import load_dotenv
-load_dotenv(PROJECT_ROOT / ".env")
+# Default repository details
+REPO_OWNER = "bluesky-social"       # Replace with the GitHub username or organization
+REPO_NAME = "social-app"            # Replace with the repository name
+BRANCH = "main"                     # Replace with target branch
 
 
 def parse_args():
@@ -20,17 +19,17 @@ def parse_args():
     parser.add_argument(
         "--repo-owner",
         default=os.environ.get("REPO_OWNER"),
-        help="GitHub repo owner (default: REPO_OWNER from .env)",
+        help="GitHub repo owner (default: REPO_OWNER)",
     )
     parser.add_argument(
         "--repo-name",
         default=os.environ.get("REPO_NAME"),
-        help="GitHub repo name (default: REPO_NAME from .env)",
+        help="GitHub repo name (default: REPO_NAME)",
     )
     parser.add_argument(
         "--branch",
         default=os.environ.get("BRANCH"),
-        help="Branch to download (default: BRANCH from .env)",
+        help="Branch to download (default: BRANCH)",
     )
     parser.add_argument(
         "--force",
@@ -105,7 +104,7 @@ def download_and_extract_ts_files(repo_owner, repo_name, branch, force=False):
                         print(f"Saved: {relative_path}")
                         
         print(f"\nExtraction complete! Files saved to: {os.path.abspath(output_dir)}")
-                            
+
     except Exception as e:
         print(f"An error occurred: {e}")
 
