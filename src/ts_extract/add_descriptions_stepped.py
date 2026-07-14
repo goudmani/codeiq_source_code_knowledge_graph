@@ -383,16 +383,15 @@ def merge_descriptions(data: list[dict], results: list[dict]) -> list[dict]:
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     _llm_config = load_llm_config()
+    parser.add_argument("--tag", required=True,
+                        help="Folder tag, e.g. <owner>_<repo>_<branch>. "
+                             "Reads from data/raw/<tag>/ and data/processed/<tag>/, "
+                             "writes to data/processed/<tag>/")
     parser.add_argument("--llm", choices=sorted(_llm_config.keys()),
                         default=os.environ.get("LLM_BACKEND", "local"),
                         help=f"Which LLM backend to use (default: local, or $LLM_BACKEND if set). "
                              f"Available: {', '.join(sorted(_llm_config.keys()))}")
     parser.add_argument("--max-tokens", type=int, default=2048)
-    parser.add_argument("--input", default="./data/processed/entities.jsonl", help="Input entities JSONL path")
-    parser.add_argument("--output", default="./data/processed/entities_with_desc.jsonl", help="Final merged output JSONL path")
-    parser.add_argument("--checkpoint", default="./data/processed/entities_raw_results.jsonl",
-                        help="Checkpoint file - per-file results, written incrementally, read on resume")
-    parser.add_argument("--root-folder", default="./data/raw/", help="Root folder that entity paths are relative to")
     parser.add_argument("--num-files", type=int, default=None, help="Only process the first N files (default: all)")
     parser.add_argument("--max-workers", type=int, default=2, help="Concurrent LLM requests")
     parser.add_argument("--min-interval", type=float, default=2.5,
@@ -403,6 +402,22 @@ def main():
                         help="Also retry files that previously failed (default: only skip successes, errors are retried automatically)")
     args = parser.parse_args()
 
+    processed_dir = os.path.join("data", "processed", args.tag)
+    root_folder = os.path.join("data", "raw", args.tag)
+    input_path = os.path.join(processed_dir, "entities.jsonl")
+    output_path = os.path.join(processed_dir, "entities_with_desc.jsonl")
+    log_folderpath = os.path.join(processed_dir, "add-descriptions-intermediate")
+
+    checkpoint_path = os.path.join(log_folderpath, "entities_raw_results.jsonl")
+
+    if not os.path.isdir(root_folder):
+        parser.error(f"Root folder not found: {root_folder}")
+    if not os.path.isfile(input_path):
+        parser.error(f"Input entities file not found: {input_path}")
+
+    os.makedirs(processed_dir, exist_ok=True)
+    os.makedirs(log_folderpath, exist_ok=True)
+
     llm = build_llm(
         backend=args.llm,
         max_tokens=args.max_tokens,
@@ -411,13 +426,13 @@ def main():
     print(f"[INFO] Using {args.llm} backend "
           f"({'qwen3.5-4b' if args.llm == 'local' else 'llama-3.1-8b-instant'})")
 
-    data = read_jsonl_file(args.input)
-    file_entity_map = build_file_entity_map(data, args.root_folder)
+    data = read_jsonl_file(input_path)
+    file_entity_map = build_file_entity_map(data, root_folder)
 
     if args.num_files is not None:
         file_entity_map = dict(islice(file_entity_map.items(), args.num_files))
 
-    checkpoint = Checkpoint(args.checkpoint, retry_errors=args.retry_errors)
+    checkpoint = Checkpoint(checkpoint_path, retry_errors=args.retry_errors)
 
     try:
         process_repo(
@@ -436,11 +451,11 @@ def main():
 
     merged = merge_descriptions(data, results)
 
-    with open(args.output, "w", encoding="utf-8") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         for entry in merged:
             f.write(json.dumps(entry) + "\n")
 
-    print(f"[INFO] Wrote {len(merged)} entities to {args.output}")
+    print(f"[INFO] Wrote {len(merged)} entities to {output_path}")
     if num_errors:
         print(f"[INFO] {num_errors} file(s) still have errors - rerun the same command "
               f"(errors are retried automatically) to pick those up.")
