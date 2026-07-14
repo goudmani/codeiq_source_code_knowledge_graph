@@ -122,14 +122,14 @@ def _github_url(owner: str, name: str, branch: str, file: str, start: int, end: 
     return f"https://github.com/{owner}/{name}/blob/{branch}/{file}{frag}"
 
 
-def _breadcrumb(owner: str, name: str, file: str) -> str:
+def _breadcrumb(owner: str, name: str, file: str, theme: str = "dark") -> str:
     parts = [p for p in (file or "").split("/") if p]
+    theme_cls = " code-breadcrumb--light" if theme == "light" else ""
     crumbs = [f'<span class="crumb-repo">{_esc(owner)}/{_esc(name)}</span>']
     for i, part in enumerate(parts):
         cls = "crumb-file" if i == len(parts) - 1 else "crumb-dir"
         crumbs.append(f'<span class="crumb-sep">/</span><span class="{cls}">{_esc(part)}</span>')
-    return "".join(crumbs)
-
+    return f'<div class="code-breadcrumb{theme_cls}">{"".join(crumbs)}</div>'
 
 def _code_pre(code_text: str, start_line: int = 1, highlight_range: str | None = None) -> str:
     attrs = f'class="line-numbers" data-start="{start_line}"'
@@ -322,7 +322,7 @@ def render_modal_body(file: str, start: int | None, end: int | None, owner: str,
 
     highlight = f"{start}-{end}" if start and end else None
     url = _github_url(owner, name, branch, file, start or 0, end or 0)
-    body = f'<div class="modal-breadcrumb"><a href="{url}" target="_blank" rel="noopener">{_breadcrumb(owner, name, file)}</a></div>'
+    body = f'<div class="modal-breadcrumb"><a href="{url}" target="_blank" rel="noopener">{_breadcrumb(owner, name, file, theme="light")}</a></div>'
     if truncated:
         body += f'<div class="modal-truncated-note">Showing first {len(lines)} lines (file truncated for display).</div>'
     body += f'<div class="modal-code-scroll">{_code_pre(chr(10).join(lines), start_line=1, highlight_range=highlight)}</div>'

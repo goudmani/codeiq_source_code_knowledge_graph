@@ -51,20 +51,51 @@ PRISM_BASE = f"https://cdnjs.cloudflare.com/ajax/libs/prism/{PRISM_VERSION}"
 # ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
-
 head = ui.tags.head(
     ui.tags.meta(charset="utf-8"),
     ui.tags.meta(name="viewport", content="width=device-width, initial-scale=1"),
-    ui.tags.title("CodeIQ"),
+    ui.tags.meta(
+        name="description",
+        content="CodeIQ — ask questions about your codebase and get sourced, confidence-rated answers.",
+    ),
+    ui.tags.meta(name="theme-color", content="#19162b"),
+
+    ui.tags.title("CodeIQ"), 
+
+    # Browser favicon
+    ui.tags.link(
+        rel="icon",
+        type="image/svg+xml",
+        href="img/confused-cat.svg",
+    ),
+
+    # Apple devices / home screen icon
+    ui.tags.link(
+        rel="apple-touch-icon",
+        href="img/confused-cat.svg",
+    ),
+
+    # Optional: manifest support for installable/PWA-style behavior
+    ui.tags.link(
+        rel="manifest",
+        href="manifest.json",
+    ),
+
     ui.tags.link(rel="preconnect", href="https://fonts.googleapis.com"),
+    ui.tags.link(rel="preconnect", href="https://fonts.gstatic.com", crossorigin=""),
+
     ui.tags.link(
         rel="stylesheet",
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap",
+        # Montserrat carries headings/brand/body for the notebook feel;
+        # Cascadia Code stays for code and metadata.
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Cascadia+Code:wght@400;500;600&display=swap",
     ),
+
     ui.tags.link(rel="stylesheet", href=f"{PRISM_BASE}/themes/prism-tomorrow.min.css"),
     ui.tags.link(rel="stylesheet", href=f"{PRISM_BASE}/plugins/line-numbers/prism-line-numbers.min.css"),
     ui.tags.link(rel="stylesheet", href=f"{PRISM_BASE}/plugins/line-highlight/prism-line-highlight.min.css"),
     ui.tags.link(rel="stylesheet", href="style.css"),
+
     ui.tags.script(src=f"{PRISM_BASE}/components/prism-core.min.js"),
     ui.tags.script(src=f"{PRISM_BASE}/components/prism-clike.min.js"),
     ui.tags.script(src=f"{PRISM_BASE}/components/prism-markup.min.js"),
@@ -81,7 +112,9 @@ head = ui.tags.head(
 header = ui.HTML(f"""
 <div class="app-header">
   <div class="brand">
-    <div class="brand-mark">CQ</div>
+    <div class="brand-mark">
+      <img src="/img/confused-cat.svg" alt="No results">
+    </div>
     <div>
       <div class="brand-title">CodeIQ</div>
       <div class="brand-sub">Source Knowledge Graph</div>
@@ -112,7 +145,7 @@ example_chips_html = "".join(
 
 empty_state = ui.HTML(f"""
 <div class="empty-state">
-  <div class="empty-glyph">&#10022;</div>
+  <div class="empty-glyph"> <img src="/img/code-cat.svg" alt="CodeIQ confused-cat"></div>
   <h2>Ask CodeIQ about the codebase</h2>
   <p>Questions are answered by tracing the {render_utils.esc(REPO_NAME)} knowledge graph &mdash;
      semantic search plus exact entity &amp; relationship lookups &mdash; not by guessing.</p>
