@@ -10,9 +10,7 @@ or kill the script partway through, you can just run it again and it will
 pick up where it left off.
 
 Usage:
-    python add_descriptions_stepped.py --llm local
-    python add_descriptions_stepped.py --llm remote            # uses env var according to config
-    python add_descriptions_stepped.py --llm remote --retry-errors  # also retry previously-failed files
+    python add_descriptions_stepped.py --llm local --tag raysk4ever_Simple-React-Native-App_main
 
 Input:
     ../data/processed/entities.jsonl
@@ -23,10 +21,22 @@ Input:
 
 Output (written incrementally, one line per file, as each completes):
     ../data/processed/entities_raw_results.jsonl
-        Intermediate/checkpoint file: one record per source file, either
-        {"file": ..., "entities": [...]} or {"file": ..., "error": ...}.
-        This is what makes the run resumable - re-running the script reads
-        this file first.
+        Checkpoint file: one record per SUCCESSFULLY processed source file,
+        of the form {"file": ..., "entities": [...]}. A file only lands
+        here once its LLM response has been parsed as JSON *and* validated
+        to contain exactly the same set of entity identifiers as the
+        input (no omissions, no additions). Failures of any kind
+        (LLM errors, JSON parse failures, entity mismatches) are never
+        written here - they only go to the metrics log below, and the
+        file is simply retried on the next run since it's absent from
+        the checkpoint.
+
+    ../data/processed/add-descriptions-intermediate/llm_call_metrics.jsonl
+        Append-only log of every LLM call attempt: timestamp, file,
+        backend/model, attempt number, latency, token usage (when the
+        backend reports it), and status ("success" or "error" with a
+        message). This is the place to look when something failed - the
+        checkpoint file itself never contains error records anymore.
 
     ../data/processed/entities_with_desc.jsonl
         Final merged output. Same records as the input, but entities that
@@ -77,7 +87,7 @@ def load_llm_config(config_path: Path = DEFAULT_CONFIG_PATH) -> dict:
         raise FileNotFoundError(f"LLM config file not found: {config_path}")
     with open(config_path, "r") as f:
         return json.load(f)
-    
+
 # --------------------------------------------------------------------------
 # LLM construction
 # --------------------------------------------------------------------------
@@ -159,17 +169,82 @@ def build_file_entity_map(data: list[dict], root_folder: str) -> dict[Path, list
 
 
 # --------------------------------------------------------------------------
+# Entity identity helpers (shared by validation + merge)
+# --------------------------------------------------------------------------
+
+def entity_key(ent: dict):
+    """Stable identifier for an entity: prefer id, then file, then name,
+    falling back to a full serialization so we always get *something*
+    hashable and comparable."""
+    key_name = ent.get("id") or ent.get("file") or ent.get("name") or json.dumps(ent, sort_keys=True)
+    if not isinstance(key_name, (str, int, float, bool)):
+        key_name = json.dumps(key_name, sort_keys=True)
+    return key_name
+
+
+def validate_entity_keys(input_entities: list[dict], returned_entities: list) -> tuple[bool, str]:
+    """Check that the LLM didn't omit or invent any entities: the set of
+    identifiers in the response must exactly match the set in the input."""
+    input_keys = {entity_key(e) for e in input_entities}
+
+    returned_keys = set()
+    for ent in returned_entities:
+        if not isinstance(ent, dict):
+            return False, f"entity is not a dict: {ent!r}"
+        returned_keys.add(entity_key(ent))
+
+    missing = input_keys - returned_keys
+    extra = returned_keys - input_keys
+    if missing or extra:
+        parts = []
+        if missing:
+            parts.append(f"missing={sorted(str(k) for k in missing)}")
+        if extra:
+            parts.append(f"extra={sorted(str(k) for k in extra)}")
+        return False, "; ".join(parts)
+    return True, ""
+
+
+# --------------------------------------------------------------------------
+# Metrics / call log
+# --------------------------------------------------------------------------
+
+class MetricsLog:
+    """Append-only, thread-safe log of every LLM call attempt: latency,
+    token usage, and success/error status. Separate from the checkpoint
+    file, which only ever holds successful, validated results."""
+
+    def __init__(self, log_path: str):
+        self.log_path = log_path
+        self._lock = threading.Lock()
+        self._fh = open(log_path, "a", encoding="utf-8")
+
+    def log(self, **fields):
+        record = {"timestamp": time.time(), **fields}
+        with self._lock:
+            self._fh.write(json.dumps(record) + "\n")
+            self._fh.flush()
+            os.fsync(self._fh.fileno())
+
+    def close(self):
+        self._fh.close()
+
+
+# --------------------------------------------------------------------------
 # Checkpoint (resumable results) handling
 # --------------------------------------------------------------------------
 
 class Checkpoint:
-    """Tracks per-file results and streams them to disk as they arrive.
+    """Tracks per-file SUCCESSFUL results and streams them to disk as they
+    arrive. Errors are never written here (see MetricsLog) - a failed file
+    simply stays absent from the checkpoint and gets retried automatically
+    on the next run.
 
     Thread-safe: process_file() runs on worker threads, all of which call
-    record() when they finish.
+    record() when they finish successfully.
     """
 
-    def __init__(self, checkpoint_path: str, retry_errors: bool):
+    def __init__(self, checkpoint_path: str):
         self.checkpoint_path = checkpoint_path
         self._lock = threading.Lock()
         self.done: dict[str, dict] = {}  # file -> result record
@@ -178,8 +253,6 @@ class Checkpoint:
             file_key = record.get("file")
             if file_key is None:
                 continue
-            if "error" in record and retry_errors:
-                continue  # don't count previous errors as done; will be retried
             self.done[file_key] = record
 
         # Open in append mode - existing good lines stay, new ones get added.
@@ -231,12 +304,32 @@ def is_rate_limit_error(exc: Exception) -> bool:
     return "429" in msg or "rate_limit" in msg or "rate limit" in msg
 
 
+def _extract_usage(response) -> dict:
+    """Best-effort extraction of token usage from a langchain response.
+    Not every backend reports this, so all fields may come back as None."""
+    usage = getattr(response, "usage_metadata", None) or {}
+    return {
+        "input_tokens": usage.get("input_tokens"),
+        "output_tokens": usage.get("output_tokens"),
+        "total_tokens": usage.get("total_tokens"),
+    }
+
+
 def process_file(llm: ChatOpenAI, ts_path: Path, entities: list[dict],
-                  max_retries: int, base_backoff: float) -> dict:
+                  max_retries: int, base_backoff: float,
+                  metrics_log: MetricsLog, backend: str, model: str) -> dict | None:
+    """Run one file through the LLM.
+
+    Returns {"file": ..., "entities": [...]} on a successful, validated
+    response, or None on any kind of failure (the failure itself is
+    recorded in metrics_log, not returned)."""
+
     try:
         file_content = ts_path.read_text(encoding="utf-8")
     except OSError as e:
-        return {"file": str(ts_path), "error": f"Could not read file: {e}"}
+        metrics_log.log(file=str(ts_path), backend=backend, model=model,
+                         status="error", error=f"Could not read file: {e}")
+        return None
 
     prompt = build_prompt(file_content, entities)
     messages = [
@@ -246,25 +339,66 @@ def process_file(llm: ChatOpenAI, ts_path: Path, entities: list[dict],
 
     last_error = None
     for attempt in range(max_retries + 1):
+        start = time.monotonic()
         try:
             response = llm.invoke(messages)
         except Exception as e:
+            latency = time.monotonic() - start
             last_error = e
+            metrics_log.log(
+                file=str(ts_path), backend=backend, model=model,
+                attempt=attempt + 1, latency_s=round(latency, 2),
+                status="error", error=f"LLM call failed: {e}",
+            )
             if is_rate_limit_error(e) and attempt < max_retries:
                 wait = base_backoff * (2 ** attempt)
                 print(f"[RATE LIMIT] {ts_path} - waiting {wait:.0f}s (attempt {attempt + 1}/{max_retries})")
                 time.sleep(wait)
                 continue
-            return {"file": str(ts_path), "error": f"LLM call failed: {e}"}
+            return None
+
+        latency = time.monotonic() - start
+        usage = _extract_usage(response)
 
         try:
             result = extract_json(response.content)
         except json.JSONDecodeError as e:
-            return {"file": str(ts_path), "error": f"JSON parse failed: {e}", "raw": response.content}
+            metrics_log.log(
+                file=str(ts_path), backend=backend, model=model,
+                attempt=attempt + 1, latency_s=round(latency, 2), **usage,
+                status="error", error=f"JSON parse failed: {e}",
+                raw=response.content[:2000],
+            )
+            return None
 
+        if not isinstance(result, list):
+            metrics_log.log(
+                file=str(ts_path), backend=backend, model=model,
+                attempt=attempt + 1, latency_s=round(latency, 2), **usage,
+                status="error",
+                error=f"Response was not a JSON list (got {type(result).__name__})",
+            )
+            return None
+
+        valid, mismatch_msg = validate_entity_keys(entities, result)
+        if not valid:
+            metrics_log.log(
+                file=str(ts_path), backend=backend, model=model,
+                attempt=attempt + 1, latency_s=round(latency, 2), **usage,
+                status="error", error=f"Entity id/name mismatch: {mismatch_msg}",
+            )
+            return None
+
+        metrics_log.log(
+            file=str(ts_path), backend=backend, model=model,
+            attempt=attempt + 1, latency_s=round(latency, 2), **usage,
+            status="success", num_entities=len(result),
+        )
         return {"file": str(ts_path), "entities": result}
 
-    return {"file": str(ts_path), "error": f"LLM call failed after retries: {last_error}"}
+    metrics_log.log(file=str(ts_path), backend=backend, model=model,
+                     status="error", error=f"LLM call failed after retries: {last_error}")
+    return None
 
 
 class Pacer:
@@ -287,7 +421,8 @@ class Pacer:
 
 
 def process_repo(llm: ChatOpenAI, file_entity_map: dict[Path, list[dict]],
-                  checkpoint: Checkpoint, max_workers: int,
+                  checkpoint: Checkpoint, metrics_log: MetricsLog,
+                  backend: str, model: str, max_workers: int,
                   min_interval: float, max_retries: int, base_backoff: float):
     pacer = Pacer(min_interval)
 
@@ -307,8 +442,10 @@ def process_repo(llm: ChatOpenAI, file_entity_map: dict[Path, list[dict]],
 
     def worker(path, entities):
         pacer.wait_turn()
-        result = process_file(llm, path, entities, max_retries, base_backoff)
-        checkpoint.record(result)
+        result = process_file(llm, path, entities, max_retries, base_backoff,
+                               metrics_log, backend, model)
+        if result is not None:
+            checkpoint.record(result)
         return result
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -322,13 +459,14 @@ def process_repo(llm: ChatOpenAI, file_entity_map: dict[Path, list[dict]],
             completed += 1
             try:
                 result = future.result()
-                if "error" in result:
-                    print(f"[FAILED {completed}/{len(to_process)}] {path}: {result['error']}")
+                if result is None:
+                    print(f"[FAILED {completed}/{len(to_process)}] {path}: see metrics log")
                 else:
                     print(f"[OK {completed}/{len(to_process)}] {path} ({len(result['entities'])} entities)")
             except Exception as e:
                 print(f"[FAILED {completed}/{len(to_process)}] {path}: {e}")
-                checkpoint.record({"file": str(path), "error": str(e)})
+                metrics_log.log(file=str(path), backend=backend, model=model,
+                                 status="error", error=f"Unhandled exception: {e}")
 
 
 # --------------------------------------------------------------------------
@@ -336,35 +474,23 @@ def process_repo(llm: ChatOpenAI, file_entity_map: dict[Path, list[dict]],
 # --------------------------------------------------------------------------
 
 def merge_descriptions(data: list[dict], results: list[dict]) -> list[dict]:
+    """Merge descriptions from checkpointed results into the full entity
+    list. Since the checkpoint only ever contains validated results
+    (entities is guaranteed to be a list of dicts whose keys exactly match
+    the input for that file), this needs no defensive checks."""
+
     desc_lookup: dict[tuple, str] = {}
     for r in results:
-        if "error" in r:
-            continue
-        entities = r.get("entities", [])
-        if not isinstance(entities, list):
-            print(f"[WARN] {r.get('file')}: 'entities' is not a list ({type(entities).__name__}), skipping")
-            continue
-        for ent in entities:
-            if not isinstance(ent, dict):
-                print(f"[WARN] {r.get('file')}: entity is not a dict ({type(ent).__name__}: {ent!r}), skipping")
-                continue
-            key_name = ent.get("id") or ent.get("file") or ent.get("name") or json.dumps(ent, sort_keys=True)
-            if not isinstance(key_name, (str, int, float, bool)):
-                key_name = json.dumps(key_name, sort_keys=True)
-            desc_lookup[(r["file"], key_name)] = ent.get("description")
+        for ent in r.get("entities", []):
+            desc_lookup[(r["file"], entity_key(ent))] = ent.get("description")
 
     updated = []
     for entity in data:
         entity = dict(entity)
-        key_name = entity.get("id") or entity.get("file") or entity.get("name")
-        if not isinstance(key_name, (str, int, float, bool)):
-            key_name = json.dumps(key_name, sort_keys=True)
-
+        key_name = entity_key(entity)
         entity_file = entity.get("file")
 
         for (file_key, name_key), desc in desc_lookup.items():
-            if not isinstance(file_key, str):
-                continue
             if name_key != key_name:
                 continue
             file_key_norm = file_key.replace("\\", "/")
@@ -398,8 +524,6 @@ def main():
                         help="Minimum seconds between the start of any two requests (global pacer, across all workers)")
     parser.add_argument("--max-retries", type=int, default=1, help="Retries on rate-limit (429) errors before giving up on a file")
     parser.add_argument("--base-backoff", type=float, default=5.0, help="Base seconds for exponential backoff on rate limits")
-    parser.add_argument("--retry-errors", action="store_true",
-                        help="Also retry files that previously failed (default: only skip successes, errors are retried automatically)")
     args = parser.parse_args()
 
     processed_dir = os.path.join("data", "processed", args.tag)
@@ -409,6 +533,7 @@ def main():
     log_folderpath = os.path.join(processed_dir, "add-descriptions-intermediate")
 
     checkpoint_path = os.path.join(log_folderpath, "entities_raw_results.jsonl")
+    metrics_log_path = os.path.join(log_folderpath, "llm_call_metrics.jsonl")
 
     if not os.path.isdir(root_folder):
         parser.error(f"Root folder not found: {root_folder}")
@@ -418,13 +543,14 @@ def main():
     os.makedirs(processed_dir, exist_ok=True)
     os.makedirs(log_folderpath, exist_ok=True)
 
+    model_name = _llm_config[args.llm]["model"]
+
     llm = build_llm(
         backend=args.llm,
         max_tokens=args.max_tokens,
         config = _llm_config
     )
-    print(f"[INFO] Using {args.llm} backend "
-          f"({'qwen3.5-4b' if args.llm == 'local' else 'llama-3.1-8b-instant'})")
+    print(f"[INFO] Using {args.llm} backend ({model_name})")
 
     data = read_jsonl_file(input_path)
     file_entity_map = build_file_entity_map(data, root_folder)
@@ -432,11 +558,15 @@ def main():
     if args.num_files is not None:
         file_entity_map = dict(islice(file_entity_map.items(), args.num_files))
 
-    checkpoint = Checkpoint(checkpoint_path, retry_errors=args.retry_errors)
+    checkpoint = Checkpoint(checkpoint_path)
+    metrics_log = MetricsLog(metrics_log_path)
+    metrics_log.log(event="run_start", backend=args.llm, model=model_name,
+                     num_files=len(file_entity_map), max_workers=args.max_workers)
 
     try:
         process_repo(
-            llm, file_entity_map, checkpoint,
+            llm, file_entity_map, checkpoint, metrics_log,
+            backend=args.llm, model=model_name,
             max_workers=args.max_workers,
             min_interval=args.min_interval,
             max_retries=args.max_retries,
@@ -446,8 +576,8 @@ def main():
         checkpoint.close()
 
     results = checkpoint.all_results()
-    num_errors = sum(1 for r in results if "error" in r)
-    print(f"[INFO] Checkpoint has {len(results)} total result(s), {num_errors} error(s)")
+    print(f"[INFO] Checkpoint has {len(results)} successful result(s) "
+          f"(check {metrics_log_path} for any failures)")
 
     merged = merge_descriptions(data, results)
 
@@ -455,10 +585,16 @@ def main():
         for entry in merged:
             f.write(json.dumps(entry) + "\n")
 
-    print(f"[INFO] Wrote {len(merged)} entities to {output_path}")
-    if num_errors:
-        print(f"[INFO] {num_errors} file(s) still have errors - rerun the same command "
-              f"(errors are retried automatically) to pick those up.")
+    total = len(merged)
+    missing = sum(1 for e in merged if not e.get("description"))
+    missing_pct = (missing / total * 100) if total else 0.0
+    print(f"[INFO] Wrote {total} entities to {output_path}")
+    print(f"[INFO] {missing}/{total} entities ({missing_pct:.1f}%) have no description")
+
+    metrics_log.log(event="run_end", total_entities=total,
+                     entities_missing_description=missing,
+                     missing_description_pct=round(missing_pct, 2))
+    metrics_log.close()
 
 
 if __name__ == "__main__":
