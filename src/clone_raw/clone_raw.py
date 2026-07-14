@@ -1,19 +1,83 @@
+import argparse
 import io
 import os
+import shutil
 import urllib.request
 import zipfile
+from pathlib import Path
 
-from repo_link import *
+SCRIPTS_DIR = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = SCRIPTS_DIR.parent.parent.parent
 
-ZIP_URL = f"https://github.com/{REPO_OWNER}/{REPO_NAME}/archive/refs/heads/{BRANCH}.zip"
-OUTPUT_DIR = "data/raw"
+from dotenv import load_dotenv
+load_dotenv(PROJECT_ROOT / ".env")
 
-def download_and_extract_ts_files():
-    print(f"Downloading source from {ZIP_URL}...")
-    
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Download a GitHub repo's .ts/.tsx files into data/raw/."
+    )
+    parser.add_argument(
+        "--repo-owner",
+        default=os.environ.get("REPO_OWNER"),
+        help="GitHub repo owner (default: REPO_OWNER from .env)",
+    )
+    parser.add_argument(
+        "--repo-name",
+        default=os.environ.get("REPO_NAME"),
+        help="GitHub repo name (default: REPO_NAME from .env)",
+    )
+    parser.add_argument(
+        "--branch",
+        default=os.environ.get("BRANCH"),
+        help="Branch to download (default: BRANCH from .env)",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Re-download and overwrite even if the output directory already exists",
+    )
+
+    args = parser.parse_args()
+
+    missing = [
+        name
+        for name, val in [
+            ("--repo-owner/REPO_OWNER", args.repo_owner),
+            ("--repo-name/REPO_NAME", args.repo_name),
+            ("--branch/BRANCH", args.branch),
+        ]
+        if not val
+    ]
+    if missing:
+        parser.error(
+            f"Missing required value(s): {', '.join(missing)}. "
+            "Pass them as CLI args or set them in .env."
+        )
+
+    return args
+
+
+def download_and_extract_ts_files(repo_owner, repo_name, branch, force=False):
+    zip_url = f"https://github.com/{repo_owner}/{repo_name}/archive/refs/heads/{branch}.zip"
+    output_dir = f"data/raw/{repo_owner}_{repo_name}_{branch}"
+
+    if os.path.exists(output_dir):
+        if force:
+            print(f"Warning: '{output_dir}' already exists. Re-cloning and overwriting it (--force).")
+            shutil.rmtree(output_dir)
+        else:
+            print(
+                f"Warning: '{output_dir}' already exists. Skipping download. "
+                "Use --force to re-clone and overwrite it."
+            )
+            return
+
+    print(f"Downloading source from {zip_url}...")
+
     try:
         # Fetch zip archive into memory
-        req = urllib.request.Request(ZIP_URL, headers={'User-Agent': 'Python-Script'})
+        req = urllib.request.Request(zip_url, headers={'User-Agent': 'Python-Script'})
         with urllib.request.urlopen(req) as response:
             zip_data = response.read()
         
@@ -30,7 +94,7 @@ def download_and_extract_ts_files():
                     relative_path = parts[1]
                     
                     # Construct the final destination file path
-                    dest_file_path = os.path.join(OUTPUT_DIR, relative_path)
+                    dest_file_path = os.path.join(output_dir, relative_path)
                     
                     # Create parent directories if they don't exist
                     os.makedirs(os.path.dirname(dest_file_path), exist_ok=True)
@@ -40,10 +104,16 @@ def download_and_extract_ts_files():
                         dest_file.write(source_file.read())
                         print(f"Saved: {relative_path}")
                         
-        print(f"\nExtraction complete! Files saved to: {os.path.abspath(OUTPUT_DIR)}")
+        print(f"\nExtraction complete! Files saved to: {os.path.abspath(output_dir)}")
                             
     except Exception as e:
         print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    download_and_extract_ts_files()
+    args = parse_args()
+    download_and_extract_ts_files(
+        repo_owner=args.repo_owner,
+        repo_name=args.repo_name,
+        branch=args.branch,
+        force=args.force,
+    )
