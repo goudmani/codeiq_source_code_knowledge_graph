@@ -5,16 +5,13 @@ semantic vector index on top of it — so a developer (or an LLM agent) can ask
 plain-English questions about code structure, component relationships, and
 impact, and get back answers grounded in real file paths and code snippets.
 
-Built for HCLTech × UBC AI/ML Hackathon, Use Case #03 (Developer Tooling /
-Code Intelligence). Target codebase: [bluesky-social/social-app](https://github.com/bluesky-social/social-app)
+Built for HCLTech × UBC AI/ML , Developer Tooling /
+Code Intelligence. Target codebase: [bluesky-social/social-app](https://github.com/bluesky-social/social-app)
 (~100K lines, React Native + web).
 
 ## Demo
 
-<!-- TODO: add demo GIF -->
-<!-- ![CodeIQ demo](docs/demo.gif) -->
-
-*(GIF coming soon)*
+![CodeIQ demo](img/demo.gif) 
 
 ## Pipeline
 
