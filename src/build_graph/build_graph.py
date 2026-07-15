@@ -21,11 +21,11 @@ from collections import Counter
 import networkx as nx
 
 
-def load_graph(out_dir: Path) -> nx.MultiDiGraph:
+def load_graph(out_dir: Path, entities_file: str = "entities_with_desc.jsonl") -> nx.MultiDiGraph:
     g = nx.MultiDiGraph()
 
     entities = {}
-    with open(out_dir / "entities.jsonl") as f:
+    with open(out_dir / entities_file) as f:
         for line in f:
             e = json.loads(line)
             entities[e["id"]] = e
@@ -70,22 +70,36 @@ def who_uses(g: nx.MultiDiGraph, name_substring: str, edge_type: str | None = No
             print(f"    {etype:10s} {u}")
 
 
-def transitive_deps(g: nx.MultiDiGraph, entity_id: str, edge_type="depends_on", max_depth=3):
-    """BFS over depends_on edges to see what a screen/component pulls in."""
+def transitive_deps(
+    g: nx.MultiDiGraph,
+    entity_id: str,
+    edge_type: str = "depends_on",
+    max_depth: int = 3,
+    direction: str = "out",
+) -> dict[str, int]:
+    """BFS over one edge_type/direction from entity_id, up to max_depth hops.
+
+    direction="out" follows entity_id -> ... (e.g. "what does this pull in");
+    direction="in" follows ... -> entity_id (e.g. "what transitively uses this").
+    Returns {node_id: depth} for every node reached (entity_id itself excluded).
+    """
+    edges_of = g.out_edges if direction == "out" else g.in_edges
     seen = {entity_id}
+    depths: dict[str, int] = {}
     frontier = [entity_id]
-    for depth in range(max_depth):
+    for depth in range(1, max_depth + 1):
         nxt = []
         for n in frontier:
-            for _, v, data in g.out_edges(n, data=True):
-                if data["type"] == edge_type and v not in seen:
-                    seen.add(v)
-                    nxt.append(v)
+            for u, v, data in edges_of(n, data=True):
+                other = v if direction == "out" else u
+                if data["type"] == edge_type and other not in seen:
+                    seen.add(other)
+                    depths[other] = depth
+                    nxt.append(other)
         if not nxt:
             break
-        print(f"depth {depth+1}: {len(nxt)} new nodes")
         frontier = nxt
-    return seen
+    return depths
 
 
 def top_fan_in(g: nx.MultiDiGraph, entity_type: str, edge_type: str, top_n=15):
