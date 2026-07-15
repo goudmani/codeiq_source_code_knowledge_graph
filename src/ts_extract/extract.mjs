@@ -16,13 +16,19 @@ import { Project, SyntaxKind } from "ts-morph";
 import path from "node:path";
 import fs from "node:fs";
 
-const [, , SRC_ROOT_ARG, OUT_DIR_ARG] = process.argv;
-if (!SRC_ROOT_ARG) {
-  console.error("Usage: node extract.mjs <src-root> [out-dir]");
+const [, , TAG_ARG] = process.argv;
+if (!TAG_ARG) {
+  console.error("Usage: node extract.mjs <tag>");
   process.exit(1);
 }
-const SRC_ROOT = path.resolve(SRC_ROOT_ARG);
-const OUT_DIR = path.resolve(OUT_DIR_ARG || "./out");
+const SRC_ROOT = path.resolve("data/raw", TAG_ARG);
+const OUT_DIR = path.resolve("data/processed", TAG_ARG);
+
+if (!fs.existsSync(SRC_ROOT)) {
+  console.error(`Source folder not found: ${SRC_ROOT}`);
+  process.exit(1);
+}
+
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
 // --- naming heuristics -----------------------------------------------------
