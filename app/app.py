@@ -31,12 +31,31 @@ from dotenv import load_dotenv  # noqa: E402
 from shiny import App, reactive, render, ui  # noqa: E402
 
 import render_utils  # noqa: E402
-from src.clone_raw.clone_raw import BRANCH, REPO_NAME, REPO_OWNER  # noqa: E402
+from src.clone_raw.clone_raw import BRANCH, REPO_NAME, REPO_OWNER, TAG  # noqa: E402
 from src.qa_agent.agent import DEFAULT_MODEL, MODELS, ask  # noqa: E402
 
 load_dotenv(PROJECT_ROOT / ".env")
 
 HAS_API_KEY = bool(os.environ.get("GROQ_API_KEY"))
+
+# Indexed repos the qa_agent can be pointed at (data/processed/<tag>/, data/raw/<tag>/).
+# Keyed by the same `tag` ask() takes/returns, so a chat entry's "tag" field
+# is enough to know which repo an answer -- and its sources -- came from.
+DEFAULT_TAG = TAG
+REPOS: dict[str, dict[str, str]] = {
+    TAG: {"owner": REPO_OWNER, "name": REPO_NAME, "branch": BRANCH},
+    "raysk4ever_Simple-React-Native-App_main": {
+        "owner": "raysk4ever",
+        "name": "Simple-React-Native-App",
+        "branch": "main",
+    },
+}
+REPO_CHOICES = {tag: f"{info['owner']}/{info['name']}" for tag, info in REPOS.items()}
+
+
+def _repo_info(tag: str | None) -> dict[str, str]:
+    return REPOS.get(tag or DEFAULT_TAG, REPOS[DEFAULT_TAG])
+
 
 EXAMPLE_PROMPTS = [
     "Which hook manages session state?",
@@ -109,26 +128,26 @@ head = ui.tags.head(
     ui.tags.script(src="app.js"),
 )
 
-header = ui.HTML(f"""
-<div class="app-header">
-  <div class="brand">
-    <div class="brand-mark">
-      <img src="/img/confused-cat.svg" alt="No results">
-    </div>
-    <div>
-      <div class="brand-title">CodeIQ</div>
-      <div class="brand-sub">Source Knowledge Graph</div>
-    </div>
+header = ui.div(
+    ui.HTML("""
+<div class="brand">
+  <div class="brand-mark">
+    <img src="/img/confused-cat.svg" alt="No results">
   </div>
-  <div class="repo-pill">
-    <span class="status-dot"></span>
-    <span>Exploring</span>
-    <span class="repo-name">{render_utils.esc(REPO_OWNER)}/{render_utils.esc(REPO_NAME)}</span>
-    <span class="repo-branch">{render_utils.esc(BRANCH)}</span>
-    <a class="repo-clear" href="https://github.com/{REPO_OWNER}/{REPO_NAME}/tree/{BRANCH}" target="_blank" rel="noopener" title="Open on GitHub">&#8599;</a>
+  <div>
+    <div class="brand-title">CodeIQ</div>
+    <div class="brand-sub">Source Knowledge Graph</div>
   </div>
 </div>
-""")
+"""),
+    ui.div(
+        ui.HTML('<span class="status-dot"></span><span class="pill-label">Exploring</span>'),
+        ui.input_select("repo", None, choices=REPO_CHOICES, selected=DEFAULT_TAG),
+        ui.output_ui("repo_meta", inline=True),
+        class_="repo-pill",
+    ),
+    class_="app-header",
+)
 
 key_banner = (
     ui.HTML(
@@ -201,8 +220,8 @@ def server(input, output, session):  # noqa: A002 - shiny convention
     busy: reactive.Value[bool] = reactive.Value(False)
 
     @reactive.extended_task
-    async def run_ask(question: str, model: str) -> dict:
-        return await asyncio.to_thread(ask, question, model=model)
+    async def run_ask(question: str, model: str, tag: str) -> dict:
+        return await asyncio.to_thread(ask, question, model=model, tag=tag)
 
     @reactive.effect
     @reactive.event(input.send)
@@ -214,7 +233,17 @@ def server(input, output, session):  # noqa: A002 - shiny convention
         busy.set(True)
         ui.update_text_area("question", value="")
         ui.update_action_button("send", label="Thinking...", disabled=True)
-        run_ask(question, input.model())
+        run_ask(question, input.model(), input.repo())
+
+    @output
+    @render.ui
+    def repo_meta():
+        info = _repo_info(input.repo())
+        return ui.HTML(
+            f'<span class="repo-branch">{render_utils.esc(info["branch"])}</span>'
+            f'<a class="repo-clear" href="https://github.com/{info["owner"]}/{info["name"]}/tree/{info["branch"]}" '
+            f'target="_blank" rel="noopener" title="Open on GitHub">&#8599;</a>'
+        )
 
     @reactive.effect
     @reactive.event(run_ask.status)
@@ -263,7 +292,8 @@ def server(input, output, session):  # noqa: A002 - shiny convention
             if entry.get("kind") == "error":
                 pieces.append(render_utils.render_error_bubble(entry["question"], entry["error"]))
             else:
-                pieces.append(render_utils.render_exchange(entry, REPO_OWNER, REPO_NAME, BRANCH))
+                info = _repo_info(entry.get("tag"))
+                pieces.append(render_utils.render_exchange(entry, info["owner"], info["name"], info["branch"]))
 
         if pending:
             pieces.append(render_utils.render_pending(pending))
@@ -283,7 +313,11 @@ def server(input, output, session):  # noqa: A002 - shiny convention
         file = payload.get("file")
         start = payload.get("start")
         end = payload.get("end")
-        title, body_html = render_utils.render_modal_body(file, start, end, REPO_OWNER, REPO_NAME, BRANCH)
+        tag = payload.get("tag") or DEFAULT_TAG
+        info = _repo_info(tag)
+        title, body_html = render_utils.render_modal_body(
+            file, start, end, info["owner"], info["name"], info["branch"], tag
+        )
         script = (
             "<script>"
             "if(window.codeiqHighlight){codeiqHighlight(document.querySelector('.modal-code-scroll'));}"

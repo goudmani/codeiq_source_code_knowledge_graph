@@ -138,8 +138,11 @@ def _code_pre(code_text: str, start_line: int = 1, highlight_range: str | None =
     return f'<pre {attrs}><code class="language-tsx">{_esc(code_text)}</code></pre>'
 
 
-def source_code_lines(source: dict) -> tuple[list[str], bool]:
+def source_code_lines(source: dict, tag: str) -> tuple[list[str], bool]:
     """Lines for a source's start-end range, preferring the live file on disk.
+
+    `tag` selects which indexed repo's data/raw/<tag>/ snapshot to read from
+    (the answer's originating repo -- see the "tag" key on ask()'s output).
 
     Returns (lines, from_live_file). Falls back to the hit's embedded
     snippet (only present on search_code() results) if the file isn't
@@ -148,8 +151,8 @@ def source_code_lines(source: dict) -> tuple[list[str], bool]:
     file = source.get("file")
     start = source.get("start_line") or 1
     end = source.get("end_line") or start
-    if file and file_utils.file_exists(file):
-        lines = file_utils.read_range(file, start, end)
+    if file and file_utils.file_exists(tag, file):
+        lines = file_utils.read_range(tag, file, start, end)
         if lines:
             return lines, True
     snippet = source.get("snippet")
@@ -167,7 +170,9 @@ def _source_tab_button(idx: int, msg_id: str, source: dict, active: bool) -> str
 </button>"""
 
 
-def _source_tab_panel(idx: int, msg_id: str, source: dict, active: bool, owner: str, name: str, branch: str) -> str:
+def _source_tab_panel(
+    idx: int, msg_id: str, source: dict, active: bool, owner: str, name: str, branch: str, tag: str
+) -> str:
     active_cls = " active" if active else ""
     file = source.get("file") or ""
     start = source.get("start_line") or 0
@@ -183,7 +188,7 @@ def _source_tab_panel(idx: int, msg_id: str, source: dict, active: bool, owner: 
         arrow = "&rarr;" if direction == "out" else "&larr;" if direction == "in" else "&harr;"
         badges.append(f'<span class="badge relation-badge">{arrow} {_esc(relation)}</span>')
 
-    lines, from_live_file = source_code_lines(source)
+    lines, from_live_file = source_code_lines(source, tag)
     n_lines = len(lines)
 
     if not file:
@@ -211,7 +216,7 @@ def _source_tab_panel(idx: int, msg_id: str, source: dict, active: bool, owner: 
       <span class="range-pill">L{start}&ndash;L{end}</span>
       {note}
       <button class="copy-btn" type="button" title="Copy code">&#128203; Copy</button>
-      <button class="view-full-file-btn" type="button" data-file="{_esc(file)}" data-start="{start}" data-end="{end}">&#10530; View full file</button>
+      <button class="view-full-file-btn" type="button" data-file="{_esc(file)}" data-start="{start}" data-end="{end}" data-tag="{_esc(tag)}">&#10530; View full file</button>
       <button class="collapse-btn" type="button">&#9652; Collapse</button>
     </div>
     {_code_pre(full_code_text, start_line=start or 1)}
@@ -224,12 +229,14 @@ def _source_tab_panel(idx: int, msg_id: str, source: dict, active: bool, owner: 
 </div>"""
 
 
-def render_sources_block(sources: list[dict], msg_id: str, owner: str, name: str, branch: str) -> str:
+def render_sources_block(sources: list[dict], msg_id: str, owner: str, name: str, branch: str, tag: str) -> str:
     if not sources:
         return '<div class="no-sources">No sources were retrieved for this answer.</div>'
 
     buttons = "".join(_source_tab_button(i, msg_id, s, i == 0) for i, s in enumerate(sources))
-    panels = "".join(_source_tab_panel(i, msg_id, s, i == 0, owner, name, branch) for i, s in enumerate(sources))
+    panels = "".join(
+        _source_tab_panel(i, msg_id, s, i == 0, owner, name, branch, tag) for i, s in enumerate(sources)
+    )
     return f"""
 <div class="sources-block">
   <div class="sources-heading">Sources <span class="sources-count">({len(sources)})</span></div>
@@ -239,6 +246,7 @@ def render_sources_block(sources: list[dict], msg_id: str, owner: str, name: str
 
 
 def build_markdown_export(entry: dict, owner: str, name: str, branch: str) -> str:
+    tag = entry.get("tag", "")
     lines = [
         "# CodeIQ Q&A Export",
         "",
@@ -275,7 +283,7 @@ def build_markdown_export(entry: dict, owner: str, name: str, branch: str) -> st
         loc = f"{file}:{s.get('start_line', '')}-{s.get('end_line', '')}" if file else s.get("id", "")
         lines.append(f"### {i}. {s.get('type', 'Unknown')} `{s.get('name', s.get('id', ''))}` &mdash; {loc}")
         lines.append("")
-        code_lines, _ = source_code_lines(s)
+        code_lines, _ = source_code_lines(s, tag)
         if code_lines:
             lines.append("```tsx")
             lines.extend(code_lines)
@@ -287,8 +295,18 @@ def build_markdown_export(entry: dict, owner: str, name: str, branch: str) -> st
     return "\n".join(lines)
 
 
+def _repo_source_tag(owner: str, name: str) -> str:
+    return f"""
+<div class="source-repo-tag">
+  <span class="source-repo-icon">&#128193;</span>
+  <span>Answered from</span>
+  <span class="source-repo-name">{_esc(owner)}/{_esc(name)}</span>
+</div>"""
+
+
 def render_exchange(entry: dict, owner: str, name: str, branch: str) -> str:
     msg_id = entry["id"]
+    tag = entry.get("tag", "")
     md_export = build_markdown_export(entry, owner, name, branch)
     md_export_escaped = _esc(md_export)
     filename = f"codeiq-{msg_id}.md"
@@ -298,13 +316,14 @@ def render_exchange(entry: dict, owner: str, name: str, branch: str) -> str:
   <div class="user-bubble">{_esc(entry['question'])}</div>
 </div>
 <div class="turn turn-assistant" id="turn-{msg_id}">
+  {_repo_source_tag(owner, name)}
   <div class="badge-row">
     {_confidence_tag(entry['confidence'], entry['confidence_rationale'])}
     {_more_info_panel(msg_id, entry['model'], entry['latency_s'], entry.get('tool_calls', []))}
   </div>
   <div class="assistant-bubble">
     <div class="answer-text">Answer: {render_markdown(entry['answer'])}</div>
-    {render_sources_block(entry.get('sources', []), msg_id, owner, name, branch)}
+    {render_sources_block(entry.get('sources', []), msg_id, owner, name, branch, tag)}
     <div class="bubble-footer">
       <span class="footer-meta">{_esc(entry['model'])} &middot; {entry['latency_s']:.2f}s &middot; {len(entry.get('sources', []))} source(s)</span>
       <button class="dl-btn" type="button" data-target="md-{msg_id}" data-filename="{filename}">&#11015; Export .md</button>
@@ -314,9 +333,11 @@ def render_exchange(entry: dict, owner: str, name: str, branch: str) -> str:
 <textarea class="md-export-data" id="md-{msg_id}" hidden readonly>{md_export_escaped}</textarea>"""
 
 
-def render_modal_body(file: str, start: int | None, end: int | None, owner: str, name: str, branch: str) -> tuple[str, str]:
+def render_modal_body(
+    file: str, start: int | None, end: int | None, owner: str, name: str, branch: str, tag: str
+) -> tuple[str, str]:
     """Returns (title, body_html) for the 'view full file' modal."""
-    lines, truncated = file_utils.read_full_file(file)
+    lines, truncated = file_utils.read_full_file(tag, file)
     if not lines:
         return file, '<div class="code-unavailable">This file is not available locally.</div>'
 

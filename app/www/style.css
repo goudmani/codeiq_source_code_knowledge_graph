@@ -161,11 +161,37 @@ a:hover { color: var(--border-soft); }
   flex: 0 0 auto;
 }
 
+.repo-pill .pill-label { white-space: nowrap; }
+
 .repo-pill .repo-name {
   font-family: var(--mono);
   color: var(--code-text);
   font-weight: 600;
 }
+
+/* Repo selector -- lets the user switch which indexed repo to explore */
+.repo-pill .shiny-input-container {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+.repo-pill select {
+  background: transparent !important;
+  border: none !important;
+  color: var(--code-text) !important;
+  font-family: var(--mono) !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 2px 4px !important;
+  border-radius: 6px !important;
+  cursor: pointer;
+  outline: none !important;
+  box-shadow: none !important;
+  width: auto !important;
+}
+.repo-pill select:hover,
+.repo-pill select:focus { background: var(--code-bg-2) !important; }
+.repo-pill select option { color: #19162b; }
 
 .repo-pill .repo-branch {
   font-family: var(--mono);
@@ -307,6 +333,30 @@ a:hover { color: var(--border-soft); }
   line-height: 1.5;
   white-space: pre-wrap;
   font-weight: 500;
+}
+
+/* ---------------------------------------------------------------- Source repo tag */
+
+.source-repo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  margin: 0 6px 8px 2px;
+}
+
+.source-repo-tag .source-repo-icon { font-size: 12px; }
+
+.source-repo-tag .source-repo-name {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--text-0);
+  background: var(--bg-2);
+  border: var(--border-w) solid var(--border);
+  padding: 2px 9px;
+  border-radius: 999px;
 }
 
 /* ---------------------------------------------------------------- Badge row */
