@@ -191,7 +191,10 @@ a:hover { color: var(--border-soft); }
 }
 .repo-pill select:hover,
 .repo-pill select:focus { background: var(--code-bg-2) !important; }
-.repo-pill select option { color: #19162b; }
+.repo-pill select option { 
+  color: #ffffff;
+  background: var(--code-bg-1);
+}
 
 .repo-pill .repo-branch {
   font-family: var(--mono);
@@ -223,7 +226,7 @@ a:hover { color: var(--border-soft); }
   min-height: 0;
   display: flex;
   flex-direction: column;
-  max-width: 900px;
+  max-width: 1050px;
   width: 100%;
   margin: 0 auto;
   padding: 0 20px;
