@@ -14,11 +14,19 @@ Confidence (High/Medium/Low) is computed deterministically from search_code's
 relevance scores, not self-reported by the LLM, so it's reproducible and
 grading-defensible.
 
+The knowledge-graph tag (which indexed repo snapshot to query) is resolved
+once per run from --tag / the ask() argument, never from the LLM: each tool
+is wrapped so `tag` is force-injected on every call and hidden from the
+tool schema the model sees, so the model can neither omit it nor override it.
+
 Usage:
   python3 agent.py "which hook manages session state?" --model llama-3.3-70b-versatile
   python3 agent.py "what breaks if BookmarksScreen changes?" --model openai/gpt-oss-120b
+  python3 agent.py "which hook manages session state?" --tag v2
 """
 import argparse
+import functools
+import inspect
 import json
 import os
 import sys
@@ -33,6 +41,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langchain_core.tools import tool as as_tool  # noqa: E402
 from langchain_groq import ChatGroq  # noqa: E402
 
+from src.clone_raw.clone_raw import TAG  # noqa: E402
 from src.vector_index.query_index import search_code  # noqa: E402
 from src.qa_agent.tools import (  # noqa: E402
     find_entity_by_id_or_name,
@@ -45,6 +54,7 @@ MODELS = {
     "openai/gpt-oss-120b": "Groq-hosted OpenAI gpt-oss 120B -- alternate for reasoning-quality comparison",
 }
 DEFAULT_MODEL = "openai/gpt-oss-120b"
+DEFAULT_TAG = TAG
 MAX_TOOL_CALLS = 5
 MAX_INVOKE_RETRIES = 2
 
@@ -64,6 +74,11 @@ MAX_SNIPPET_CHARS_IN_CONTEXT = 150
 MAX_GRAPH_CONTEXT_CHARS_IN_CONTEXT = 100
 MAX_TRANSITIVE_DEPTH = 3
 MAX_TRANSITIVE_RESULTS = 15
+
+# Params that select which indexed repo snapshot a tool reads from. These are
+# never exposed to the LLM's tool schema and are force-injected server-side
+# (see _bind_tag) -- the model has no way to see, omit, or override them.
+_TAG_SCOPED_PARAMS = ("tag", "chroma_dir")
 
 SYSTEM_PROMPT = """You are CodeIQ, a code-understanding assistant answering questions about a \
 parsed React/React Native codebase (bluesky-social/social-app) via a knowledge graph and \
@@ -110,12 +125,40 @@ query wording, switch tool, or answer from what you have.
 """
 
 
-def _build_tools():
+def _bind_tag(fn, tag: str):
+    """Wrap fn so any tag-scoped kwarg it accepts (tag, chroma_dir, ...) is
+    always set to `tag`/derived-from-`tag` server-side, and is hidden from
+    the signature LangChain inspects to build the tool's JSON schema.
+
+    This means the LLM's tool-call arguments can never contain a `tag` --
+    it isn't offered the parameter at all -- and even a stray one wouldn't
+    survive: it's overwritten unconditionally on every call.
+    """
+    sig = inspect.signature(fn)
+    visible_params = [
+        p for name, p in sig.parameters.items() if name not in _TAG_SCOPED_PARAMS
+    ]
+    visible_sig = sig.replace(parameters=visible_params)
+    accepts_tag = "tag" in sig.parameters
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        for scoped in _TAG_SCOPED_PARAMS:
+            kwargs.pop(scoped, None)
+        if accepts_tag:
+            kwargs["tag"] = tag
+        return fn(*args, **kwargs)
+
+    wrapper.__signature__ = visible_sig
+    return wrapper
+
+
+def _build_tools(tag: str):
     return [
-        as_tool(search_code),
-        as_tool(find_entity_by_id_or_name),
-        as_tool(get_related_entities),
-        as_tool(get_transitive_related_entities),
+        as_tool(_bind_tag(search_code, tag)),
+        as_tool(_bind_tag(find_entity_by_id_or_name, tag)),
+        as_tool(_bind_tag(get_related_entities, tag)),
+        as_tool(_bind_tag(get_transitive_related_entities, tag)),
     ]
 
 
@@ -242,8 +285,13 @@ def _score_confidence(sources: list[dict]) -> tuple[str, str]:
     return level, rationale
 
 
-def ask(question: str, model: str = DEFAULT_MODEL, max_tool_calls: int = MAX_TOOL_CALLS) -> dict:
-    tools = _build_tools()
+def ask(
+    question: str,
+    model: str = DEFAULT_MODEL,
+    max_tool_calls: int = MAX_TOOL_CALLS,
+    tag: str = DEFAULT_TAG,
+) -> dict:
+    tools = _build_tools(tag)
     tools_by_name = {t.name: t for t in tools}
 
     # Built per-key (not once) so _invoke_with_retry can rotate to another
@@ -348,6 +396,7 @@ def ask(question: str, model: str = DEFAULT_MODEL, max_tool_calls: int = MAX_TOO
         "confidence_rationale": confidence_rationale,
         "sources": sources,
         "model": model,
+        "tag": tag,
         "latency_s": latency_s,
         "tool_calls": tool_call_trace,
     }
@@ -357,16 +406,17 @@ def main():
     ap = argparse.ArgumentParser(description="Ask the CodeIQ Q&A agent a question.")
     ap.add_argument("question")
     ap.add_argument("--model", default=DEFAULT_MODEL, choices=list(MODELS))
+    ap.add_argument("--tag", default=DEFAULT_TAG, help="indexed repo tag to query (data/processed/<tag>)")
     args = ap.parse_args()
 
     load_dotenv()
     if not os.environ.get("GROQ_API_KEY"):
         raise SystemExit("GROQ_API_KEY is not set (add it to .env, see .env.example)")
 
-    result = ask(args.question, model=args.model)
+    result = ask(args.question, model=args.model, tag=args.tag)
 
     print(f"\nQ: {result['question']}")
-    print(f"Model: {result['model']}  |  Latency: {result['latency_s']}s  |  Confidence: {result['confidence']}")
+    print(f"Model: {result['model']}  |  Tag: {result['tag']}  |  Latency: {result['latency_s']}s  |  Confidence: {result['confidence']}")
     print(f"Confidence rationale: {result['confidence_rationale']}\n")
     print(f"A: {result['answer']}\n")
     print(f"Sources ({len(result['sources'])}):")
