@@ -2,24 +2,29 @@
 """
 build_index.py
 
-Loads entities.jsonl / edges.jsonl (produced by extract.mjs) plus the cloned
-source in data/raw/, and builds a persistent ChromaDB collection for semantic
-search over code entities (Files / Components / Hooks / Screens).
+Loads entities.jsonl (or entities_with_desc.jsonl, the same entities annotated
+with an LLM-generated one-line "description" field by
+src/ts_extract/add_descriptions_stepped.py) / edges.jsonl (produced by
+extract.mjs) plus the cloned source in data/raw/, and builds a persistent
+ChromaDB collection for semantic search over code entities (Files /
+Components / Hooks / Screens).
 
 Each entity becomes one document:
-  - text: type/name/file + a graph-context sentence (renders/calls/depends_on/
-    defines, both directions) + the actual source snippet (startLine..endLine)
-  - metadata: id/type/name/file/kindGuess/startLine/endLine/snippet, so answers
-    can cite "file path + code snippet" directly from a query hit, plus a JSON
-    "edges" field (direction/type/id/name/external/lines per edge) for exact
-    call/render-site lookups without re-parsing the graph-context sentence.
+  - text: type/name/file + one-line description (if present) + a graph-context
+    sentence (renders/calls/depends_on/defines, both directions) + the actual
+    source snippet (startLine..endLine)
+  - metadata: id/type/name/file/kindGuess/startLine/endLine/description/
+    snippet, so answers can cite "file path + code snippet" directly from a
+    query hit, plus a JSON "edges" field (direction/type/id/name/external/
+    lines per edge) for exact call/render-site lookups without re-parsing the
+    graph-context sentence.
 
 Uses ChromaDB's default local embedding function (all-MiniLM-L6-v2 via ONNX)
 - no API key, no network calls at query time.
 
 Usage:
   python3 build_index.py \
-      --entities data/processed/entities.jsonl \
+      --entities data/processed/entities_with_desc.jsonl \
       --edges data/processed/edges.jsonl \
       --raw-dir data/raw \
       --chroma-dir data/processed/chroma \
@@ -173,6 +178,7 @@ def build_documents(entities: dict, outgoing: dict, incoming: dict, raw_dir: Pat
         etype, name, file = e["type"], e["name"], e.get("file", e.get("path", ""))
         start, end = e.get("startLine"), e.get("endLine")
         kind = e.get("kindGuess", "")
+        description = e.get("description") or ""
 
         context = describe(eid, entities, outgoing, incoming)
         edges = collect_edges_metadata(eid, entities, outgoing, incoming)
@@ -181,6 +187,8 @@ def build_documents(entities: dict, outgoing: dict, incoming: dict, raw_dir: Pat
         header = f"{etype} {name}"
         header += f" ({kind})" if kind else ""
         header += f" in {file}" if file else ""
+        if description:
+            header += f" -- {description}"
 
         text = header
         if context:
@@ -199,6 +207,7 @@ def build_documents(entities: dict, outgoing: dict, incoming: dict, raw_dir: Pat
                 "kindGuess": kind,
                 "startLine": start or 0,
                 "endLine": end or 0,
+                "description": description,
                 "snippet": snippet[:2000],  # keep metadata bounded
                 "edges": json.dumps(edges),  # Chroma metadata is scalar-only; serialize
             }
@@ -209,7 +218,7 @@ def build_documents(entities: dict, outgoing: dict, incoming: dict, raw_dir: Pat
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--entities", default="data/processed/entities.jsonl")
+    ap.add_argument("--entities", default="data/processed/entities_with_desc.jsonl")
     ap.add_argument("--edges", default="data/processed/edges.jsonl")
     ap.add_argument("--raw-dir", default="data/raw")
     ap.add_argument("--chroma-dir", default="data/processed/chroma")

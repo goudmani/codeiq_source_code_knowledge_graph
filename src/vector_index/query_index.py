@@ -61,6 +61,9 @@ def search_code(
           - file (str): repo-relative path, e.g. "src/state/session/index.tsx"
           - start_line / end_line (int): source line range of the entity
           - snippet (str): the entity's actual source code
+          - description (str): one-line LLM-generated summary of the entity's
+            purpose, if entities_with_desc.jsonl was used to build the index
+            (empty string otherwise)
           - graph_context (str): human-readable renders/calls/depends_on/
             defines relationships (both directions) for this entity
           - edges (list[dict]): structured version of graph_context, one dict
@@ -99,6 +102,7 @@ def search_code(
                 "start_line": meta["startLine"],
                 "end_line": meta["endLine"],
                 "snippet": meta["snippet"] or snippet,
+                "description": meta.get("description", ""),
                 "graph_context": graph_context,
                 "edges": json.loads(meta["edges"]) if meta.get("edges") else [],
                 "relevance": round(max(0.0, 1.0 - dist / 2), 4),
@@ -120,6 +124,8 @@ def main():
     for i, hit in enumerate(search_code(args.query, n_results=args.n, entity_type=args.entity_type)):
         print(f"--- #{i+1}  relevance={hit['relevance']} ---")
         print(f"{hit['type']} {hit['name']}  ({hit['file']}:{hit['start_line']}-{hit['end_line']})")
+        if hit["description"]:
+            print(hit["description"])
         if hit["graph_context"]:
             print(hit["graph_context"])
         external = [e for e in hit["edges"] if e["external"]]

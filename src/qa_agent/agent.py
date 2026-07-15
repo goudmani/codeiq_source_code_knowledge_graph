@@ -2,12 +2,13 @@
 """
 agent.py
 
-LLM-powered Q&A agent over the CodeIQ knowledge graph. Wraps three tools --
+LLM-powered Q&A agent over the CodeIQ knowledge graph. Wraps four tools --
 search_code() (semantic, src/vector_index/query_index.py), and
-find_entity_by_id_or_name() / get_related_entities() (exact lookup + graph
-traversal, src/qa_agent/tools.py) -- and drives a bounded tool-calling loop
-against a Groq-hosted chat model (model name is a parameter, not hardcoded,
-so different Groq models can be compared head-to-head; see eval.py).
+find_entity_by_id_or_name() / get_related_entities() / (exact lookup + 1-hop
+graph traversal) get_transitive_related_entities() (multi-hop BFS, src/
+qa_agent/tools.py) -- and drives a bounded tool-calling loop against a
+Groq-hosted chat model (model name is a parameter, not hardcoded, so
+different Groq models can be compared head-to-head; see eval.py).
 
 Confidence (High/Medium/Low) is computed deterministically from search_code's
 relevance scores, not self-reported by the LLM, so it's reproducible and
@@ -33,7 +34,11 @@ from langchain_core.tools import tool as as_tool  # noqa: E402
 from langchain_groq import ChatGroq  # noqa: E402
 
 from src.vector_index.query_index import search_code  # noqa: E402
-from src.qa_agent.tools import find_entity_by_id_or_name, get_related_entities  # noqa: E402
+from src.qa_agent.tools import (  # noqa: E402
+    find_entity_by_id_or_name,
+    get_related_entities,
+    get_transitive_related_entities,
+)
 
 MODELS = {
     "llama-3.3-70b-versatile": "Groq Llama 3.3 70B -- most tool-calling-tested default",
@@ -57,10 +62,12 @@ MAX_INVOKE_RETRIES = 2
 MAX_SEARCH_RESULTS = 3
 MAX_SNIPPET_CHARS_IN_CONTEXT = 150
 MAX_GRAPH_CONTEXT_CHARS_IN_CONTEXT = 100
+MAX_TRANSITIVE_DEPTH = 3
+MAX_TRANSITIVE_RESULTS = 15
 
 SYSTEM_PROMPT = """You are CodeIQ, a code-understanding assistant answering questions about a \
 parsed React/React Native codebase (bluesky-social/social-app) via a knowledge graph and \
-vector index. You have three tools:
+vector index. You have four tools:
 
 1. search_code -- semantic search over code entities (Files/Components/Hooks/Screens). Start \
 here for discovery: "which hook does X", "what renders Y", "where is Z implemented". Prefer \
@@ -70,23 +77,33 @@ snippets, so requesting more than necessary wastes context.
 search_code's similarity ranking when the question names a specific identifier directly \
 (e.g. a function/component name in backticks or CamelCase) -- semantic similarity can return a \
 near-miss instead of the exact entity, especially when multiple entities share a name.
-3. get_related_entities -- uncapped graph traversal (renders/calls/depends_on/defines, either \
-direction) for one specific entity id you already have. search_code's results include only a \
-capped preview (8 names per relation). Use this when a question needs an entity's full \
-relationship list, or one hop beyond what a single semantic hit exposes.
+3. get_related_entities -- uncapped 1-hop graph traversal (renders/calls/depends_on/defines, \
+either direction) for one specific entity id you already have. search_code's results include \
+only a capped preview (8 names per relation). Use this when a question needs an entity's full \
+direct relationship list, or one hop beyond what a single semantic hit exposes.
+4. get_transitive_related_entities -- multi-hop BFS (one relation, one direction) from one \
+entity id you already have. Use this specifically for transitive/indirect impact questions -- \
+"what breaks if X changes", "what does X transitively depend on/use" -- instead of calling \
+get_related_entities repeatedly hop-by-hop. direction="in" over "calls" or "depends_on" answers \
+"what transitively uses/depends on X"; direction="out" over "depends_on" answers "what does X \
+transitively pull in". Results are capped and ordered by hop count (depth field).
 
 Rules:
 - Always call at least one tool before answering -- never answer from memory alone.
 - Answer only from retrieved evidence. If the tools don't surface a clear answer, say so.
 - Cite the file path and line range for every factual claim (e.g. `src/App.tsx:110-145`).
 - Keep answers concise and concrete -- prefer real entity/file names over generalities.
-- Only these three tools exist: search_code, find_entity_by_id_or_name, get_related_entities. \
-Never call any other tool name (e.g. open_file, read_file, list_files) -- if you need more of a \
-file's content, call search_code or get_related_entities again instead.
+- Only these four tools exist: search_code, find_entity_by_id_or_name, get_related_entities, \
+get_transitive_related_entities. Never call any other tool name (e.g. open_file, read_file, \
+list_files) -- if you need more of a file's content, call search_code or get_related_entities \
+again instead.
 - If the question names a code identifier (CamelCase like BookmarksScreen, or a useX hook name), \
 your FIRST call must be find_entity_by_id_or_name with that identifier. Only fall back to \
 search_code if the exact lookup returns nothing. Many entities share a name (e.g. 57 components \
 are named Provider) -- semantic similarity cannot disambiguate them, exact lookup can.
+- If the question is explicitly about transitive/indirect impact ("what breaks if...", "what \
+does X eventually depend on"), prefer get_transitive_related_entities over chaining multiple \
+get_related_entities calls -- it returns the full multi-hop answer in a single call.
 - Never repeat a tool call with the same arguments -- it returns identical results. search_code's \
 n_results is hard-capped at 3, so raising it changes nothing. If a search missed, change the \
 query wording, switch tool, or answer from what you have.
@@ -98,18 +115,27 @@ def _build_tools():
         as_tool(search_code),
         as_tool(find_entity_by_id_or_name),
         as_tool(get_related_entities),
+        as_tool(get_transitive_related_entities),
     ]
 
 
 def _clamp_tool_args(name: str, args: dict) -> dict:
-    """Hard-cap search_code's n_results regardless of what the model requested.
+    """Hard-cap search_code's n_results, and get_transitive_related_entities'
+    max_depth/limit, regardless of what the model requested.
 
     Each hit already carries a full code snippet, so result count is the
     single biggest lever on request size under Groq's per-minute token cap --
-    more reliable than trusting the system prompt's n_results hint alone.
+    more reliable than trusting the system prompt's hints alone. A transitive
+    BFS is the other risk: an uncapped depth/limit on a fan-out-heavy node
+    could return far more hits than search_code ever would.
     """
     if name == "search_code" and args.get("n_results", 0) > MAX_SEARCH_RESULTS:
         args = {**args, "n_results": MAX_SEARCH_RESULTS}
+    if name == "get_transitive_related_entities":
+        if args.get("max_depth", 0) > MAX_TRANSITIVE_DEPTH:
+            args = {**args, "max_depth": MAX_TRANSITIVE_DEPTH}
+        if args.get("limit", 0) > MAX_TRANSITIVE_RESULTS:
+            args = {**args, "limit": MAX_TRANSITIVE_RESULTS}
     return args
 
 
