@@ -95,18 +95,44 @@ shiny run app/app.py --reload
 ## Project structure
 
 ```
-src/
-├── clone_raw/        stage 1 — download source repo
-├── ts_extract/        stage 2 — parse with ts-morph -> entities/edges.jsonl (+ LLM descriptions)
-├── build_graph/       stage 3 — networkx graph + GraphML export
-├── vector_index/      stage 4 — ChromaDB build/query
-└── qa_agent/          stage 5 — LLM agent, tools, eval harness
+README.md / LICENSE / Makefile
+environment.yml, requirements.txt      conda + pip dependency specs
+package.json                           node deps (ts-morph)
 
-app/                  Shiny chat UI over the qa_agent
+src/
+├── clone_raw/
+│   └── clone_raw.py                   stage 1 — download source repo, defines TAG
+├── ts_extract/
+│   ├── extract.mjs                    stage 2 — ts-morph parse -> entities/edges.jsonl
+│   ├── add_descriptions_stepped.py    LLM-generated one-line entity descriptions
+│   └── llm_config.json                backend config for the description step
+├── build_graph/
+│   └── build_graph.py                 stage 3 — networkx graph + GraphML export
+├── vector_index/
+│   ├── build_index.py                 stage 4 — builds the ChromaDB collection
+│   └── query_index.py                 search_code() semantic search
+└── qa_agent/
+    ├── tools.py                        find_entity / get_related / get_transitive_related
+    ├── agent.py                        ask() — LangChain tool-calling loop + confidence scoring
+    ├── eval.py                         runs data/eval/questions.json, writes RESULTS.md
+    └── probe_quota.py                  checks configured Groq keys' quota
+
+app/                                  Shiny chat UI over the qa_agent
+├── app.py                             UI + server logic
+├── file_utils.py                      reads live source from data/raw/<tag>/
+├── render_utils.py                    HTML rendering for chat/source panels
+└── www/                                static assets (JS, CSS, images)
+
+img/demo.gif                          demo GIF (see Demo section above)
+
 data/
-├── raw/               gitignored, regenerated with `make clone`
-├── processed/<tag>/    entities/edges (source of truth), graphml + chroma (derived)
-└── eval/               question set + eval reports
+├── raw/<tag>/                         gitignored, regenerated with `make clone`
+├── processed/<tag>/                   entities/edges (source of truth)
+│   ├── entities.jsonl, entities_with_desc.jsonl, edges.jsonl
+│   ├── graph.graphml                   derived, for Gephi/yEd
+│   ├── chroma/                         derived, ChromaDB persistent store
+│   └── add-descriptions-intermediate/  checkpoint + LLM call log
+└── eval/                              question sets + eval reports (checked into git)
 ```
 
 ## Roadmap
