@@ -11,6 +11,10 @@ REPO_OWNER = "bluesky-social"       # Replace with the GitHub username or organi
 REPO_NAME = "social-app"            # Replace with the repository name
 BRANCH = "main"                     # Replace with target branch
 
+# Folder tag every downstream stage (extract/graph/vector-index/qa_agent) uses
+# to namespace its data/raw and data/processed output for this repo+branch.
+TAG = f"{REPO_OWNER}_{REPO_NAME}_{BRANCH}"
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -18,17 +22,17 @@ def parse_args():
     )
     parser.add_argument(
         "--repo-owner",
-        default=os.environ.get("REPO_OWNER"),
+        default=os.environ.get("REPO_OWNER", REPO_OWNER),
         help="GitHub repo owner (default: REPO_OWNER)",
     )
     parser.add_argument(
         "--repo-name",
-        default=os.environ.get("REPO_NAME"),
+        default=os.environ.get("REPO_NAME", REPO_NAME),
         help="GitHub repo name (default: REPO_NAME)",
     )
     parser.add_argument(
         "--branch",
-        default=os.environ.get("BRANCH"),
+        default=os.environ.get("BRANCH", BRANCH),
         help="Branch to download (default: BRANCH)",
     )
     parser.add_argument(

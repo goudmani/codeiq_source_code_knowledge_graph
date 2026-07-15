@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.21">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>readme</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="README_files/libs/clipboard/clipboard.min.js"></script>
+<script src="README_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="README_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="README_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="README_files/libs/quarto-html/popper.min.js"></script>
+<script src="README_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="README_files/libs/quarto-html/anchor.min.js"></script>
+<link href="README_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="README_files/libs/quarto-html/quarto-syntax-highlighting-ea1d7ac60288e0f1efdbc993fd8432ae.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="README_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="README_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="README_files/libs/bootstrap/bootstrap-d6a003b94517c951b2d65075d42fb01b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="codeiq-source-code-knowledge-graph-assistant" class="level1">
+<h1>CodeIQ — Source Code Knowledge Graph Assistant</h1>
+<p>Parse a real React / React Native codebase into a queryable knowledge graph, then a semantic vector index on top of it — so a developer (or an LLM agent) can ask plain-English questions about code structure, component relationships, and impact, and get back answers grounded in real file paths and code snippets.</p>
+<p>Built for HCLTech × UBC AI/ML Hackathon, Use Case #03 (Developer Tooling / Code Intelligence). Target codebase: <a href="https://github.com/bluesky-social/social-app">bluesky-social/social-app</a> (~100K lines, React Native + web).</p>
+<section id="pipeline" class="level2">
+<h2 class="anchored" data-anchor-id="pipeline">Pipeline</h2>
+<pre><code>GitHub repo (bluesky-social/social-app)
+        │  make clone
+        ▼
+data/raw/**/*.{ts,tsx}                      raw TypeScript source
+        │  make extract  (ts-morph, src/ts_extract/extract.mjs)
+        ▼
+data/processed/entities.jsonl               nodes: File / Component / Hook / Screen
+data/processed/edges.jsonl                  edges: depends_on / renders / calls / defines
+        │  make graph  (networkx, src/build_graph/build_graph.py)
+        ▼
+data/processed/graph.graphml                exported graph for Gephi / yEd viewing
+        │
+        │  python src/vector_index/build_index.py
+        ▼
+data/processed/chroma/                      ChromaDB vector index (one doc per entity:
+                                             graph context + real source snippet)
+        │
+        ▼
+   (next) LangChain retriever + LLM Q&amp;A agent, chat/console UI, confidence scoring</code></pre>
+<p>Each stage reads the previous stage’s output and is independently re-runnable. <code>entities.jsonl</code> / <code>edges.jsonl</code> are the source of truth — <code>graph.graphml</code> and the Chroma index are both <em>derived</em> from them, not from each other.</p>
+</section>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">Setup</h2>
+<ol start="0" type="1">
+<li><p>Before setting up this project, you must have the following installed manually (these are <strong>not</strong> provided by the conda environment):</p>
+<ul>
+<li><a href="https://docs.conda.io/en/latest/miniconda.html">Conda</a> (Miniconda recommended) — manages the Python environment.</li>
+<li><a href="https://nodejs.org/en/download">Node.js</a> — for the ts-morph-based extractor.</li>
+</ul></li>
+<li><p>Create and activate the Python environment</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> env create <span class="at">-f</span> environment.yml</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> activate codeiq_source_code_knowledge_graph</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p>Install Node dependencies</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+</ol>
+</section>
+<section id="running-the-pipeline" class="level2">
+<h2 class="anchored" data-anchor-id="running-the-pipeline">Running the pipeline</h2>
+<p>All steps can be run individually or together via <code>make all</code>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> clone      <span class="co"># download bluesky-social/social-app source into data/raw/</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> extract    <span class="co"># parse TS/TSX with ts-morph -&gt; data/processed/{entities,edges}.jsonl</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> graph      <span class="co"># load into networkx, print example queries, export graph.graphml</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Then build the vector index (not yet wired into the Makefile):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> src/vector_index/build_index.py</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="make-clone-srcclone_rawclone_raw.py" class="level3">
+<h3 class="anchored" data-anchor-id="make-clone-srcclone_rawclone_raw.py"><code>make clone</code> — <code>src/clone_raw/clone_raw.py</code></h3>
+<p>Downloads the target repo as a zip (<code>src/clone_raw/repo_link.py</code> configures owner/repo/branch — currently <code>bluesky-social/social-app@main</code>) and extracts only <code>.ts</code>/<code>.tsx</code> files into <code>data/raw/</code>. This directory is gitignored and regenerated on demand — nobody needs to commit ~100K lines of someone else’s source.</p>
+</section>
+<section id="make-extract-srcts_extractextract.mjs" class="level3">
+<h3 class="anchored" data-anchor-id="make-extract-srcts_extractextract.mjs"><code>make extract</code> — <code>src/ts_extract/extract.mjs</code></h3>
+<p>Walks <code>data/raw/</code> with <a href="https://ts-morph.com/">ts-morph</a> and emits two JSONL files.</p>
+<p><strong><code>entities.jsonl</code></strong> — one JSON object per node. Four entity types, classified by naming/return-type heuristics (<code>useX</code> → Hook, <code>PascalCase</code> returning JSX → Component, Component in a <code>screens/</code> dir or named <code>*Screen</code> → Screen, everything else → File):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">"id"</span><span class="fu">:</span> <span class="st">"src/state/session/index.tsx#useRequireAuth"</span><span class="fu">,</span> <span class="dt">"type"</span><span class="fu">:</span> <span class="st">"Hook"</span><span class="fu">,</span> <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"useRequireAuth"</span><span class="fu">,</span> <span class="dt">"file"</span><span class="fu">:</span> <span class="st">"src/state/session/index.tsx"</span><span class="fu">,</span> <span class="dt">"kindGuess"</span><span class="fu">:</span> <span class="st">"function"</span><span class="fu">,</span> <span class="dt">"startLine"</span><span class="fu">:</span> <span class="dv">438</span><span class="fu">,</span> <span class="dt">"endLine"</span><span class="fu">:</span> <span class="dv">454</span><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>field</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>id</code></td>
+<td><code>&lt;file&gt;#&lt;name&gt;</code> for declarations, or bare file path for Files</td>
+</tr>
+<tr class="even">
+<td><code>type</code></td>
+<td><code>File</code> | <code>Component</code> | <code>Hook</code> | <code>Screen</code></td>
+</tr>
+<tr class="odd">
+<td><code>name</code></td>
+<td>identifier name</td>
+</tr>
+<tr class="even">
+<td><code>file</code></td>
+<td>repo-relative source path</td>
+</tr>
+<tr class="odd">
+<td><code>kindGuess</code></td>
+<td><code>function</code> | <code>arrow</code> | <code>class</code></td>
+</tr>
+<tr class="even">
+<td><code>startLine</code> / <code>endLine</code></td>
+<td>source line range, used to pull real code snippets later</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>edges.jsonl</code></strong> — one JSON object per relationship:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">"from"</span><span class="fu">:</span> <span class="st">"src/App.tsx#InnerApp"</span><span class="fu">,</span> <span class="dt">"to"</span><span class="fu">:</span> <span class="st">"src/state/session/index.tsx#useSession"</span><span class="fu">,</span> <span class="dt">"type"</span><span class="fu">:</span> <span class="st">"calls"</span><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>edge type</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>depends_on</code></td>
+<td>file A imports file B</td>
+</tr>
+<tr class="even">
+<td><code>defines</code></td>
+<td>file A declares entity B</td>
+</tr>
+<tr class="odd">
+<td><code>renders</code></td>
+<td>component A renders JSX tag B</td>
+</tr>
+<tr class="even">
+<td><code>calls</code></td>
+<td>function/component A calls hook/function B</td>
+</tr>
+</tbody>
+</table>
+<p>Edges may also carry <code>external: true</code> (target is an npm package, not local code), <code>unresolvedFileGuess: true</code> (target file inferred, not import-resolved), or <code>sameFile: true</code> (target defined in the same file as the source).</p>
+<p>Current corpus (bluesky-social/social-app): <strong>3,820 entities</strong> (1,651 Files, 1,052 Components, 572 Hooks, 543 Screens) and <strong>~25,000 edges</strong>.</p>
+</section>
+<section id="make-graph-srcbuild_graphbuild_graph.py" class="level3">
+<h3 class="anchored" data-anchor-id="make-graph-srcbuild_graphbuild_graph.py"><code>make graph</code> — <code>src/build_graph/build_graph.py</code></h3>
+<p>Loads the JSONL pair into a <code>networkx.MultiDiGraph</code> and runs a few example queries you’ll actually want when exploring the graph interactively:</p>
+<ul>
+<li><code>who_uses(g, "useSession")</code> — who renders/calls a given entity</li>
+<li><code>transitive_deps(g, entity_id)</code> — BFS over <code>depends_on</code> to see what a screen/component pulls in, transitively</li>
+<li><code>top_fan_in(g, "Hook", "calls")</code> — most-called hooks (candidate “core” pieces)</li>
+</ul>
+<p>It then exports the graph to <code>data/processed/graph.graphml</code> for viewing in <a href="https://gephi.org/">Gephi</a> or <a href="https://www.yworks.com/products/yed">yEd</a> — useful for eyeballing structure, but GraphML stringifies every attribute (<code>startLine</code> becomes <code>"109"</code> not <code>109</code>), so the vector-index build below reads directly from the JSONL instead of round-tripping through GraphML.</p>
+</section>
+<section id="vector-index-srcvector_index" class="level3">
+<h3 class="anchored" data-anchor-id="vector-index-srcvector_index">Vector index — <code>src/vector_index/</code></h3>
+<p><code>build_index.py</code> turns every entity into one document in a persistent <a href="https://www.trychroma.com/">ChromaDB</a> collection at <code>data/processed/chroma/</code> (collection name <code>codeiq_entities</code>), embedded with Chroma’s default local model (<code>all-MiniLM-L6-v2</code>, ONNX, CPU, no API key, ~90MB one-time download).</p>
+<p>Each document combines three things, so a single retrieval hit is enough to answer <em>and</em> cite evidence:</p>
+<ol type="1">
+<li><strong>Header</strong> — entity type, name, kind, file (e.g.&nbsp;<code>Hook useRequireAuth (function) in src/state/session/index.tsx</code>)</li>
+<li><strong>Graph context</strong> — a natural-language sentence built from the entity’s edges in both directions (<code>Renders: ...</code>, <code>Calls: ...</code>, <code>Rendered by: ...</code>, <code>Called by: ...</code>, <code>Depends on: ...</code>, <code>Defines: ...</code>), capped at 8 names per relation with a “+N more” suffix</li>
+<li><strong>Source snippet</strong> — the entity’s actual code, read from <code>data/raw/&lt;file&gt;</code> lines <code>startLine:endLine</code> (capped at 60 lines)</li>
+</ol>
+<p>Rebuild the index any time the JSONL/raw source changes:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> src/vector_index/build_index.py</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Runs in well under a minute for the current corpus size (~3,800 docs) — the embedding model is tiny and runs on CPU, so no GPU or special hardware is needed.</p>
+<p><strong>Querying it</strong> — <code>query_index.py</code> exposes <code>search_code()</code> as a plain, importable function (JSON-serializable return, no side effects beyond reading the index), so it can be wrapped directly as a tool for an LLM agent (e.g. LangChain’s <code>@tool</code>) without any adapter code:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.vector_index.query_index <span class="im">import</span> search_code</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>hits <span class="op">=</span> search_code(<span class="st">"who handles session restore"</span>, n_results<span class="op">=</span><span class="dv">5</span>, entity_type<span class="op">=</span><span class="st">"Hook"</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># -&gt; [{"id", "type", "name", "file", "start_line", "end_line",</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co">#      "snippet", "graph_context", "relevance"}, ...]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>It also runs as a CLI for manual sanity checks:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> src/vector_index/query_index.py <span class="st">"authentication session hook"</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> src/vector_index/query_index.py <span class="st">"session"</span> <span class="at">--n</span> 10 <span class="at">--type</span> Hook</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="project-structure" class="level2">
+<h2 class="anchored" data-anchor-id="project-structure">Project structure</h2>
+<pre><code>codeiq_source_code_knowledge_graph/
+├── README.md                    this file
+├── LICENSE
+├── Makefile                     make clone / extract / graph / all
+├── environment.yml               conda env spec (Python 3.11 + pip deps)
+├── package.json                  node deps for the extractor (ts-morph)
+│
+├── src/
+│   ├── clone_raw/                 stage 1: fetch target repo source
+│   │   ├── repo_link.py             REPO_OWNER / REPO_NAME / BRANCH config
+│   │   │                            (currently bluesky-social/social-app@main)
+│   │   └── clone_raw.py             downloads repo zip, extracts *.ts/*.tsx
+│   │                                only into data/raw/, no git history needed
+│   │
+│   ├── ts_extract/                stage 2: parse source -&gt; structured graph data
+│   │   └── extract.mjs              ts-morph walk over data/raw/**/*.{ts,tsx}
+│   │                                classifies each declaration as
+│   │                                File / Component / Hook / Screen,
+│   │                                records its line range, and emits
+│   │                                depends_on / renders / calls / defines
+│   │                                edges -&gt; entities.jsonl + edges.jsonl
+│   │
+│   ├── build_graph/                stage 3: load graph, run example queries
+│   │   └── build_graph.py           entities.jsonl/edges.jsonl -&gt; networkx
+│   │                                MultiDiGraph; who_uses() / transitive_deps()
+│   │                                / top_fan_in() helpers; exports graph.graphml
+│   │                                for Gephi/yEd
+│   │
+│   └── vector_index/                stage 4: semantic search over the graph
+│       ├── build_index.py           reads entities.jsonl/edges.jsonl + source
+│       │                            from data/raw/, builds one document per
+│       │                            entity (header + graph-context sentence +
+│       │                            real code snippet), embeds with Chroma's
+│       │                            local MiniLM model, persists the collection
+│       └── query_index.py           search_code(query, n_results, entity_type)
+│                                    - importable function returning structured
+│                                    hits (id/type/name/file/lines/snippet/
+│                                    graph_context/relevance), designed to be
+│                                    wrapped as an LLM agent tool (LangChain
+│                                    @tool or similar); also runnable as a CLI
+│                                    for manual sanity checks
+│
+└── data/
+    ├── raw/                        gitignored — cloned *.ts/*.tsx source,
+    │                                regenerate any time with `make clone`
+    └── processed/                  pipeline outputs, checked into git
+        ├── entities.jsonl            graph nodes (source of truth)
+        ├── edges.jsonl                graph edges (source of truth)
+        ├── graph.graphml              GraphML export of the above, for
+        │                              opening in Gephi/yEd — derived, not
+        │                              a separate source of data
+        └── chroma/                    ChromaDB persistent store (SQLite +
+                                        HNSW index segment) for the
+                                        codeiq_entities collection — derived
+                                        from entities.jsonl/edges.jsonl +
+                                        data/raw/, safe to delete/rebuild,
+                                        should be gitignored</code></pre>
+</section>
+<section id="roadmap" class="level2">
+<h2 class="anchored" data-anchor-id="roadmap">Roadmap</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="">Parse codebase into entities/edges (File, Component, Hook, Screen)</label></li>
+<li><label><input type="checkbox" checked="">Build knowledge graph (NetworkX) + GraphML export</label></li>
+<li><label><input type="checkbox" checked="">Vector search index (ChromaDB, local embeddings)</label></li>
+<li><label><input type="checkbox">LangChain retriever + LLM Q&amp;A agent over the vector index, with graph-neighbor expansion for multi-hop questions (“what breaks if X changes?”)</label></li>
+<li><label><input type="checkbox">Confidence scoring (High/Medium/Low) per answer</label></li>
+<li><label><input type="checkbox">Chat UI or console interface with source citations</label></li>
+<li><label><input type="checkbox">Answer-quality evaluation against a hand-written question set</label></li>
+</ul>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

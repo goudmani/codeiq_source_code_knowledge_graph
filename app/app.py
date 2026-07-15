@@ -31,7 +31,7 @@ from dotenv import load_dotenv  # noqa: E402
 from shiny import App, reactive, render, ui  # noqa: E402
 
 import render_utils  # noqa: E402
-from src.clone_raw.repo_link import BRANCH, REPO_NAME, REPO_OWNER  # noqa: E402
+from src.clone_raw.clone_raw import BRANCH, REPO_NAME, REPO_OWNER  # noqa: E402
 from src.qa_agent.agent import DEFAULT_MODEL, MODELS, ask  # noqa: E402
 
 load_dotenv(PROJECT_ROOT / ".env")

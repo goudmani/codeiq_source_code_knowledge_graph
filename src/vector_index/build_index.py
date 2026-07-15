@@ -24,17 +24,22 @@ Uses ChromaDB's default local embedding function (all-MiniLM-L6-v2 via ONNX)
 
 Usage:
   python3 build_index.py \
-      --entities data/processed/entities_with_desc.jsonl \
-      --edges data/processed/edges.jsonl \
-      --raw-dir data/raw \
-      --chroma-dir data/processed/chroma \
+      --entities data/processed/<tag>/entities_with_desc.jsonl \
+      --edges data/processed/<tag>/edges.jsonl \
+      --raw-dir data/raw/<tag> \
+      --chroma-dir data/processed/<tag>/chroma \
       --collection codeiq_entities
 """
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import chromadb
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from src.clone_raw.clone_raw import TAG  # noqa: E402
 
 RELEVANT_EDGE_TYPES = ("renders", "calls", "depends_on", "defines")
 MAX_SNIPPET_LINES = 60
@@ -218,10 +223,10 @@ def build_documents(entities: dict, outgoing: dict, incoming: dict, raw_dir: Pat
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--entities", default="data/processed/entities_with_desc.jsonl")
-    ap.add_argument("--edges", default="data/processed/edges.jsonl")
-    ap.add_argument("--raw-dir", default="data/raw")
-    ap.add_argument("--chroma-dir", default="data/processed/chroma")
+    ap.add_argument("--entities", default=f"data/processed/{TAG}/entities_with_desc.jsonl")
+    ap.add_argument("--edges", default=f"data/processed/{TAG}/edges.jsonl")
+    ap.add_argument("--raw-dir", default=f"data/raw/{TAG}")
+    ap.add_argument("--chroma-dir", default=f"data/processed/{TAG}/chroma")
     ap.add_argument("--collection", default="codeiq_entities")
     args = ap.parse_args()
 

@@ -13,14 +13,14 @@ Usage:
     python add_descriptions_stepped.py --llm local --tag raysk4ever_Simple-React-Native-App_main
 
 Input:
-    ../data/processed/entities.jsonl
+    data/processed/<tag>/entities.jsonl
         JSON-lines file where each record has at least a "type" field.
         Records with type == "File" must have a "file" field (relative to
-        --root-folder) pointing at a source file. Other records reference
+        data/raw/<tag>/) pointing at a source file. Other records reference
         that file via either a "file" or "file" field.
 
 Output (written incrementally, one line per file, as each completes):
-    ../data/processed/entities_raw_results.jsonl
+    data/processed/<tag>/add-descriptions-intermediate/entities_raw_results.jsonl
         Checkpoint file: one record per SUCCESSFULLY processed source file,
         of the form {"file": ..., "entities": [...]}. A file only lands
         here once its LLM response has been parsed as JSON *and* validated
@@ -31,14 +31,14 @@ Output (written incrementally, one line per file, as each completes):
         file is simply retried on the next run since it's absent from
         the checkpoint.
 
-    ../data/processed/add-descriptions-intermediate/llm_call_metrics.jsonl
+    data/processed/<tag>/add-descriptions-intermediate/llm_call_metrics.jsonl
         Append-only log of every LLM call attempt: timestamp, file,
         backend/model, attempt number, latency, token usage (when the
         backend reports it), and status ("success" or "error" with a
         message). This is the place to look when something failed - the
         checkpoint file itself never contains error records anymore.
 
-    ../data/processed/entities_with_desc.jsonl
+    data/processed/<tag>/entities_with_desc.jsonl
         Final merged output. Same records as the input, but entities that
         were successfully annotated now also have a "description" field.
         Written once at the end, after all files are processed (or after

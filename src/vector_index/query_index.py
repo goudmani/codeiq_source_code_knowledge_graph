@@ -15,11 +15,17 @@ Also runnable directly as a CLI for manual sanity checks:
 """
 import argparse
 import json
+import sys
 from functools import lru_cache
+from pathlib import Path
 
 import chromadb
 
-DEFAULT_CHROMA_DIR = "data/processed/chroma"
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from src.clone_raw.clone_raw import TAG  # noqa: E402
+
+DEFAULT_CHROMA_DIR = f"data/processed/{TAG}/chroma"
 DEFAULT_COLLECTION = "codeiq_entities"
 
 

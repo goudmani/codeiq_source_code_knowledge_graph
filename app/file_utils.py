@@ -13,8 +13,10 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from src.clone_raw.clone_raw import TAG
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-RAW_ROOT = PROJECT_ROOT / "data" / "raw"
+RAW_ROOT = PROJECT_ROOT / "data" / "raw" / TAG
 
 MAX_FILE_LINES = 6000  # safety cap for pathological files; source files are never this long
 

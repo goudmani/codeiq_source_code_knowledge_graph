@@ -37,10 +37,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.vector_index.build_index import load_entities, load_adjacency, pretty  # noqa: E402
 from src.build_graph.build_graph import load_graph, transitive_deps  # noqa: E402
+from src.clone_raw.clone_raw import TAG  # noqa: E402
 
-DEFAULT_ENTITIES_PATH = "data/processed/entities_with_desc.jsonl"
-DEFAULT_EDGES_PATH = "data/processed/edges.jsonl"
-DEFAULT_PROCESSED_DIR = "data/processed"
+DEFAULT_ENTITIES_PATH = f"data/processed/{TAG}/entities_with_desc.jsonl"
+DEFAULT_EDGES_PATH = f"data/processed/{TAG}/edges.jsonl"
+DEFAULT_PROCESSED_DIR = f"data/processed/{TAG}"
 
 
 @lru_cache(maxsize=None)
