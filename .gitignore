@@ -5,6 +5,11 @@ __pycache__/
 .env
 data/raw/*
 
+# ChromaDB binaries regularly exceed GitHub's 100MB file limit as the index
+# grows (description/edge metadata, more repos). Regenerate locally via
+# src/vector_index/build_index.py instead of committing the built index.
+data/processed/*/chroma/
+
 # Local context/reference material (notes, briefs, transcripts, etc.)
 # provided for understanding only -- never committed.
 context/
