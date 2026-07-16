@@ -146,12 +146,30 @@ mismatches are exactly the cases likely to cost more (extra tool calls, more
 turns, more re-sent context). So this bucketing doubles as a cheap
 correctness check, not just a cost one.
 
-## Open questions for next round
+## Fingerprint-equality threshold (decided)
 
-- Exact fingerprint-equality rule for entity-overlap (a hard threshold, e.g.
-  ≥80% Jaccard overlap counts as "same"?).
-- Where results get written (mirror `eval.py`'s `results.json`/`RESULTS.md`
-  pattern, or a new format).
+Two runs' cited-entity sets count as "the same" if their Jaccard overlap is
+**≥ 0.7**. Chosen as a starting default, not empirically tuned yet — we
+don't have real repeated-run data to calibrate against until the live
+testing round. Kept as a single named constant so it's a one-line change to
+recalibrate once we see real variance. Combined with exact equality on
+first-tool-called and confidence level for the overall fingerprint match
+(all three must agree for two runs to count as "the same run").
+
+## Output file format (decided)
+
+Mirrors `eval.py`'s existing `results.json` / `RESULTS.md` pattern for
+consistency with the rest of the project:
+
+- `data/cost/cost_log.jsonl` — one raw record per LLM call (the schema from
+  the section above).
+- `data/cost/COST_REPORT.md` — human-readable aggregated report (tokens by
+  prompt-type bucket, by tool, by process stage, plus the intended-vs-actual
+  tool cross-tab).
+- `data/reliability/reliability_results.json` — one record per question
+  tested: the fingerprints from each sample, the verdict (PASS/FAIL/INCONCLUSIVE),
+  and how many samples were actually used (3 or 5).
+- `data/reliability/RELIABILITY_REPORT.md` — human-readable summary.
 
 ## Noted for later: missing-description handling
 
