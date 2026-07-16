@@ -48,6 +48,7 @@ from src.qa_agent.tools import (  # noqa: E402
     get_related_entities,
     get_transitive_related_entities,
 )
+from src.qa_agent.cost_logger import CostLogWriter, classify_prompt_type, estimate_char_shares  # noqa: E402
 
 MODELS = {
     "llama-3.3-70b-versatile": "Groq Llama 3.3 70B -- most tool-calling-tested default",
@@ -289,6 +290,8 @@ def ask(
     model: str = DEFAULT_MODEL,
     max_tool_calls: int = MAX_TOOL_CALLS,
     tag: str = DEFAULT_TAG,
+    cost_sink: CostLogWriter | None = None,
+    question_id: str | None = None,
 ) -> dict:
     tools = _build_tools(tag)
     tools_by_name = {t.name: t for t in tools}
@@ -302,17 +305,52 @@ def ask(
         return make_llm(api_key).bind_tools(tools)
 
     messages = [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=question)]
+    # Parallel to `messages` -- (source_tag, text) for everything currently
+    # in context, so cost_sink can estimate each source's token share. Kept
+    # up to date alongside every `messages.append()` below. Cheap to
+    # maintain even when cost_sink is None, so no branching at each append
+    # site is needed.
+    message_tags: list[tuple[str, str]] = [("system_prompt", SYSTEM_PROMPT), ("question", question)]
     sources_by_id: dict[str, dict] = {}
     tool_call_trace: list[dict] = []
     seen_calls: set[tuple] = set()
+
+    prompt_type = classify_prompt_type(question) if cost_sink else None
+    turn = 0
+    first_tool_used: str | None = None
+
+    def log_turn(resp: AIMessage, tags: list[tuple[str, str]]) -> None:
+        nonlocal turn, first_tool_used
+        turn += 1
+        if cost_sink is None:
+            return
+        if turn == 1 and resp.tool_calls:
+            first_tool_used = resp.tool_calls[0]["name"]
+        usage = getattr(resp, "response_metadata", {}).get("token_usage", {})
+        cost_sink.log_call({
+            "question_id": question_id,
+            "question": question,
+            "tag": tag,
+            "model": model,
+            "prompt_type": prompt_type,
+            "first_tool_used": first_tool_used,
+            "turn": turn,
+            "prompt_tokens": usage.get("prompt_tokens", 0),
+            "completion_tokens": usage.get("completion_tokens", 0),
+            "total_tokens": usage.get("total_tokens", 0),
+            "message_breakdown": estimate_char_shares(tags),
+            "timestamp": time.time(),
+        })
 
     start = time.monotonic()
     calls_made = 0
     budget_exhausted_mid_turn = False
     response: AIMessage = _invoke_with_retry(make_llm_with_tools, messages)
+    log_turn(response, message_tags)
 
     while response.tool_calls and calls_made < max_tool_calls:
         messages.append(response)
+        message_tags.append(("assistant_turn", response.content or ""))
         for call in response.tool_calls:
             clamped_args = _clamp_tool_args(call["name"], call["args"])
             # Dedupe on the CLAMPED args: raising n_results past the cap
@@ -325,12 +363,11 @@ def ask(
                 # Don't re-execute or resend the same payload -- nudge the
                 # model to change strategy. Still counts against the budget
                 # so a stubborn model can't loop forever.
-                messages.append(ToolMessage(
-                    content=json.dumps({"note": "Duplicate call: identical arguments were already "
-                                        "used above and would return the same results. Change the "
-                                        "query wording, switch tool, or answer now."}),
-                    tool_call_id=call["id"],
-                ))
+                dup_content = json.dumps({"note": "Duplicate call: identical arguments were already "
+                                          "used above and would return the same results. Change the "
+                                          "query wording, switch tool, or answer now."})
+                messages.append(ToolMessage(content=dup_content, tool_call_id=call["id"]))
+                message_tags.append((f"tool:{call['name']}", dup_content))
                 calls_made += 1
                 if calls_made >= max_tool_calls:
                     budget_exhausted_mid_turn = True
@@ -340,7 +377,9 @@ def ask(
             result = tools_by_name[call["name"]].invoke(clamped_args)
             for hit in result or []:
                 sources_by_id.setdefault(hit["id"], hit)
-            messages.append(ToolMessage(content=json.dumps(_trim_for_context(result)), tool_call_id=call["id"]))
+            tool_content = json.dumps(_trim_for_context(result))
+            messages.append(ToolMessage(content=tool_content, tool_call_id=call["id"]))
+            message_tags.append((f"tool:{call['name']}", tool_content))
             calls_made += 1
             if calls_made >= max_tool_calls:
                 budget_exhausted_mid_turn = True
@@ -348,6 +387,7 @@ def ask(
         if budget_exhausted_mid_turn:
             break
         response = _invoke_with_retry(make_llm_with_tools, messages)
+        log_turn(response, message_tags)
 
     if budget_exhausted_mid_turn or response.tool_calls or not response.content:
         # Either the tool-call budget ran out mid-turn (every tool_call in the
@@ -359,17 +399,14 @@ def ask(
         # the loop would exit holding a tool_calls-only response, which
         # carries no text content, producing a blank final answer.)
         try:
+            budget_notice = ("You have used all available tool calls. Answer now, in text, "
+                              "using only the evidence already retrieved above. Do not emit any "
+                              "tool call -- respond with plain prose only.")
             response = _invoke_with_retry(
                 make_llm,
-                messages
-                + [
-                    HumanMessage(
-                        content="You have used all available tool calls. Answer now, in text, "
-                        "using only the evidence already retrieved above. Do not emit any "
-                        "tool call -- respond with plain prose only."
-                    )
-                ],
+                messages + [HumanMessage(content=budget_notice)],
             )
+            log_turn(response, message_tags + [("budget_exhausted_prompt", budget_notice)])
         except groq.APIStatusError as exc:
             # gpt-oss-120b sometimes emits tool-call syntax even on this
             # tools-unbound call, which Groq rejects with a 400 ("Tool choice
