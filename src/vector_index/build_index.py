@@ -223,12 +223,27 @@ def build_documents(entities: dict, outgoing: dict, incoming: dict, raw_dir: Pat
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--entities", default=f"data/processed/{TAG}/entities_with_desc.jsonl")
-    ap.add_argument("--edges", default=f"data/processed/{TAG}/edges.jsonl")
-    ap.add_argument("--raw-dir", default=f"data/raw/{TAG}")
-    ap.add_argument("--chroma-dir", default=f"data/processed/{TAG}/chroma")
+    ap.add_argument(
+        "--tag",
+        default=TAG,
+        help="Repo tag; used to build default paths under data/processed/<tag> and data/raw/<tag>",
+    )
+    ap.add_argument("--entities", default=None)
+    ap.add_argument("--edges", default=None)
+    ap.add_argument("--raw-dir", default=None)
+    ap.add_argument("--chroma-dir", default=None)
     ap.add_argument("--collection", default="codeiq_entities")
     args = ap.parse_args()
+
+    tag = args.tag
+    if args.entities is None:
+        args.entities = f"data/processed/{tag}/entities_with_desc.jsonl"
+    if args.edges is None:
+        args.edges = f"data/processed/{tag}/edges.jsonl"
+    if args.raw_dir is None:
+        args.raw_dir = f"data/raw/{tag}"
+    if args.chroma_dir is None:
+        args.chroma_dir = f"data/processed/{tag}/chroma"
 
     entities = load_entities(Path(args.entities))
     outgoing, incoming = load_adjacency(Path(args.edges))
