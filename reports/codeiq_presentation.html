@@ -11,8 +11,7 @@
 /* ==========================================================================
    CodeIQ — client presentation deck
    Same design system as app/www/style.css: near-white paper background,
-   deep navy-ink header, peach + warm-yellow accents, thick flat ink
-   borders, no gradients.
+   peach + warm-yellow accents, thick flat ink borders, no gradients.
    ========================================================================== */
 :root {
   --bg-0: #fdfeff;
@@ -70,63 +69,6 @@ body {
   background-attachment: fixed;
   display: flex;
   flex-direction: column;
-}
-
-/* ------------------------------------------------------------- Header bar */
-.deck-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 28px;
-  background: var(--border);
-  border-bottom: var(--border-w-thick) solid var(--text-0);
-  flex: 0 0 auto;
-  z-index: 20;
-}
-.brand { display: flex; align-items: center; gap: 10px; }
-.brand-mark {
-  width: 38px; height: 38px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden; flex-shrink: 0;
-  border: 2px solid var(--accent); background: #ffffff;
-}
-.brand-mark svg { width: 30px; height: 30px; display: block; }
-.brand-title {
-  font-weight: 700; font-size: 21px; letter-spacing: 0.3px; color: var(--accent);
-  line-height: 1.1;
-}
-.brand-sub {
-  font-size: 10.5px; color: var(--code-text-dim);
-  letter-spacing: 1.5px; text-transform: uppercase; margin-top: 1px;
-}
-.header-right { display: flex; align-items: center; gap: 10px; }
-.repo-pill {
-  display: flex; align-items: center; gap: 9px;
-  padding: 6px 14px 6px 10px; border-radius: 999px;
-  background: var(--code-bg-1); border: var(--border-w) solid var(--code-border);
-  font-size: 13px; color: var(--code-text-dim);
-}
-.repo-pill .status-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--accent);
-  animation: pulse 2s ease-in-out infinite; flex: 0 0 auto;
-}
-.repo-pill .repo-name { font-family: var(--mono); color: var(--code-text); font-weight: 600; }
-.repo-pill .repo-branch {
-  font-family: var(--mono); padding: 2px 8px; border-radius: 999px;
-  background: var(--code-bg-2); border: 1px solid var(--code-border);
-  color: var(--accent); font-size: 11.5px;
-}
-.slide-counter {
-  font-family: var(--mono); font-size: 12px; color: var(--code-text-dim);
-  padding: 6px 12px; border-radius: 999px;
-  background: var(--code-bg-1); border: var(--border-w) solid var(--code-border);
-}
-.slide-counter b { color: var(--accent); font-weight: 600; }
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.45; transform: scale(0.8); }
 }
 
 /* ------------------------------------------------------------- Slides */
@@ -423,13 +365,6 @@ h1.slide-title { font-size: 40px; font-weight: 800; letter-spacing: -0.5px; line
 .nav-btn:hover { background: var(--accent-3); }
 .nav-btn:active { transform: scale(0.96); }
 .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.dots { display: flex; gap: 8px; }
-.dot-btn {
-  width: 11px; height: 11px; border-radius: 50%;
-  background: var(--bg-1); border: 1.5px solid var(--border);
-  cursor: pointer; padding: 0;
-}
-.dot-btn.active { background: var(--accent); }
 .nav-hint { font-size: 10.5px; color: var(--text-2); position: absolute; right: 24px; }
 
 /* ------------------------------------------------------------- Print */
@@ -438,7 +373,6 @@ h1.slide-title { font-size: 40px; font-weight: 800; letter-spacing: -0.5px; line
   .deck { position: static; }
   .slide { position: static; display: flex !important; height: 100vh; page-break-after: always; overflow: hidden; }
   .deck-nav, .nav-hint { display: none !important; }
-  .deck-header { display: none; }
 }
 @media (max-width: 900px) {
   .two-col, .demo-grid, .risk-grid, .road-grid, .kpi-row { grid-template-columns: 1fr; }
@@ -448,35 +382,6 @@ h1.slide-title { font-size: 40px; font-weight: 800; letter-spacing: -0.5px; line
 </style>
 </head>
 <body>
-
-<!-- ============================================================ Header -->
-<header class="deck-header">
-  <div class="brand">
-    <div class="brand-mark">
-      <svg viewBox="0 0 167 163" xmlns="http://www.w3.org/2000/svg" aria-label="CodeIQ logo">
-        <g transform="translate(0,163) scale(0.1,-0.1)" fill="#19162b" stroke="none">
-          <path d="M494 1541 c-136 -49 -252 -167 -311 -317 -23 -59 -27 -84 -27 -176 -1 -59 3 -111 9 -116 17 -17 95 90 109 150 18 76 54 143 108 204 66 72 103 87 220 94 114 6 151 25 156 79 9 86 -132 129 -264 82z"/>
-          <path d="M1153 1368 c-23 -26 -55 -86 -72 -138 -6 -19 -26 -46 -45 -60 -18 -13 -45 -41 -60 -62 -26 -36 -29 -37 -49 -23 -34 24 -45 17 -13 -8 21 -17 27 -29 23 -41 -5 -11 -13 -16 -23 -12 -9 3 -28 8 -42 11 -20 3 -17 1 11 -11 23 -11 37 -23 37 -35 0 -12 15 -26 39 -39 22 -11 61 -44 87 -75 26 -30 53 -55 58 -55 22 0 110 -76 128 -110 10 -19 17 -53 17 -75 l-1 -40 -8 47 c-13 74 -76 147 -143 163 -16 4 -34 19 -42 35 -31 60 -143 130 -207 130 -12 0 -19 6 -17 18 3 37 -2 54 -26 77 -67 68 -197 -15 -181 -115 l6 -38 -64 5 c-54 5 -72 2 -121 -21 l-58 -26 27 32 c41 50 68 113 60 143 -8 32 -49 65 -81 65 -52 0 -98 -45 -226 -221 -105 -145 -64 -343 108 -514 296 -296 768 -339 1030 -93 102 95 167 251 151 365 -6 46 9 67 29 40 17 -24 28 -21 15 3 -8 15 -7 26 6 45 20 30 21 28 -36 54 -52 24 -37 29 17 6 19 -8 39 -15 43 -15 14 0 33 100 26 140 -4 29 0 51 20 94 31 68 43 158 24 182 -17 20 -63 12 -135 -23 l-52 -26 -54 26 c-30 13 -61 27 -70 30 -8 3 -22 31 -32 63 -19 68 -51 124 -70 124 -7 0 -23 -10 -34 -22z m-3 -298 c27 -27 26 -77 -2 -107 -38 -41 -108 -22 -122 32 -7 27 15 80 36 88 29 12 69 6 88 -13z m-797 -25 c-6 -16 -16 -19 -26 -8 -9 8 13 34 24 28 4 -3 6 -12 2 -20z m57 10 c0 -8 -7 -15 -15 -15 -8 0 -15 7 -15 15 0 8 7 15 15 15 8 0 15 -7 15 -15z m560 -16 c0 -6 -4 -7 -10 -4 -5 3 -10 11 -10 16 0 6 5 7 10 4 6 -3 10 -11 10 -16z m-524 -28 c-8 -13 -36 -15 -36 -3 0 4 5 13 12 20 14 14 34 0 24 -17z m-52 -23 c8 -13 8 -23 0 -35 -16 -25 -26 -25 -58 2 -26 20 -28 26 -16 40 17 20 59 16 74 -7z m561 12 c3 -5 2 -10 -4 -10 -5 0 -13 5 -16 10 -3 6 -2 10 4 10 5 0 13 -4 16 -10z m448 -42 c38 -45 1 -128 -58 -128 -35 0 -75 42 -75 77 1 72 87 105 133 51z m-593 -2 c0 -16 -18 -31 -27 -22 -8 8 5 36 17 36 5 0 10 -6 10 -14z m-53 -22 c8 -21 -13 -42 -28 -27 -13 13 -5 43 11 43 6 0 13 -7 17 -16z m-60 -9 c3 -9 3 -19 -1 -22 -8 -9 -37 18 -30 28 8 14 24 11 31 -6z m-60 -63 c-28 -30 -47 -89 -47 -142 0 -32 -4 -49 -10 -45 -13 8 -13 60 1 110 11 42 57 110 67 101 3 -3 -2 -14 -11 -24z m243 -39 c0 -35 -65 -213 -77 -213 -7 0 -13 3 -13 8 0 11 58 201 65 212 10 16 25 11 25 -7z m-126 -21 c3 -5 -10 -24 -29 -42 l-35 -34 36 -37 c49 -51 26 -62 -29 -13 -23 21 -43 41 -45 45 -3 7 79 89 90 89 4 0 9 -4 12 -8z m218 -29 c21 -20 38 -42 38 -48 0 -20 -79 -90 -90 -79 -7 7 0 20 20 39 37 36 37 44 0 80 -26 25 -31 45 -12 45 3 0 23 -17 44 -37z m496 -41 c21 -33 10 -27 -29 15 -26 28 -28 33 -10 22 14 -9 31 -25 39 -37z m-368 24 c0 -8 -13 -16 -30 -18 -28 -4 -40 9 -23 25 12 13 53 7 53 -7z m-16 -32 c23 -9 20 -42 -5 -49 -14 -5 -27 -1 -38 10 -15 15 -15 17 3 31 23 16 20 16 40 8z m-481 -115 c-17 -17 -37 -1 -22 17 8 10 15 12 23 4 7 -7 7 -13 -1 -21z m55 9 c-6 -18 -28 -21 -28 -4 0 9 7 16 16 16 9 0 14 -5 12 -12z m376 -35 c-33 -44 -117 -85 -187 -90 -34 -3 -73 0 -87 5 -21 9 -13 11 44 11 93 1 140 17 195 67 50 46 66 49 35 7z m-344 2 c0 -8 -7 -15 -15 -15 -16 0 -20 12 -8 23 11 12 23 8 23 -8z m-72 -22 c13 -24 -3 -63 -25 -63 -24 0 -67 46 -59 65 8 22 73 20 84 -2z m72 -27 c0 -8 -4 -17 -8 -20 -13 -8 -35 11 -28 23 10 16 36 14 36 -3z"/>
-          <path d="M1065 1054 c-26 -26 -16 -77 17 -88 51 -18 91 49 52 88 -20 21 -48 20 -69 0z"/>
-          <path d="M1307 942 c-32 -36 -10 -84 38 -84 48 0 72 54 39 86 -21 21 -57 20 -77 -2z"/>
-          <path d="M1530 761 c0 -5 7 -11 15 -15 8 -3 15 -1 15 3 0 5 -7 11 -15 15 -8 3 -15 1 -15 -3z"/>
-        </g>
-      </svg>
-    </div>
-    <div>
-      <div class="brand-title">CodeIQ</div>
-      <div class="brand-sub">Source Code Knowledge Graph</div>
-    </div>
-  </div>
-  <div class="header-right">
-    <div class="repo-pill">
-      <span class="status-dot"></span>
-      <span class="repo-name">bluesky-social/social-app</span>
-      <span class="repo-branch">main</span>
-    </div>
-    <div class="slide-counter"><b id="cur-slide">1</b> / <span id="total-slides">7</span></div>
-  </div>
-</header>
 
 <!-- ============================================================ Deck -->
 <main class="deck" id="deck">
@@ -910,7 +815,6 @@ h1.slide-title { font-size: 40px; font-weight: 800; letter-spacing: -0.5px; line
 <!-- ============================================================ Nav -->
 <nav class="deck-nav">
   <button class="nav-btn" id="prev-btn" aria-label="Previous slide">← Prev</button>
-  <div class="dots" id="dots"></div>
   <button class="nav-btn" id="next-btn" aria-label="Next slide">Next →</button>
   <span class="nav-hint">← → arrow keys · F for fullscreen</span>
 </nav>
@@ -918,29 +822,15 @@ h1.slide-title { font-size: 40px; font-weight: 800; letter-spacing: -0.5px; line
 <script>
 (function () {
   const slides = Array.from(document.querySelectorAll(".slide"));
-  const dotsWrap = document.getElementById("dots");
   const prevBtn = document.getElementById("prev-btn");
   const nextBtn = document.getElementById("next-btn");
-  const curEl = document.getElementById("cur-slide");
-  document.getElementById("total-slides").textContent = slides.length;
-
-  slides.forEach((_, i) => {
-    const d = document.createElement("button");
-    d.className = "dot-btn";
-    d.setAttribute("aria-label", "Go to slide " + (i + 1));
-    d.addEventListener("click", () => go(i));
-    dotsWrap.appendChild(d);
-  });
-  const dots = Array.from(dotsWrap.children);
 
   let cur = 0;
   function go(i) {
     cur = Math.max(0, Math.min(slides.length - 1, i));
     slides.forEach((s, j) => s.classList.toggle("active", j === cur));
-    dots.forEach((d, j) => d.classList.toggle("active", j === cur));
     prevBtn.disabled = cur === 0;
     nextBtn.disabled = cur === slides.length - 1;
-    curEl.textContent = cur + 1;
     history.replaceState(null, "", "#" + (cur + 1));
     slides[cur].scrollTop = 0;
   }
