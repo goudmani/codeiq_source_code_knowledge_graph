@@ -1,0 +1,10 @@
+.git
+.env
+data/
+node_modules/
+reports/
+img/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/

@@ -13,14 +13,14 @@ Usage:
     python add_descriptions_stepped.py --llm local --tag raysk4ever_Simple-React-Native-App_main
 
 Input:
-    ../data/processed/entities.jsonl
+    data/processed/<tag>/entities.jsonl
         JSON-lines file where each record has at least a "type" field.
         Records with type == "File" must have a "file" field (relative to
-        --root-folder) pointing at a source file. Other records reference
+        data/raw/<tag>/) pointing at a source file. Other records reference
         that file via either a "file" or "file" field.
 
 Output (written incrementally, one line per file, as each completes):
-    ../data/processed/entities_raw_results.jsonl
+    data/processed/<tag>/add-descriptions-intermediate/entities_raw_results.jsonl
         Checkpoint file: one record per SUCCESSFULLY processed source file,
         of the form {"file": ..., "entities": [...]}. A file only lands
         here once its LLM response has been parsed as JSON *and* validated
@@ -31,14 +31,14 @@ Output (written incrementally, one line per file, as each completes):
         file is simply retried on the next run since it's absent from
         the checkpoint.
 
-    ../data/processed/add-descriptions-intermediate/llm_call_metrics.jsonl
+    data/processed/<tag>/add-descriptions-intermediate/llm_call_metrics.jsonl
         Append-only log of every LLM call attempt: timestamp, file,
         backend/model, attempt number, latency, token usage (when the
         backend reports it), and status ("success" or "error" with a
         message). This is the place to look when something failed - the
         checkpoint file itself never contains error records anymore.
 
-    ../data/processed/entities_with_desc.jsonl
+    data/processed/<tag>/entities_with_desc.jsonl
         Final merged output. Same records as the input, but entities that
         were successfully annotated now also have a "description" field.
         Written once at the end, after all files are processed (or after
@@ -244,6 +244,12 @@ class Checkpoint:
     record() when they finish successfully.
     """
 
+    @staticmethod
+    def _norm_key(file_key: str) -> str:
+        # Checkpoints written on Windows store backslash paths; normalize so
+        # a run on macOS/Linux (or in Docker) still recognizes them as done.
+        return str(file_key).replace("\\", "/")
+
     def __init__(self, checkpoint_path: str):
         self.checkpoint_path = checkpoint_path
         self._lock = threading.Lock()
@@ -253,17 +259,17 @@ class Checkpoint:
             file_key = record.get("file")
             if file_key is None:
                 continue
-            self.done[file_key] = record
+            self.done[self._norm_key(file_key)] = record
 
         # Open in append mode - existing good lines stay, new ones get added.
         # (We never rewrite the checkpoint file in place, only append.)
         self._fh = open(checkpoint_path, "a", encoding="utf-8")
 
     def is_done(self, file_key: str) -> bool:
-        return file_key in self.done
+        return self._norm_key(file_key) in self.done
 
     def record(self, result: dict):
-        file_key = result["file"]
+        file_key = self._norm_key(result["file"])
         with self._lock:
             self.done[file_key] = result
             self._fh.write(json.dumps(result) + "\n")

@@ -12,14 +12,21 @@ instead of printing.
 Also runnable directly as a CLI for manual sanity checks:
   python3 query_index.py "how does session restore work"
   python3 query_index.py "authentication hook" --n 10 --type Hook
+  python3 query_index.py "authentication hook" --tag v2
 """
 import argparse
 import json
+import sys
 from functools import lru_cache
+from pathlib import Path
 
 import chromadb
 
-DEFAULT_CHROMA_DIR = "data/processed/chroma"
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from src.clone_raw.clone_raw import TAG  # noqa: E402
+
+DEFAULT_CHROMA_DIR = f"data/processed/{TAG}/chroma"
 DEFAULT_COLLECTION = "codeiq_entities"
 
 
@@ -33,6 +40,9 @@ def search_code(
     query: str,
     n_results: int = 5,
     entity_type: str | None = None,
+    tag: str | None = None,
+    chroma_dir: str | None = None,
+    collection_name: str = DEFAULT_COLLECTION,
 ) -> list[dict]:
     """Semantically search the CodeIQ knowledge graph for relevant code entities.
 
@@ -51,6 +61,12 @@ def search_code(
         n_results: Max number of matches to return (default 5).
         entity_type: Optionally restrict to one entity type -- one of
             "File", "Component", "Hook", "Screen". Omit to search all types.
+        tag: Optional repo tag; selects the index at data/processed/<tag>/chroma
+            without needing to know the exact path. Ignored if chroma_dir is
+            given explicitly.
+        chroma_dir: Optional explicit path to the Chroma persistence dir.
+            Overrides `tag` if both are given. Defaults to the index for TAG.
+        collection_name: Chroma collection name (default "codeiq_entities").
 
     Returns:
         A list of up to n_results dicts, ordered by relevance (best first),
@@ -75,7 +91,10 @@ def search_code(
           - relevance (float): similarity score in [0, 1], higher is more
             relevant (converted from Chroma's raw cosine distance)
     """
-    collection = _get_collection()
+    if chroma_dir is None:
+        chroma_dir = f"data/processed/{tag}/chroma" if tag else DEFAULT_CHROMA_DIR
+
+    collection = _get_collection(chroma_dir, collection_name)
     where = {"type": entity_type} if entity_type else None
 
     results = collection.query(
@@ -116,12 +135,24 @@ def main():
     ap.add_argument("query", help="natural-language search text")
     ap.add_argument("--n", type=int, default=5, help="number of results")
     ap.add_argument("--type", dest="entity_type", help="filter: File | Component | Hook | Screen")
+    ap.add_argument("--tag", default=None, help="repo tag; selects data/processed/<tag>/chroma")
+    ap.add_argument("--chroma-dir", dest="chroma_dir", default=None, help="explicit chroma dir, overrides --tag")
+    ap.add_argument("--collection", dest="collection_name", default=DEFAULT_COLLECTION)
     args = ap.parse_args()
 
-    collection = _get_collection()
-    print(f"Collection '{DEFAULT_COLLECTION}': {collection.count()} docs\n")
+    chroma_dir = args.chroma_dir or (f"data/processed/{args.tag}/chroma" if args.tag else DEFAULT_CHROMA_DIR)
 
-    for i, hit in enumerate(search_code(args.query, n_results=args.n, entity_type=args.entity_type)):
+    collection = _get_collection(chroma_dir, args.collection_name)
+    print(f"Collection '{args.collection_name}' @ {chroma_dir}: {collection.count()} docs\n")
+
+    hits = search_code(
+        args.query,
+        n_results=args.n,
+        entity_type=args.entity_type,
+        chroma_dir=chroma_dir,
+        collection_name=args.collection_name,
+    )
+    for i, hit in enumerate(hits):
         print(f"--- #{i+1}  relevance={hit['relevance']} ---")
         print(f"{hit['type']} {hit['name']}  ({hit['file']}:{hit['start_line']}-{hit['end_line']})")
         if hit["description"]:

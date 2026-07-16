@@ -24,17 +24,22 @@ Uses ChromaDB's default local embedding function (all-MiniLM-L6-v2 via ONNX)
 
 Usage:
   python3 build_index.py \
-      --entities data/processed/entities_with_desc.jsonl \
-      --edges data/processed/edges.jsonl \
-      --raw-dir data/raw \
-      --chroma-dir data/processed/chroma \
+      --entities data/processed/<tag>/entities_with_desc.jsonl \
+      --edges data/processed/<tag>/edges.jsonl \
+      --raw-dir data/raw/<tag> \
+      --chroma-dir data/processed/<tag>/chroma \
       --collection codeiq_entities
 """
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import chromadb
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from src.clone_raw.clone_raw import TAG  # noqa: E402
 
 RELEVANT_EDGE_TYPES = ("renders", "calls", "depends_on", "defines")
 MAX_SNIPPET_LINES = 60
@@ -218,12 +223,27 @@ def build_documents(entities: dict, outgoing: dict, incoming: dict, raw_dir: Pat
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--entities", default="data/processed/entities_with_desc.jsonl")
-    ap.add_argument("--edges", default="data/processed/edges.jsonl")
-    ap.add_argument("--raw-dir", default="data/raw")
-    ap.add_argument("--chroma-dir", default="data/processed/chroma")
+    ap.add_argument(
+        "--tag",
+        default=TAG,
+        help="Repo tag; used to build default paths under data/processed/<tag> and data/raw/<tag>",
+    )
+    ap.add_argument("--entities", default=None)
+    ap.add_argument("--edges", default=None)
+    ap.add_argument("--raw-dir", default=None)
+    ap.add_argument("--chroma-dir", default=None)
     ap.add_argument("--collection", default="codeiq_entities")
     args = ap.parse_args()
+
+    tag = args.tag
+    if args.entities is None:
+        args.entities = f"data/processed/{tag}/entities_with_desc.jsonl"
+    if args.edges is None:
+        args.edges = f"data/processed/{tag}/edges.jsonl"
+    if args.raw_dir is None:
+        args.raw_dir = f"data/raw/{tag}"
+    if args.chroma_dir is None:
+        args.chroma_dir = f"data/processed/{tag}/chroma"
 
     entities = load_entities(Path(args.entities))
     outgoing, incoming = load_adjacency(Path(args.edges))
