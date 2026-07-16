@@ -125,3 +125,27 @@ Notes so far, to pick back up next round:
   ≥80% Jaccard overlap counts as "same"?).
 - Where results get written (mirror `eval.py`'s `results.json`/`RESULTS.md`
   pattern, or a new format).
+
+## Noted for later: missing-description handling
+
+Not every entity in `entities_with_desc.jsonl` has a `description` (7/3820
+bluesky entities, 0/24 raysk4ever). The code never fails on this -- it always
+falls back to an empty string -- but there's no explicit system-prompt
+instruction telling the model this is expected, and the tool docstrings are
+inconsistent about it (`find_entity_by_id_or_name`/`get_related_entities`
+document "empty string if none"; `get_transitive_related_entities` doesn't
+mention it at all; `search_code`'s docstring frames it as an index-wide
+condition rather than a per-entity one, which could mislead the model into
+assuming descriptions are always present in this index). Simple test for
+later: ask about one of the entities below a few times and check whether the
+agent stays grounded in the code snippet vs. hallucinates a plausible-sounding
+description.
+
+Entities with no description (bluesky-social/social-app):
+- `src/alf/fonts.ts` (File)
+- `src/geolocation/types.ts` (File)
+- `src/components/Dialog/types.ts` (File)
+- `src/components/dms/ActionsWrapper.web.tsx#ActionsWrapper` (Component)
+- `src/components/icons/CircleCheck.tsx` (File)
+- `src/components/icons/Message.tsx` (File)
+- `src/components/PolicyUpdateOverlay/logger.ts` (File)
