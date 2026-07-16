@@ -33,7 +33,7 @@ import urllib.error
 import urllib.request
 
 API_BASE = "https://api.render.com/v1"
-ENV_VAR_KEYS = ["GROQ_API_KEY", "GROQ_API_KEY_2", "GROQ_API_KEY_3"]
+ENV_VAR_KEYS = ["GROQ_API_KEY", "GROQ_API_KEY_2", "GROQ_API_KEY_3", "GROQ_API_KEY_4", "GROQ_API_KEY_5"]
 
 
 def _request(method: str, path: str, token: str, body=None):
