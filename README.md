@@ -33,7 +33,40 @@ other. Every stage's output is namespaced under a `<tag>` folder
 once as `TAG` in `src/clone_raw/clone_raw.py` and imported everywhere else, so
 cloning/processing a second repo never collides with the first.
 
-## Setup
+## Quickstart (Docker — no local setup)
+
+The only prerequisite is [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+and a free [Groq API key](https://console.groq.com). One line runs the whole
+pipeline (clone → parse → LLM descriptions → vector index):
+
+```bash
+git clone https://github.com/goudmani/codeiq_source_code_knowledge_graph.git
+cd codeiq_source_code_knowledge_graph
+echo "GROQ_API_KEY=your-key-here" > .env
+
+docker compose up                # <- the one line that does all the processing
+```
+
+All outputs land in `./data/processed/<tag>/` on your machine (not trapped in
+the container). The pipeline is resumable: Ctrl+C anytime and rerun — finished
+work is skipped. Then explore the results:
+
+```bash
+docker compose up -d app         # chat UI     -> open http://localhost:8000
+docker compose up -d jupyter     # JupyterLab  -> open http://localhost:8888
+docker compose down              # stop everything
+```
+
+By default this processes bluesky-social/social-app (~1,650 files through the
+LLM, roughly 70–90 min on Groq's free tier). To try a small repo first, or
+process any other React/React Native repo, prefix commands with env vars:
+
+```bash
+REPO_OWNER=raysk4ever REPO_NAME=Simple-React-Native-App docker compose up
+REPO_OWNER=raysk4ever REPO_NAME=Simple-React-Native-App docker compose up -d app
+```
+
+## Setup (local, without Docker)
 
 0. Install manually (not provided by the conda environment):
    - [Conda](https://docs.conda.io/en/latest/miniconda.html) (Miniconda recommended)
@@ -53,18 +86,30 @@ cloning/processing a second repo never collides with the first.
    echo "GROQ_API_KEY=your-key-here" > .env
    ```
 
-## Running the pipeline
+## Running the pipeline (local)
+
+One line runs everything (the same stages `docker compose up` runs):
+
+```bash
+make all
+```
+
+Or stage by stage:
 
 ```bash
 make clone      # download source -> data/raw/<tag>/
 make extract    # parse with ts-morph -> data/processed/<tag>/{entities,edges}.jsonl
 make graph      # load into networkx, export graph.graphml
-python src/vector_index/build_index.py   # build the Chroma vector index (not yet a make target)
+make describe   # LLM one-line descriptions -> entities_with_desc.jsonl (needs GROQ_API_KEY)
+make index      # build the Chroma vector index -> data/processed/<tag>/chroma/
 ```
 
 Each step is independently re-runnable and reads only the previous step's
-output. `TAG` is computed automatically from `clone_raw.py`'s
-`REPO_OWNER`/`REPO_NAME`/`BRANCH` (override via CLI flags or env vars).
+output. `TAG` is computed automatically from `REPO_OWNER`/`REPO_NAME`/`BRANCH`
+env vars (defaults: bluesky-social/social-app/main), so
+`REPO_OWNER=foo REPO_NAME=bar make all` processes a different repo.
+`make describe` also accepts `LLM=local` (LM Studio) and
+`DESC_ARGS="--num-files 10"` to limit a run.
 
 ## Q&A agent
 
@@ -98,6 +143,8 @@ shiny run app/app.py --reload
 README.md / LICENSE / Makefile
 environment.yml, requirements.txt      conda + pip dependency specs
 package.json                           node deps (ts-morph)
+Dockerfile, docker-compose.yml         container image + pipeline/app/jupyter services
+docker/entrypoint.sh                   what `docker compose up` runs (all pipeline stages)
 
 src/
 ├── clone_raw/
