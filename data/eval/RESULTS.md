@@ -6,7 +6,7 @@
 
 | Model | Entity-hit rate | Avg latency (s) | Errors | Blank answers | Confidence (H/M/L) |
 |---|---|---|---|---|---|
-| `openai/gpt-oss-120b` | 0.8 | 74.08 | 1 | 0 | 1/5/3 |
+| `openai/gpt-oss-120b` | 0.9 | 60.69 | 0 | 0 | 1/4/5 |
 
 ## Per-question comparison
 
@@ -14,20 +14,18 @@
 
 _Expected: useSession, defined in src/state/session/index.tsx (part of the session Provider component)._
 
-**`openai/gpt-oss-120b`** -- confidence: Medium (0 of 8 retrieved entities scored >=0.6 relevance; top match scored 0.59.) -- entity hit: yes -- latency: 47.51s
-> The hook that holds the app’s authenticated‑session state is **`useSession`**. It simply returns the session context that is provided by the `<SessionProvider>` component.
+**`openai/gpt-oss-120b`** -- confidence: Medium (2 of 3 retrieved entities scored >=0.6 relevance; top match scored 0.64.) -- entity hit: yes -- latency: 2.41s
+> The hook that manages the app’s authenticated session state is **`useSession`**.  
 
-**Definition**  
-- File: `src/state/session/index.tsx`  
-- Lines: 430‑432  
+It is defined in **`src/state/session/index.tsx`**, around lines **430‑432**:
 
 ```tsx
 export function useSession() {
   return useContext(StateContext)
 }
-```  
+```
 
-(Reference: `src/state/session/index.tsx#useSession`, lines 430‑432)
+*Source:* `src/state/session/index.tsx#useSession` (lines 430‑432)【{"cursor": 0, "id": 0}】
 
 ---
 
@@ -35,15 +33,15 @@ export function useSession() {
 
 _Expected: src/analytics/identifiers/session.ts#useSessionId and src/analytics/identifiers/session.web.ts#useSessionId -- a native/native-default implementation and a .web.ts platform-specific override, a common React Native pattern for web-only behavior._
 
-**`openai/gpt-oss-120b`** -- confidence: High (3 of 7 retrieved entities scored >=0.6 relevance; top match scored 0.79.) -- entity hit: yes -- latency: 99.55s
-> The hook **`useSessionId`** is defined in two separate files:
+**`openai/gpt-oss-120b`** -- confidence: High (3 of 5 retrieved entities scored >=0.6 relevance; top match scored 0.79.) -- entity hit: yes -- latency: 179.6s
+> The codebase contains **two separate implementations of the `useSessionId` hook**:
 
-| Hook | File (path) | Location in file |
-|------|-------------|------------------|
-| `useSessionId` (default) | `src/analytics/identifiers/session.ts` | lines 31‑50【0†L0-L2】 |
-| `useSessionId` (web‑specific) | `src/analytics/identifiers/session.web.ts` | lines 34‑54【0†L0-L2】 |
+| Hook implementation | File location | Line range |
+|---------------------|---------------|------------|
+| `useSessionId` (generic version) | `src/analytics/identifiers/session.ts` | 31‑50 |
+| `useSessionId` (web‑specific version) | `src/analytics/identifiers/session.web.ts` | 34‑54 |
 
-Both files export a hook with the same name and very similar implementation (they both create a stateful `id` and subscribe to app‑state changes). The presence of a **`.web.ts`** version indicates a platform‑specific implementation: React Native projects often provide separate modules for native and web builds, and the build system will pick `session.web.ts` when bundling for the web, while `session.ts` is used for the other platforms (iOS/Android). This allows the hook to handle platform‑specific APIs or behaviours while keeping a common public API.
+Both files export a hook named `useSessionId`. The presence of two versions is typical in a codebase that targets multiple platforms (e.g., native vs. web). The generic file (`session.ts`) provides a baseline implementation, while the `.web.ts` file supplies a platform‑specific variant that can be resolved by the module resolver when building for the web. This pattern allows the same import (`#​/analytics/identifiers/session`) to resolve to the appropriate implementation depending on the build target.
 
 ---
 
@@ -51,25 +49,26 @@ Both files export a hook with the same name and very similar implementation (the
 
 _Expected: Several top-level providers/wrappers, including an Alf provider, a ThemeProvider, a ContextMenuProvider, a Splash screen, and a VideoVolumeProvider._
 
-**`openai/gpt-oss-120b`** -- confidence: Medium (1 of 7 retrieved entities scored >=0.6 relevance; top match scored 0.61.) -- entity hit: yes -- latency: 110.54s
-> The **InnerApp** component (defined in `src/App.tsx`) renders a top‑level **React Fragment** that wraps a series of context‑ and UI‑providers for the whole application. According to the graph of its `renders` edges, the fragment contains:
+**`openai/gpt-oss-120b`** -- confidence: Low (No semantically-scored evidence was retrieved for this answer.) -- entity hit: yes -- latency: 11.47s
+> The **InnerApp** component is essentially a wrapper that composes a stack of context providers and a few UI components. At the top level it renders (in order):
 
 * `Alf`  
 * `ThemeProvider` (from `lib/ThemeContext`)  
 * `ContextMenuProvider` (from `components/ContextMenu`)  
 * `Splash`  
-* `VideoVolumeProvider` (from `components/Post/Embed/VideoEmbed/VideoEmbed`)  
+* `VideoVolumeProvider` (from `components/Post/Embed/VideoEmbed/VideoVolumeContext`)  
+* a React `Fragment`  
 * `AnalyticsFeaturesContext`  
 * `QueryProvider` (from `lib/react‑query`)  
 * `PolicyUpdateOverlayProvider` (from `components/PolicyUpdateOverlay`)  
 * `LiveEventsProvider` (from `features/liveEvents/context`)  
-* `AgeAssuranceV2Provider` (from `ageAssurance`)  
+* `AgeAssuranceV2Provider`  
 * `ComposerProvider` (from `state/shell/composer`)  
 * `MessagesProvider` (from `state/messages`)  
 * `LabelDefsProvider` (from `state/preferences/label‑defs`)  
 * `ModerationOptsProvider` (from `state/preferences/moderation‑opts`)  
 
-All of these are rendered inside a single `Fragment` (external) — the top‑level structure of the app 【get_related_entities result】.
+These providers are rendered directly inside **InnerApp**, establishing the global context and UI scaffolding for the rest of the application【src/App.tsx:109-213】.
 
 ---
 
@@ -77,10 +76,21 @@ All of these are rendered inside a single `Fragment` (external) — the top�
 
 _Expected: BookmarksScreen in src/screens/Bookmarks.tsx, which depends on useBookmarksQuery and useBookmarkMutation from state/queries/bookmarks._
 
-**`openai/gpt-oss-120b`** -- confidence: Medium (3 of 6 retrieved entities scored >=0.6 relevance; top match scored 0.65.) -- entity hit: yes -- latency: 84.09s
-> **Screen:** The Bookmarks feature is implemented by **`BookmarksScreen`** in `src/screens/Bookmarks.tsx`【0†src/screens/Bookmarks.tsx#BookmarksScreen】. This screen renders the inner component `BookmarksInner`.
+**`openai/gpt-oss-120b`** -- confidence: Low (0 of 3 retrieved entities scored >=0.6 relevance; top match scored 0.44.) -- entity hit: yes -- latency: 116.02s
+> The **Bookmarks feature** is implemented by the **`BookmarksScreen`** component defined in **`src/screens/Bookmarks.tsx`** (lines 44‑67)【src/screens/Bookmarks.tsx#BookmarksScreen】.
 
-**Data‑fetching dependency:** `BookmarksInner` fetches the bookmarked posts by calling the hook **`useBookmarksQuery`** (defined in `src/state/queries/bookmarks/useBookmarksQuery.ts`)【1†src/screens/Bookmarks.tsx#BookmarksInner】【2†src/state/queries/bookmarks/useBookmarksQuery.ts#useBookmarksQuery】. This hook uses the app’s agent and an infinite query to retrieve the bookmark data.
+From the graph data for this screen we can see the entities it directly depends on:
+
+| Dependency type | Entity | Where it appears |
+|-----------------|--------|------------------|
+| Renders | `Layout` component | lines 54‑58【src/screens/Bookmarks.tsx#BookmarksScreen】 |
+| Renders | `Trans` (i18n macro) | line 59【src/screens/Bookmarks.tsx#BookmarksScreen】 |
+| Renders | `BookmarksInner` (inner list component) | line 64【src/screens/Bookmarks.tsx#BookmarksScreen】 |
+| Calls | `useAnalytics` hook | line 45【src/screens/Bookmarks.tsx#BookmarksScreen】 |
+| Calls | `useFocusEffect` (React‑Navigation) | line 47【src/screens/Bookmarks.tsx#BookmarksScreen】 |
+| Calls | `useCallback` (React) | line 48【src/screens/Bookmarks.tsx#BookmarksScreen】 |
+
+No “depends_on” edge for a data‑fetching hook (e.g., a `useBookmarksQuery` or similar) is present in the retrieved relationships, so the screen does **not explicitly depend on a specific hook for fetching bookmark data** according to the current graph evidence. Its data‑fetching logic, if any, would be encapsulated inside the rendered `BookmarksInner` component or handled elsewhere.
 
 ---
 
@@ -88,17 +98,17 @@ _Expected: BookmarksScreen in src/screens/Bookmarks.tsx, which depends on useBoo
 
 _Expected: Several call sites, including useRequireAuth (same file), useMigrateMutes (state/cache/thread-mutes.tsx), useFeedTuners (state/preferences/feed-tuners.tsx), and usePinnedPostMutation (state/queries/pinned-post.ts)._
 
-**`openai/gpt-oss-120b`** -- confidence: Low (0 of 4 retrieved entities scored >=0.6 relevance; top match scored 0.38.) -- entity hit: yes -- latency: 74.06s
-> `useSession` is called directly by four other hooks in the codebase:
+**`openai/gpt-oss-120b`** -- confidence: Low (No semantically-scored evidence was retrieved for this answer.) -- entity hit: yes -- latency: 76.25s
+> The only hooks that invoke **`useSession`** directly are:
 
-| Direct caller | File / line range |
-|---------------|-------------------|
-| `useMigrateMutes` – a hook that migrates thread‑mute data | `src/state/cache/thread-mutes.tsx#useMigrateMutes` (lines 58‑104)【3†L1-L4】 |
-| `useFeedTuners` – a hook that manages feed‑tuning preferences | `src/state/preferences/feed-tuners.tsx#useFeedTuners` (lines 9‑52)【3†L2-L4】 |
-| `usePinnedPostMutation` – a hook that provides a mutation for pinning posts | `src/state/queries/pinned‑post.ts#usePinnedPostMutation` (lines 12‑87)【3†L3-L4】 |
-| `useRequireAuth` – a hook that enforces authentication before rendering | `src/state/session/index.tsx#useRequireAuth` (lines 438‑454)【3†L4-L5】 |
+| Caller | File | Lines where it calls `useSession` |
+|--------|------|-----------------------------------|
+| `useMigrateMutes` | `src/state/cache/thread-mutes.tsx` | line 60 |
+| `useFeedTuners` | `src/state/preferences/feed-tuners.tsx` | line 12 |
+| `usePinnedPostMutation` | `src/state/queries/pinned‑post.ts` | line 14 |
+| `useRequireAuth` | `src/state/session/index.tsx` | line 439 |
 
-If the behavior of `useSession` were changed, any of these four hooks would be affected because they invoke `useSession` directly.
+These four hooks depend on `useSession`; any change in `useSession`’s behavior could affect them. (Evidence from the graph’s incoming “calls” edges for `src/state/session/index.tsx#useSession`.)
 
 ---
 
@@ -106,10 +116,8 @@ If the behavior of `useSession` were changed, any of these four hooks would be a
 
 _Expected: src/screens/Hashtag.tsx#HashtagScreen._
 
-**`openai/gpt-oss-120b`** -- confidence: Low (No semantically-scored evidence was retrieved for this answer.) -- entity hit: yes -- latency: 27.66s
-> `HashtagScreen` is defined in **src/screens/Hashtag.tsx**, spanning lines 42‑154.  
-
-File and location: `src/screens/Hashtag.tsx#HashtagScreen` (lines 42‑154).
+**`openai/gpt-oss-120b`** -- confidence: Low (No semantically-scored evidence was retrieved for this answer.) -- entity hit: yes -- latency: 25.06s
+> `HashtagScreen` is defined in **src/screens/Hashtag.tsx**, spanning lines **42‑154** of that file. 【src/screens/Hashtag.tsx:42-154】
 
 ---
 
@@ -117,13 +125,15 @@ File and location: `src/screens/Hashtag.tsx#HashtagScreen` (lines 42‑154).
 
 _Expected: Two: InnerApp and App._
 
-**`openai/gpt-oss-120b`** -- confidence: Medium (0 of 4 retrieved entities scored >=0.6 relevance; top match scored 0.59.) -- entity hit: yes -- latency: 63.75s
-> `src/App.tsx` defines two top‑level components:
+**`openai/gpt-oss-120b`** -- confidence: Low (No semantically-scored evidence was retrieved for this answer.) -- entity hit: yes -- latency: 50.12s
+> The file **src/App.tsx** defines two top‑level components:
 
-* **InnerApp** – a component defined from line 109 to 213 in the file【src/App.tsx#InnerApp:109-213】  
-* **App** – the main component defined from line 215 to 268 in the file【src/App.tsx#App:215-268】
+| Entity | Type | Location |
+|--------|------|----------|
+| `InnerApp` | Component | `src/App.tsx:109‑213` |
+| `App` | Component | `src/App.tsx:215‑268` |
 
-These are the only top‑level entities that the file declares.
+These are the only entities listed under a **defines** relationship for `src/App.tsx`.
 
 ---
 
@@ -131,8 +141,14 @@ These are the only top‑level entities that the file declares.
 
 _Expected: Deactivated, in src/screens/Deactivated.tsx._
 
-**`openai/gpt-oss-120b`** -- confidence: Medium (0 of 7 retrieved entities scored >=0.6 relevance; top match scored 0.56.) -- entity hit: yes -- latency: 89.58s
-> The **`Deactivated`** screen (implemented in `src/screens/Deactivated.tsx`) is the component that handles the deactivated‑account state【src/screens/Deactivated.tsx#Deactivated:31-210】.
+**`openai/gpt-oss-120b`** -- confidence: Medium (1 of 3 retrieved entities scored >=0.6 relevance; top match scored 0.60.) -- entity hit: yes -- latency: 35.99s
+> The **`Deactivated` screen** is responsible for handling the deactivated‑account state.
+
+- **File:** `src/screens/Deactivated.tsx`  
+- **Entity:** `Deactivated` (a Screen)  
+- **Location in file:** lines 31‑210  
+
+This screen displays the UI shown when a user’s account is deactivated【src/screens/Deactivated.tsx:31-210】.
 
 ---
 
@@ -140,8 +156,10 @@ _Expected: Deactivated, in src/screens/Deactivated.tsx._
 
 _Expected: FindContactsFlowScreen, in src/screens/FindContactsFlowScreen.tsx._
 
-**`openai/gpt-oss-120b`** -- confidence: Low (0 of 7 retrieved entities scored >=0.6 relevance; top match scored 0.50.) -- entity hit: no -- latency: 69.94s
-> The **FindContactsSettingsScreen** implements the find‑contacts flow. It is defined in `src/screens/Settings/FindContactsSettings.tsx` (lines 59‑112) and renders the onboarding intro, sync status, and related UI for the find‑contacts feature【src/screens/Settings/FindContactsSettings.tsx#FindContactsSettingsScreen】.
+**`openai/gpt-oss-120b`** -- confidence: Medium (0 of 3 retrieved entities scored >=0.6 relevance; top match scored 0.53.) -- entity hit: yes -- latency: 40.24s
+> The **FindContactsFlowScreen** component is the screen that hosts the Find‑Contacts flow. It renders the `FindContactsFlow` component and manages its state.
+
+**Source**: `src/screens/FindContactsFlowScreen.tsx` (lines 20‑69) – the file defines `FindContactsFlowScreen` and shows it rendering `FindContactsFlow` as part of the screen.【src/screens/FindContactsFlowScreen.tsx:20-69】
 
 ---
 
@@ -149,7 +167,20 @@ _Expected: FindContactsFlowScreen, in src/screens/FindContactsFlowScreen.tsx._
 
 _Expected: It depends on view/com/post/Post for rendering and usePostViewTracking / useInitialNumToRender hooks for view tracking and list rendering behavior._
 
-**`openai/gpt-oss-120b`** -- confidence: None (None) -- entity hit: no -- latency: Nones
-> ERROR: Error code: 400 - {'error': {'message': 'Tool choice is none, but model called a tool', 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{"name": "search_code", "arguments": {"entity_type": "Screen", "n_results": 5, "path": "src/screens/Bookmarks.tsx", "query": "function BookmarkItem"}}'}}
+**`openai/gpt-oss-120b`** -- confidence: Medium (0 of 6 retrieved entities scored >=0.6 relevance; top match scored 0.53.) -- entity hit: no -- latency: 69.76s
+> `src/screens/Bookmarks.tsx` (the **BookmarksInner** component) renders the list of bookmarked posts with the generic **List** component and tracks when a post is seen with the custom hook **usePostViewTracking**.
+
+* It **renders** the `List` component (which is responsible for rendering each item in the list) – see the “renders List” edge from `BookmarksInner`【2†L0-L2】.  
+* It **calls** the hook `usePostViewTracking` to log view‑analytics for each post – see the “calls usePostViewTracking” edge from `BookmarksInner`【2†L4-L6】.  
+
+The `List` component ultimately renders the individual post UI using the `Post` component defined in `src/view/com/post/Post.tsx`【4†L0-L2】.  
+
+So, the screen depends on:
+
+1. **`List` (src/view/com/util/List)** – to render each bookmarked post in the list.  
+2. **`Post` (src/view/com/post/Post.tsx)** – the component that actually displays a single post.  
+3. **`usePostViewTracking` (src/lib/hooks/usePostViewTracking.ts)** – to record view events for each post.  
+
+These three pieces together enable the Bookmarks screen to show individual posts and track their views.
 
 ---
