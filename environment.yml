@@ -1,0 +1,24 @@
+name: codeiq
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - nodejs
+  - pandas
+  - make
+  - numpy
+  - networkx
+  - jupyterlab
+  - pytest
+  - black
+  - flake8
+  - pip
+  - pip:
+      - python-dotenv
+      - langchain
+      - langchain-openai
+      - chromadb
+      - langchain-core
+      - langchain-groq
+      - shiny
+      - markdown-it-py

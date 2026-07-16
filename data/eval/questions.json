@@ -1,0 +1,69 @@
+[
+  {
+    "id": "q1",
+    "question": "Which hook manages the app's authenticated session state, and where is it defined?",
+    "expected_answer": "useSession, defined in src/state/session/index.tsx (part of the session Provider component).",
+    "expected_entities": ["src/state/session/index.tsx#useSession", "src/state/session/index.tsx#Provider"]
+  },
+  {
+    "id": "q2",
+    "question": "There seem to be two versions of a useSessionId hook. Where are they, and why might there be two?",
+    "expected_answer": "src/analytics/identifiers/session.ts#useSessionId and src/analytics/identifiers/session.web.ts#useSessionId -- a native/native-default implementation and a .web.ts platform-specific override, a common React Native pattern for web-only behavior.",
+    "expected_entities": [
+      "src/analytics/identifiers/session.ts#useSessionId",
+      "src/analytics/identifiers/session.web.ts#useSessionId"
+    ]
+  },
+  {
+    "id": "q3",
+    "question": "What does the InnerApp component in src/App.tsx render at the top level of the app?",
+    "expected_answer": "Several top-level providers/wrappers, including an Alf provider, a ThemeProvider, a ContextMenuProvider, a Splash screen, and a VideoVolumeProvider.",
+    "expected_entities": ["src/App.tsx#InnerApp"]
+  },
+  {
+    "id": "q4",
+    "question": "Which screen implements the Bookmarks feature, and what does it depend on for fetching bookmark data?",
+    "expected_answer": "BookmarksScreen in src/screens/Bookmarks.tsx, which depends on useBookmarksQuery and useBookmarkMutation from state/queries/bookmarks.",
+    "expected_entities": ["src/screens/Bookmarks.tsx#BookmarksScreen", "src/screens/Bookmarks.tsx"]
+  },
+  {
+    "id": "q5",
+    "question": "What breaks if useSession changes its behavior -- who calls it directly?",
+    "expected_answer": "Several call sites, including useRequireAuth (same file), useMigrateMutes (state/cache/thread-mutes.tsx), useFeedTuners (state/preferences/feed-tuners.tsx), and usePinnedPostMutation (state/queries/pinned-post.ts).",
+    "expected_entities": [
+      "src/state/session/index.tsx#useSession",
+      "src/state/session/index.tsx#useRequireAuth",
+      "src/state/cache/thread-mutes.tsx#useMigrateMutes"
+    ]
+  },
+  {
+    "id": "q6",
+    "question": "Where is HashtagScreen defined?",
+    "expected_answer": "src/screens/Hashtag.tsx#HashtagScreen.",
+    "expected_entities": ["src/screens/Hashtag.tsx#HashtagScreen"]
+  },
+  {
+    "id": "q7",
+    "question": "What top-level entities does src/App.tsx define?",
+    "expected_answer": "Two: InnerApp and App.",
+    "expected_entities": ["src/App.tsx#InnerApp", "src/App.tsx#App"]
+  },
+  {
+    "id": "q8",
+    "question": "Which screen handles the deactivated-account state?",
+    "expected_answer": "Deactivated, in src/screens/Deactivated.tsx.",
+    "expected_entities": ["src/screens/Deactivated.tsx#Deactivated"]
+  },
+  {
+    "id": "q9",
+    "question": "Which screen handles the find-contacts flow?",
+    "expected_answer": "FindContactsFlowScreen, in src/screens/FindContactsFlowScreen.tsx.",
+    "expected_entities": ["src/screens/FindContactsFlowScreen.tsx#FindContactsFlowScreen"]
+  },
+  {
+    "id": "q10",
+    "question": "What does src/screens/Bookmarks.tsx depend on for rendering individual posts and tracking views?",
+    "expected_answer": "It depends on view/com/post/Post for rendering and usePostViewTracking / useInitialNumToRender hooks for view tracking and list rendering behavior.",
+    "expected_entities": ["src/screens/Bookmarks.tsx"]
+  }
+]

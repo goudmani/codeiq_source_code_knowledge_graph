@@ -1,0 +1,1195 @@
+{
+  "runs": [
+    {
+      "question_id": "q11",
+      "question": "Which component provides the session state to the rest of the app, and where is it defined?",
+      "expected_answer": "The Provider component in src/state/session/index.tsx (lines 105-416) wraps the app in the session StateContext/ApiContext.",
+      "expected_entities": [
+        "src/state/session/index.tsx#Provider"
+      ],
+      "entity_hit": false,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The **`Provider` component defined in `src/state/shell/logged-out.tsx`** supplies the session state to the rest of the application. It creates the context that other parts of the app consume (e.g., `StateContext` and `ControlsContext`) and uses the `useSession` hook to obtain the current session information\u3010source:src/state/shell/logged-out.tsx#Provider:72-118\u3011.",
+      "confidence": "Medium",
+      "confidence_rationale": "1 of 6 retrieved entities scored >=0.6 relevance; top match scored 0.60.",
+      "sources": [
+        {
+          "id": "src/state/shell/logged-out.tsx#Provider",
+          "type": "Component",
+          "name": "Provider",
+          "file": "src/state/shell/logged-out.tsx",
+          "start_line": 72,
+          "end_line": 118,
+          "snippet": "export function Provider({children}: React.PropsWithChildren<{}>) {\n  const activeLanding = useActiveLanding()\n  const {hasSession} = useSession()\n\n  const requestedAccount = getRequestedAccountFromLanding(\n    activeLanding,\n    hasSession,\n  )\n\n  const [state, setState] = useState<State>({\n    showLoggedOut: Boolean(requestedAccount),\n    requestedAccountSwitchTo: requestedAccount,\n  })\n\n  const controls = useMemo<Controls>(\n    () => ({\n      setShowLoggedOut(show) {\n        setState(s => ({\n          ...s,\n          showLoggedOut: show,\n        }))\n      },\n      requestSwitchToAccount({requestedAccount}) {\n        setState(s => ({\n          ...s,\n          showLoggedOut: true,\n          requestedAccountSwitchTo: requestedAccount,\n        }))\n      },\n      clearRequestedAccount() {\n        setState(s => ({\n          ...s,\n          requestedAccountSwitchTo: undefined,\n        }))\n      },\n    }),\n    [setState],\n  )\n\n  return (\n    <StateContext.Provider value={state}>\n      <ControlsContext.Provider value={controls}>\n        {children}\n      </ControlsContext.Provider>\n    </StateContext.Provider>\n  )\n}",
+          "graph_context": "Renders: StateContext, ControlsContext\nCalls: useActiveLanding, useSession, useState (external), useMemo (external)",
+          "relevance": 0.6046
+        },
+        {
+          "id": "src/view/com/auth/LoggedOut.tsx#LoggedOut",
+          "type": "Component",
+          "name": "LoggedOut",
+          "file": "src/view/com/auth/LoggedOut.tsx",
+          "start_line": 53,
+          "end_line": 176,
+          "snippet": "export function LoggedOut({onDismiss}: {onDismiss?: () => void}) {\n  const {t: l} = useLingui()\n  const ax = useAnalytics()\n  const t = useTheme()\n  const insets = useSafeAreaInsets()\n  useEnableMinimalShellMode()\n  const {requestedAccountSwitchTo} = useLoggedOutView()\n  const initialScreenState = getInitialScreenState(requestedAccountSwitchTo)\n  const [screenState, setScreenState] =\n    useState<ScreenState>(initialScreenState)\n  const {clearRequestedAccount} = useLoggedOutViewControls()\n  const setActiveLanding = useSetActiveLanding()\n\n  const queryClient = useQueryClient()\n  const {accounts} = useSession()\n  const agent = useAgent()\n  useEffect(() => {\n    const actors = accounts.map(acc => acc.did)\n    if (actors.length === 0) return\n    void queryClient.prefetchQuery({\n      queryKey: profilesQueryKey(actors),\n      staleTime: STALE.MINUTES.FIVE,\n      queryFn: async () => {\n        const res = await agent.getProfiles({actors})\n        return res.data\n      },\n    })\n  }, [accounts, agent, queryClient])\n\n  const onPressDismiss = useCallback(() => {\n    if (onDismiss) {\n      onDismiss()\n    }\n    clearRequestedAccount()\n    // Clear landing context when user dismisses the modal\n    setActiveLanding(undefined)\n  }, [clearRequestedAccount, onDismiss, setActiveLanding])\n\n  /*\n   * Back from the login or create-account step. Where it returns depends on how\n   * the view was entered:\n   * - Entered on the splash or a landing screen (starter pack, group chat\n   *   invite): return there, i.e. the screen the user actually saw first.\n   * - Dropped directly onto login/create-account (e.g. tapping \"Create\n   *   account\" elsewhere in the app): there is no preceding screen in this\n   *   view, so dismiss it. Fall back to the splash when the view cannot be\n   *   dismissed (native with no session), since that is its natural root.\n   */\n  const onPressBack = useCallback(() => {\n    if (\n      initialScreenState === ScreenState.S_Login ||\n      initialScreenState === Screen",
+          "graph_context": "Renders: View (external), ErrorBoundary, Button, ButtonIcon, LandingScreen, JoinRequest, SplashScreen, Login (+1 more)\nCalls: useLingui (external), useAnalytics, useTheme, useSafeAreaInsets (external), useEnableMinimalShellMode, useLoggedOutView, useState (external), useLoggedOutViewControls (+6 more)",
+          "relevance": 0.5405
+        },
+        {
+          "id": "src/App.web.tsx#App",
+          "type": "Component",
+          "name": "App",
+          "file": "src/App.web.tsx",
+          "start_line": 194,
+          "end_line": 242,
+          "snippet": "function App() {\n  const [isReady, setIsReady] = useState(false)\n\n  useEffect(() => {\n    void Promise.all([initPersistedState(), Geo.resolve(), setupDeviceId]).then(\n      () => setIsReady(true),\n    )\n  }, [])\n\n  if (!isReady) {\n    return null\n  }\n\n  /*\n   * NOTE: only nothing here can depend on other data or session state, since\n   * that is set up in the InnerApp component above.\n   */\n  return (\n    <Geo.Provider>\n      <AppConfigProvider>\n        <A11yProvider>\n          <KeyboardControllerProvider>\n            <OnboardingProvider>\n              <AnalyticsContext>\n                <SessionProvider>\n                  <PrefsStateProvider>\n                    <I18nProvider>\n                      <ShellStateProvider>\n                        <DialogStateProvider>\n                          <LightboxStateProvider>\n                            <PortalProvider>\n                              <LandingProvider>\n                                <InnerApp />\n                              </LandingProvider>\n                            </PortalProvider>\n                          </LightboxStateProvider>\n                        </DialogStateProvider>\n                      </ShellStateProvider>\n                    </I18nProvider>\n                  </PrefsStateProvider>\n                </SessionProvider>\n              </AnalyticsContext>\n            </OnboardingProvider>\n          </KeyboardControllerProvider>\n        </A11yProvider>\n      </AppConfigProvider>\n    </Geo.Provider>\n  )\n}",
+          "graph_context": "Renders: Geo, AppConfigProvider, A11yProvider, KeyboardControllerProvider (external), OnboardingProvider, AnalyticsContext, SessionProvider, PrefsStateProvider (+7 more)\nCalls: useState (external), useEffect (external)",
+          "relevance": 0.5355
+        },
+        {
+          "id": "src/components/PolicyUpdateOverlay/context.tsx#Provider",
+          "type": "Component",
+          "name": "Provider",
+          "file": "src/components/PolicyUpdateOverlay/context.tsx",
+          "start_line": 45,
+          "end_line": 76,
+          "snippet": "export function Provider({children}: {children?: ReactNode}) {\n  const {hasSession} = useSession()\n  const [isReadyToShowOverlay, setIsReadyToShowOverlay] = useState(false)\n  const state = usePolicyUpdateState({\n    enabled:\n      // if the feature is enabled\n      POLICY_UPDATE_IS_ENABLED &&\n      // once shell has rendered\n      isReadyToShowOverlay &&\n      // only once logged in\n      hasSession &&\n      // only enabled in non-test environments\n      ENV !== 'e2e',\n  })\n\n  const ctx = useMemo(\n    () => ({\n      state,\n      setIsReadyToShowOverlay() {\n        if (isReadyToShowOverlay) return\n        setIsReadyToShowOverlay(true)\n      },\n    }),\n    [state, isReadyToShowOverlay, setIsReadyToShowOverlay],\n  )\n\n  return (\n    <PortalProvider>\n      <Context.Provider value={ctx}>{children}</Context.Provider>\n    </PortalProvider>\n  )\n}",
+          "graph_context": "Renders: PortalProvider, Context\nCalls: useSession, useState (external), usePolicyUpdateState, useMemo (external)",
+          "relevance": 0.3893
+        },
+        {
+          "id": "src/App.tsx#App",
+          "type": "Component",
+          "name": "App",
+          "file": "src/App.tsx",
+          "start_line": 215,
+          "end_line": 268,
+          "snippet": "function App() {\n  const [isReady, setIsReady] = useState(false)\n\n  useEffect(() => {\n    void Promise.all([initPersistedState(), Geo.resolve(), setupDeviceId]).then(\n      () => setIsReady(true),\n    )\n  }, [])\n\n  if (!isReady) {\n    return null\n  }\n\n  /*\n   * NOTE: only nothing here can depend on other data or session state, since\n   * that is set up in the InnerApp component above.\n   */\n  return (\n    <Geo.Provider>\n      <AppConfigProvider>\n        <A11yProvider>\n          <KeyboardControllerProvider preload={false}>\n            <OnboardingProvider>\n              <AnalyticsContext>\n                <SessionProvider>\n                  <PrefsStateProvider>\n                    <I18nProvider>\n                      <ShellStateProvider>\n                        <DialogStateProvider>\n                          <LightboxStateProvider>\n                            <PortalProvider>\n                              <BottomSheetProvider>\n                                <LandingProvider>\n                                  <SafeAreaProvider\n                                    initialMetrics={initialWindowMetrics}>\n                                    <InnerApp />\n                                  </SafeAreaProvider>\n                                </LandingProvider>\n                              </BottomSheetProvider>\n                            </PortalProvider>\n                          </LightboxStateProvider>\n                        </DialogStateProvider>\n                      </ShellStateProvider>\n                    </I18nProvider>\n                  </PrefsStateProvider>\n                </SessionProvider>\n              </AnalyticsContext>\n            </OnboardingProvider>\n          </KeyboardControllerProvider>\n        </A11yProvider>\n      </AppConfigProvider>\n    </Geo.Provider>\n  )\n}",
+          "graph_context": "Renders: Geo, AppConfigProvider, A11yProvider, KeyboardControllerProvider (external), OnboardingProvider, AnalyticsContext, SessionProvider, PrefsStateProvider (+9 more)\nCalls: useState (external), useEffect (external)",
+          "relevance": 0.3866
+        },
+        {
+          "id": "src/analytics/index.tsx#AnalyticsContext",
+          "type": "Component",
+          "name": "AnalyticsContext",
+          "file": "src/analytics/index.tsx",
+          "start_line": 127,
+          "end_line": 171,
+          "snippet": "export function AnalyticsContext({\n  children,\n  metadata,\n}: {\n  children: React.ReactNode\n  metadata?: MergeableMetadata\n}) {\n  if (metadata) {\n    if (!('__meta' in metadata)) {\n      throw new Error(\n        'Use the useMeta() helper when passing metadata to AnalyticsContext',\n      )\n    }\n  }\n  const sessionId = useSessionId()\n  const geolocation = useGeolocationServiceResponse()\n  const parentContext = useContext(Context)\n  const childContext = useMemo(() => {\n    const combinedMetadata = {\n      ...parentContext.metadata,\n      ...metadata,\n      base: {\n        ...parentContext.metadata.base,\n        sessionId,\n      },\n      geolocation,\n    }\n    const context: AnalyticsBaseContextType = {\n      ...parentContext,\n      logger: createLogger(\n        Logger.Context.Default,\n        getMetadataForLogger(combinedMetadata),\n      ),\n      metadata: combinedMetadata,\n      metric: (event, payload, extraMetadata) => {\n        parentContext.metric(event, payload, {\n          ...combinedMetadata,\n          ...extraMetadata,\n        })\n      },\n    }\n    return context\n  }, [sessionId, geolocation, parentContext, metadata])\n  return <Context.Provider value={childContext}>{children}</Context.Provider>\n}",
+          "graph_context": "Renders: Context\nCalls: useSessionId, useGeolocationServiceResponse, useContext (external), useMemo (external)",
+          "relevance": 0.3564
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 52.53,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 5,
+            "query": "session provider component provides session state to the rest of the app"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 10,
+            "query": "SessionContext Provider"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 10,
+            "query": "SessionProvider"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 10,
+            "query": "SessionContext"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 10,
+            "query": "SessionProvider"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q12",
+      "question": "There appear to be two different useTheme hooks in the codebase. Where is each defined?",
+      "expected_answer": "src/alf/index.tsx#useTheme (the alf design-system theme hook) and src/lib/ThemeContext.tsx#useTheme (the legacy ThemeContext hook).",
+      "expected_entities": [
+        "src/alf/index.tsx#useTheme",
+        "src/lib/ThemeContext.tsx#useTheme"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The codebase contains two distinct **`useTheme`** hooks:\n\n| Hook name | Definition location | Line range |\n|-----------|--------------------|------------|\n| **`useTheme`** (the simple context hook) | `src/lib/ThemeContext.tsx` | line\u202f92\u202f\u2013\u202f92\u3010src/lib/ThemeContext.tsx:92-92\u3011 |\n| **`useTheme`** (the Alf\u2011specific hook that returns a theme object from the Alf store) | `src/alf/index.tsx` | line\u202f140\u202f\u2013\u202f145\u3010src/alf/index.tsx:140-145\u3011 |\n\nThus, one `useTheme` is defined in **`ThemeContext.tsx`** as a thin wrapper around `useContext(ThemeContext)`, while the other is defined in **`alf/index.tsx`** and derives the theme from the Alf state via `useAlf` and `useMemo`.",
+      "confidence": "Low",
+      "confidence_rationale": "0 of 3 retrieved entities scored >=0.6 relevance; top match scored 0.34.",
+      "sources": [
+        {
+          "id": "src/lib/ThemeContext.tsx#useTheme",
+          "type": "Hook",
+          "name": "useTheme",
+          "file": "src/lib/ThemeContext.tsx",
+          "start_line": 92,
+          "end_line": 92,
+          "snippet": "export const useTheme = () => useContext(ThemeContext)",
+          "graph_context": "Calls: useContext (external)\nCalled by: usePalette",
+          "relevance": 0.3369
+        },
+        {
+          "id": "src/alf/index.tsx#useTheme",
+          "type": "Hook",
+          "name": "useTheme",
+          "file": "src/alf/index.tsx",
+          "start_line": 140,
+          "end_line": 145,
+          "snippet": "export function useTheme(theme?: ThemeName) {\n  const alf = useAlf()\n  return useMemo(() => {\n    return theme ? alf.themes[theme] : alf.theme\n  }, [theme, alf])\n}",
+          "graph_context": "Calls: useAlf, useMemo (external)",
+          "relevance": 0.2988
+        },
+        {
+          "id": "src/alf/util/useColorModeTheme.ts#useThemeName",
+          "type": "Hook",
+          "name": "useThemeName",
+          "file": "src/alf/util/useColorModeTheme.ts",
+          "start_line": 19,
+          "end_line": 24,
+          "snippet": "export function useThemeName(): ThemeName {\n  const colorScheme = useColorScheme()\n  const {colorMode, darkTheme} = useThemePrefs()\n\n  return getThemeName(colorScheme, colorMode, darkTheme)\n}",
+          "graph_context": "Calls: useColorScheme (external), useThemePrefs\nCalled by: useColorModeTheme",
+          "relevance": 0.2826
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 27.66,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 10,
+            "query": "useTheme"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q13",
+      "question": "What does the TabsNavigator component in src/Navigation.tsx render?",
+      "expected_answer": "It renders the BottomBar (from view/shell/bottom-bar/BottomBar) and Tab entries defined in the same file.",
+      "expected_entities": [
+        "src/Navigation.tsx#TabsNavigator"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The **TabsNavigator** component (defined in `src/Navigation.tsx` lines\u202f582\u2011617) renders two child components:\n\n* **BottomBar** \u2013 the app\u2019s bottom navigation bar.  \n* **Tab** \u2013 the tab navigator component that provides the tab\u2011based navigation structure.\n\nThese render relationships are shown in the graph data for `TabsNavigator` (`renders: BottomBar, Tab`).",
+      "confidence": "Medium",
+      "confidence_rationale": "0 of 4 retrieved entities scored >=0.6 relevance; top match scored 0.56.",
+      "sources": [
+        {
+          "id": "src/Navigation.tsx#TabsNavigator",
+          "type": "Component",
+          "name": "TabsNavigator",
+          "file": "src/Navigation.tsx",
+          "start_line": 582,
+          "end_line": 617,
+          "snippet": "function TabsNavigator({\n  layout,\n}: {\n  layout: React.ComponentProps<typeof Tab.Navigator>['layout']\n}) {\n  const tabBar = useCallback(\n    (props: JSX.IntrinsicAttributes & BottomTabBarProps) => (\n      <BottomBar {...props} />\n    ),\n    [],\n  )\n\n  return (\n    <Tab.Navigator\n      initialRouteName=\"HomeTab\"\n      backBehavior=\"initialRoute\"\n      screenOptions={{headerShown: false, lazy: true}}\n      tabBar={tabBar}\n      layout={layout}>\n      <Tab.Screen name=\"HomeTab\" getComponent={() => HomeTabNavigator} />\n      <Tab.Screen name=\"SearchTab\" getComponent={() => SearchTabNavigator} />\n      <Tab.Screen\n        name=\"MessagesTab\"\n        getComponent={() => MessagesTabNavigator}\n      />\n      <Tab.Screen\n        name=\"NotificationsTab\"\n        getComponent={() => NotificationsTabNavigator}\n      />\n      <Tab.Screen\n        name=\"MyProfileTab\"\n        getComponent={() => MyProfileTabNavigator}\n      />\n    </Tab.Navigator>\n  )\n}",
+          "graph_context": "Renders: BottomBar, Tab\nCalls: useCallback (external)",
+          "relevance": 0.5591
+        },
+        {
+          "id": "src/view/shell/createNativeStackNavigatorWithAuth.tsx#NativeStackNavigator",
+          "type": "Component",
+          "name": "NativeStackNavigator",
+          "file": "src/view/shell/createNativeStackNavigatorWithAuth.tsx",
+          "start_line": 54,
+          "end_line": 217,
+          "snippet": "function NativeStackNavigator({\n  id,\n  initialRouteName,\n  UNSTABLE_routeNamesChangeBehavior,\n  children,\n  layout,\n  screenListeners,\n  screenOptions,\n  screenLayout,\n  UNSTABLE_router,\n  ...rest\n}: NativeStackNavigatorProps) {\n  // --- this is copy and pasted from the original native stack navigator ---\n  const {state, describe, descriptors, navigation, NavigationContent} =\n    useNavigationBuilder<\n      StackNavigationState<ParamListBase>,\n      StackRouterOptions,\n      StackActionHelpers<ParamListBase>,\n      NativeStackNavigationOptionsWithAuth,\n      NativeStackNavigationEventMap\n    >(StackRouter, {\n      id,\n      initialRouteName,\n      UNSTABLE_routeNamesChangeBehavior,\n      children,\n      layout,\n      screenListeners,\n      screenOptions,\n      screenLayout,\n      UNSTABLE_router,\n    })\n\n  useEffect(\n    () =>\n      // @ts-expect-error: there may not be a tab navigator in parent\n      navigation?.addListener?.('tabPress', (e: any) => {\n        const isFocused = navigation.isFocused()\n\n        // Run the operation in the next frame so we're sure all listeners have been run\n        // This is necessary to know if preventDefault() has been called\n        requestAnimationFrame(() => {\n          if (\n            state.index > 0 &&\n            isFocused &&\n            !(e as EventArg<'tabPress', true>).defaultPrevented\n          ) {\n            // When user taps on already focused tab and we're inside the tab,\n            // reset the stack to replicate native behaviour\n            navigation.dispatch({\n              ...StackActions.popToTop(),\n              target: state.key,\n            })\n          }\n        })\n      }),\n    [navigation, state.index, state.key],\n  )\n\n  // --- our custom logic starts here ---\n  // Web LRU: tracks route keys in most-recently-focused order\n# ... truncated ...",
+          "graph_context": "Renders: LoggedOut, SignupQueued, Onboarding, View (external), NavigationContent, NativeStackView (external), BottomBarWeb, DesktopLeftNav (+2 more)\nCalls: useNavigationBuilder (external), useEffect (external), useRef (external), useSession, useOnboardingState, useLoggedOutView, useLoggedOutViewControls, useWebMediaQueries (+1 more)",
+          "relevance": 0.4722
+        },
+        {
+          "id": "src/Navigation.tsx#SearchTabNavigator",
+          "type": "Component",
+          "name": "SearchTabNavigator",
+          "file": "src/Navigation.tsx",
+          "start_line": 659,
+          "end_line": 669,
+          "snippet": "function SearchTabNavigator() {\n  const t = useTheme()\n  return (\n    <SearchTab.Navigator\n      screenOptions={screenOptions(t)}\n      initialRouteName=\"Search\">\n      <SearchTab.Screen name=\"Search\" getComponent={() => SearchScreen} />\n      {commonScreens(SearchTab as typeof Flat)}\n    </SearchTab.Navigator>\n  )\n}",
+          "graph_context": "Renders: SearchTab\nCalls: useTheme",
+          "relevance": 0.4493
+        },
+        {
+          "id": "src/view/com/pager/TabBar.tsx#TabBar",
+          "type": "Component",
+          "name": "TabBar",
+          "file": "src/view/com/pager/TabBar.tsx",
+          "start_line": 42,
+          "end_line": 376,
+          "snippet": "export function TabBar({\n  testID,\n  selectedPage,\n  items,\n  onSelect,\n  onPressSelected,\n  dragProgress,\n  dragState,\n  transparent,\n}: TabBarProps) {\n  const t = useTheme()\n  const scrollElRef = useAnimatedRef<ScrollView>()\n  const syncScrollState = useSharedValue<'synced' | 'unsynced' | 'needs-sync'>(\n    'synced',\n  )\n  const didInitialScroll = useSharedValue(false)\n  const contentSize = useSharedValue(0)\n  const containerSize = useSharedValue(0)\n  const scrollX = useSharedValue(0)\n  const layouts = useSharedValue<{x: number; width: number}[]>([])\n  const textLayouts = useSharedValue<{width: number}[]>([])\n  const itemsLength = items.length\n\n  const scrollToOffsetJS = useCallback(\n    (x: number) => {\n      scrollElRef.current?.scrollTo({\n        x,\n        y: 0,\n        animated: true,\n      })\n    },\n    [scrollElRef],\n  )\n\n  const indexToOffset = useCallback(\n    (index: number) => {\n      'worklet'\n      const layout = layouts.get()[index]\n      const availableSize = containerSize.get() - 2 * CONTENT_PADDING\n      if (!layout) {\n        // Should not happen, but fall back to equal sizes.\n        const offsetPerPage = contentSize.get() - availableSize\n        return (index / (itemsLength - 1)) * offsetPerPage\n      }\n      const freeSpace = availableSize - layout.width\n      const accumulatingOffset = interpolate(\n        index,\n        // Gradually shift every next item to the left so that the first item\n        // is positioned like \"left: 0\" but the last item is like \"right: 0\".\n        [0, itemsLength - 1],\n        [0, freeSpace],\n        'clamp',\n      )\n      return layout.x - accumulatingOffset\n    },\n    [itemsLength, contentSize, containerSize, layouts],\n  )\n\n  const progressToOffset = useCallback(\n    (progress: number) => {\n# ... truncated ...",
+          "graph_context": "Renders: View (external), BlockDrawerGesture, ScrollView (external), Animated (external), TabBarItem\nCalls: useTheme, useAnimatedRef (external), useSharedValue (external), useCallback (external), useAnimatedReaction (external), useAnimatedStyle (external)\nRendered by: HomeHeader, PagerTabBar, PagerTabBar",
+          "relevance": 0.508
+        },
+        {
+          "id": "view/shell/bottom-bar/BottomBar#BottomBar",
+          "type": "Unknown",
+          "name": "BottomBar",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        },
+        {
+          "id": "src/Navigation.tsx#Tab",
+          "type": "Unknown",
+          "name": "Tab",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "renders",
+          "direction": "out"
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 97.79,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 5,
+            "query": "TabsNavigator"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 10,
+            "query": "function TabsNavigator"
+          }
+        },
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Component",
+            "limit": 5,
+            "query": "TabsNavigator"
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "out",
+            "edge_type": "renders",
+            "entity_id": "src/Navigation.tsx#TabsNavigator"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 1,
+            "query": "src/Navigation.tsx#TabsNavigator"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q14",
+      "question": "Which tab navigator components does src/Navigation.tsx define?",
+      "expected_answer": "TabsNavigator plus per-tab navigators: HomeTabNavigator, SearchTabNavigator, NotificationsTabNavigator, MyProfileTabNavigator, MessagesTabNavigator, and a FlatNavigator.",
+      "expected_entities": [
+        "src/Navigation.tsx#TabsNavigator",
+        "src/Navigation.tsx#HomeTabNavigator",
+        "src/Navigation.tsx"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "`src/Navigation.tsx` defines a **SearchTabNavigator** component, which renders a `SearchTab.Navigator` (see `src/Navigation.tsx#SearchTabNavigator`, lines\u202f659\u2011669). No other tab\u2011navigator components are shown in the retrieved evidence.",
+      "confidence": "Medium",
+      "confidence_rationale": "2 of 8 retrieved entities scored >=0.6 relevance; top match scored 0.63.",
+      "sources": [
+        {
+          "id": "src/Navigation.tsx",
+          "type": "File",
+          "name": "Navigation.tsx",
+          "file": "src/Navigation.tsx",
+          "start_line": 1,
+          "end_line": 1117,
+          "snippet": "import {type JSX, useCallback, useRef} from 'react'\nimport * as Linking from 'expo-linking'\nimport * as Notifications from 'expo-notifications'\nimport {i18n, type MessageDescriptor} from '@lingui/core'\nimport {msg} from '@lingui/core/macro'\nimport {\n  type BottomTabBarProps,\n  createBottomTabNavigator,\n} from '@react-navigation/bottom-tabs'\nimport {\n  CommonActions,\n  createNavigationContainerRef,\n  DarkTheme,\n  DefaultTheme,\n  type LinkingOptions,\n  NavigationContainer,\n  StackActions,\n} from '@react-navigation/native'\n\nimport {timeout} from '#/lib/async/timeout'\nimport {useAccountSwitcher} from '#/lib/hooks/useAccountSwitcher'\nimport {useColorSchemeStyle} from '#/lib/hooks/useColorSchemeStyle'\nimport {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'\nimport {\n  type ChatNotificationPayload,\n  getNotificationPayload,\n  isChatNotificationPayload,\n  notificationToURL,\n  storePayloadForAccountSwitch,\n} from '#/lib/hooks/useNotificationHandler'\nimport {useWebScrollRestoration} from '#/lib/hooks/useWebScrollRestoration'\nimport {useCallOnce} from '#/lib/once'\nimport {buildStateObject, getCurrentRoute} from '#/lib/routes/helpers'\nimport {\n  type AllNavigatorParams,\n  type BottomTabNavigatorParams,\n  type FlatNavigatorParams,\n  type HomeTabNavigatorParams,\n  type MessagesTabNavigatorParams,\n  type MyProfileTabNavigatorParams,\n  type NotificationsTabNavigatorParams,\n  type RouteParams,\n  type SearchTabNavigatorParams,\n  type State,\n} from '#/lib/routes/types'\nimport {bskyTitle} from '#/lib/strings/headings'\nimport {CHAT_INVITE_CODE_REGEX} from '#/lib/strings/url-helpers'\nimport {useUnreadNotifications} from '#/state/queries/notifications/unread'\nimport {useSession} from '#/state/session'\nimport {useLoggedOutViewControls} from '#/state/shell/logged-out'\nimport {\n  shouldRequestEmailConfirmation,\n  snoozeEmailConfirmationPrompt,\n} from '#/state/shell/reminders'\nimport {useCloseAllActiveElements} from '#/state/util'\nimport {CommunityGuidelinesScreen} from '#/vi",
+          "graph_context": "Depends on: lib/async/timeout, lib/hooks/useAccountSwitcher, lib/hooks/useColorSchemeStyle, lib/hooks/useNonReactiveCallback, lib/hooks/useNotificationHandler, lib/hooks/useWebScrollRestoration, lib/once, lib/routes/helpers (+87 more)\nDefines: TabsNavigator, HomeTabNavigator, SearchTabNavigator, NotificationsTabNavigator, MyProfileTabNavigator, MessagesTabNavigator, FlatNavigator, RoutesContainer\nDepended on by: TestCtrls.e2e.tsx",
+          "relevance": 0.6167
+        },
+        {
+          "id": "src/view/shell/desktop/LeftNav.tsx",
+          "type": "File",
+          "name": "LeftNav.tsx",
+          "file": "src/view/shell/desktop/LeftNav.tsx",
+          "start_line": 1,
+          "end_line": 782,
+          "snippet": "import {useCallback, useMemo, useState} from 'react'\nimport {StyleSheet, View} from 'react-native'\nimport {type AppBskyActorDefs} from '@atproto/api'\nimport {plural} from '@lingui/core/macro'\nimport {Trans, useLingui} from '@lingui/react/macro'\nimport {useNavigation, useNavigationState} from '@react-navigation/native'\n\nimport {useAccountSwitcher} from '#/lib/hooks/useAccountSwitcher'\nimport {useOpenComposer} from '#/lib/hooks/useOpenComposer'\nimport {getCurrentRoute, isTab} from '#/lib/routes/helpers'\nimport {makeProfileLink} from '#/lib/routes/links'\nimport {\n  type CommonNavigatorParams,\n  type NavigationProp,\n} from '#/lib/routes/types'\nimport {sanitizeDisplayName} from '#/lib/strings/display-names'\nimport {isInvalidHandle, sanitizeHandle} from '#/lib/strings/handles'\nimport {emitSoftReset} from '#/state/events'\nimport {useFetchHandle} from '#/state/queries/handle'\nimport {useUnreadMessageCount} from '#/state/queries/messages/list-conversations'\nimport {useUnreadNotifications} from '#/state/queries/notifications/unread'\nimport {useProfilesQuery} from '#/state/queries/profile'\nimport {type SessionAccount, useSession, useSessionApi} from '#/state/session'\nimport {useLoggedOutViewControls} from '#/state/shell/logged-out'\nimport {useCloseAllActiveElements} from '#/state/util'\nimport {LoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'\nimport {PressableWithHover} from '#/view/com/util/PressableWithHover'\nimport {UserAvatar} from '#/view/com/util/UserAvatar'\nimport {NavSignupCard} from '#/view/shell/NavSignupCard'\nimport {\n  atoms as a,\n  tokens,\n  useBreakpoints,\n  useLayoutBreakpoints,\n  useTheme,\n  web,\n} from '#/alf'\nimport {Button, ButtonIcon, ButtonText} from '#/components/Button'\nimport {type DialogControlProps} from '#/components/Dialog'\nimport {ArrowBoxLeft_Stroke2_Corner0_Rounded as LeaveIcon} from '#/components/icons/ArrowBoxLeft'\nimport {\n  Bell_Filled_Corner0_Rounded as BellFilledIcon,\n  Bell_Stroke2_Corner0_Rounded as BellIcon,\n} from '#/compone",
+          "graph_context": "Depends on: lib/hooks/useAccountSwitcher, lib/hooks/useOpenComposer, lib/routes/helpers, lib/routes/links, lib/routes/types, lib/strings/display-names, lib/strings/handles, state/events (+38 more)\nDefines: ProfileCard, SwitchMenuItems, SwitcherMenuProfileLink, SwitchMenuItem, NavItem, ComposeBtn, DesktopLeftNav\nDepended on by: createNativeStackNavigatorWithAuth.tsx",
+          "relevance": 0.5558
+        },
+        {
+          "id": "src/view/com/home/HomeHeader.tsx",
+          "type": "File",
+          "name": "HomeHeader.tsx",
+          "file": "src/view/com/home/HomeHeader.tsx",
+          "start_line": 1,
+          "end_line": 69,
+          "snippet": "import {useCallback, useMemo} from 'react'\nimport {useNavigation} from '@react-navigation/native'\n\nimport {type NavigationProp} from '#/lib/routes/types'\nimport {type FeedSourceInfo} from '#/state/queries/feed'\nimport {useSession} from '#/state/session'\nimport {type RenderTabBarFnProps} from '#/view/com/pager/Pager'\nimport {TabBar} from '../pager/TabBar'\nimport {HomeHeaderLayout} from './HomeHeaderLayout'\n\nexport function HomeHeader(\n  props: RenderTabBarFnProps & {\n    testID?: string\n    onPressSelected: () => void\n    feeds: FeedSourceInfo[]\n  },\n) {\n  const {feeds, onSelect: onSelectProp} = props\n  const {hasSession} = useSession()\n  const navigation = useNavigation<NavigationProp>()\n\n  const hasPinnedCustom = useMemo<boolean>(() => {\n    if (!hasSession) return false\n    return feeds.some(tab => {\n      const isFollowing = tab.uri === 'following'\n      return !isFollowing\n    })\n  }, [feeds, hasSession])\n\n  const items = useMemo(() => {\n    const pinnedNames = feeds.map(f => f.displayName)\n    if (!hasPinnedCustom) {\n      return pinnedNames.concat('Feeds \u2728')\n    }\n    return pinnedNames\n  }, [hasPinnedCustom, feeds])\n\n  const onPressFeedsLink = useCallback(() => {\n    navigation.navigate('Feeds')\n  }, [navigation])\n\n  const onSelect = useCallback(\n    (index: number) => {\n      if (!hasPinnedCustom && index === items.length - 1) {\n        onPressFeedsLink()\n      } else if (onSelectProp) {\n        onSelectProp(index)\n      }\n    },\n    [items.length, onPressFeedsLink, onSelectProp, hasPinnedCustom],\n  )\n\n  return (\n    <HomeHeaderLayout tabBarAnchor={props.tabBarAnchor}>\n      <TabBar\n        key={items.join(',')}\n        onPressSelected={props.onPressSelected}\n        selectedPage={props.selectedPage}\n        onSelect={onSelect}\n        testID={props.testID}\n# ... truncated ...",
+          "graph_context": "Depends on: lib/routes/types, state/queries/feed, state/session, view/com/pager/Pager, TabBar.tsx, HomeHeaderLayout.tsx\nDefines: HomeHeader",
+          "relevance": 0.5474
+        },
+        {
+          "id": "src/lib/hooks/useNavigationTabState.ts",
+          "type": "File",
+          "name": "useNavigationTabState.ts",
+          "file": "src/lib/hooks/useNavigationTabState.ts",
+          "start_line": 1,
+          "end_line": 35,
+          "snippet": "import {useNavigationState} from '@react-navigation/native'\n\nimport {getTabState, TabState} from '#/lib/routes/helpers'\n\nexport function useNavigationTabState() {\n  return useNavigationState(state => {\n    const res = {\n      isAtHome: getTabState(state, 'Home') !== TabState.Outside,\n      isAtSearch: getTabState(state, 'Search') !== TabState.Outside,\n      // FeedsTab no longer exists, but this check works for `Feeds` screen as well\n      isAtFeeds: getTabState(state, 'Feeds') !== TabState.Outside,\n      isAtBookmarks: getTabState(state, 'Bookmarks') !== TabState.Outside,\n      isAtNotifications:\n        getTabState(state, 'Notifications') !== TabState.Outside,\n      isAtMyProfile: getTabState(state, 'MyProfile') !== TabState.Outside,\n      isAtMessages: getTabState(state, 'Messages') !== TabState.Outside,\n    }\n\n    if (\n      !res.isAtHome &&\n      !res.isAtSearch &&\n      !res.isAtFeeds &&\n      !res.isAtNotifications &&\n      !res.isAtMyProfile &&\n      !res.isAtMessages\n    ) {\n      // HACK for some reason useNavigationState will give us pre-hydration results\n      //      and not update after, so we force isAtHome if all came back false\n      //      -prf\n      res.isAtHome = true\n    }\n    return res\n  })\n}",
+          "graph_context": "Depends on: lib/routes/helpers\nDefines: useNavigationTabState",
+          "relevance": 0.6271
+        },
+        {
+          "id": "src/view/com/posts/FollowingEndOfFeed.tsx#FollowingEndOfFeed",
+          "type": "Component",
+          "name": "FollowingEndOfFeed",
+          "file": "src/view/com/posts/FollowingEndOfFeed.tsx",
+          "start_line": 15,
+          "end_line": 78,
+          "snippet": "export function FollowingEndOfFeed() {\n  const {t: l} = useLingui()\n  const pal = usePalette('default')\n  const navigation = useNavigation<NavigationProp>()\n\n  const onPressFindAccounts = useCallback(() => {\n    if (IS_WEB) {\n      navigation.navigate('Search', {})\n    } else {\n      navigation.navigate('SearchTab')\n      navigation.popToTop()\n    }\n  }, [navigation])\n\n  const onPressDiscoverFeeds = useCallback(() => {\n    navigation.navigate('Feeds')\n  }, [navigation])\n\n  return (\n    <View\n      style={[\n        styles.container,\n        pal.border,\n        {minHeight: Dimensions.get('window').height * 0.75},\n      ]}>\n      <View style={styles.inner}>\n        <Text type=\"xl-medium\" style={[s.textCenter, pal.text]}>\n          <Trans>\n            You've reached the end of your feed! Find some more accounts to\n            follow.\n          </Trans>\n        </Text>\n        <View style={[a.mt_xl, a.align_center]}>\n          <Button\n            label={l`Find accounts to follow`}\n            onPress={onPressFindAccounts}\n            color=\"secondary_inverted\"\n            size=\"large\">\n            <ButtonText>\n              <Trans>Find accounts to follow</Trans>\n            </ButtonText>\n            <ButtonIcon icon={ChevronRightIcon} />\n          </Button>\n        </View>\n\n        <Text type=\"xl-medium\" style={[s.textCenter, pal.text, s.mt20]}>\n          <Trans>You can also discover new Custom Feeds to follow.</Trans>\n        </Text>\n        <View style={[a.mt_md, a.align_center]}>\n          <Button\n            label={l`Discover new custom feeds`}\n            onPress={onPressDiscoverFeeds}\n            color=\"secondary_inverted\"\n            size=\"large\">\n            <ButtonText>\n              <Trans>Discover new custom feeds</Trans>\n            </ButtonText>\n            <ButtonIcon icon={ChevronRightIcon} />\n          </Button>\n        </View>\n# ... truncated ...",
+          "graph_context": "Renders: View (external), Text, Trans (external), Button, ButtonText, ButtonIcon\nCalls: useLingui (external), usePalette, useNavigation (external), useCallback (external)",
+          "relevance": 0.5441
+        },
+        {
+          "id": "src/view/com/posts/FollowingEmptyState.tsx#FollowingEmptyState",
+          "type": "Component",
+          "name": "FollowingEmptyState",
+          "file": "src/view/com/posts/FollowingEmptyState.tsx",
+          "start_line": 16,
+          "end_line": 77,
+          "snippet": "export function FollowingEmptyState() {\n  const {t: l} = useLingui()\n  const pal = usePalette('default')\n  const navigation = useNavigation<NavigationProp>()\n\n  const onPressFindAccounts = useCallback(() => {\n    if (IS_WEB) {\n      navigation.navigate('Search', {})\n    } else {\n      navigation.navigate('SearchTab')\n      navigation.popToTop()\n    }\n  }, [navigation])\n\n  const onPressDiscoverFeeds = useCallback(() => {\n    navigation.navigate('Feeds')\n  }, [navigation])\n\n  return (\n    <View style={styles.container}>\n      <View style={styles.inner}>\n        <View style={styles.iconContainer}>\n          <MagnifyingGlassIcon style={[styles.icon, pal.text]} size={62} />\n        </View>\n        <Text type=\"xl-medium\" style={[s.textCenter, pal.text]}>\n          <Trans>\n            Your following feed is empty! Follow more users to see what's\n            happening.\n          </Trans>\n        </Text>\n        <View style={[a.mt_xl, a.align_center]}>\n          <Button\n            label={l`Find accounts to follow`}\n            onPress={onPressFindAccounts}\n            color=\"secondary_inverted\"\n            size=\"large\">\n            <ButtonText>\n              <Trans>Find accounts to follow</Trans>\n            </ButtonText>\n            <ButtonIcon icon={ChevronRightIcon} />\n          </Button>\n        </View>\n\n        <Text type=\"xl-medium\" style={[s.textCenter, pal.text, s.mt20]}>\n          <Trans>You can also discover new Custom Feeds to follow.</Trans>\n        </Text>\n        <View style={[a.mt_md, a.align_center]}>\n          <Button\n            label={l`Discover new custom feeds`}\n            onPress={onPressDiscoverFeeds}\n            color=\"secondary_inverted\"\n            size=\"large\">\n            <ButtonText>\n              <Trans>Discover new custom feeds</Trans>\n            </ButtonText>\n            <ButtonIcon icon={ChevronRightIcon} />\n          </Button>\n        </View>\n      </View>\n    </View>\n# ... truncated ...",
+          "graph_context": "Renders: View (external), MagnifyingGlassIcon, Text, Trans (external), Button, ButtonText, ButtonIcon\nCalls: useLingui (external), usePalette, useNavigation (external), useCallback (external)",
+          "relevance": 0.5346
+        },
+        {
+          "id": "src/Navigation.tsx#SearchTabNavigator",
+          "type": "Component",
+          "name": "SearchTabNavigator",
+          "file": "src/Navigation.tsx",
+          "start_line": 659,
+          "end_line": 669,
+          "snippet": "function SearchTabNavigator() {\n  const t = useTheme()\n  return (\n    <SearchTab.Navigator\n      screenOptions={screenOptions(t)}\n      initialRouteName=\"Search\">\n      <SearchTab.Screen name=\"Search\" getComponent={() => SearchScreen} />\n      {commonScreens(SearchTab as typeof Flat)}\n    </SearchTab.Navigator>\n  )\n}",
+          "graph_context": "Renders: SearchTab\nCalls: useTheme",
+          "relevance": 0.5299
+        },
+        {
+          "id": "src/view/shell/desktop/LeftNav.tsx#SwitcherMenuProfileLink",
+          "type": "Component",
+          "name": "SwitcherMenuProfileLink",
+          "file": "src/view/shell/desktop/LeftNav.tsx",
+          "start_line": 292,
+          "end_line": 346,
+          "snippet": "function SwitcherMenuProfileLink() {\n  const {t: l} = useLingui()\n  const {currentAccount} = useSession()\n  const navigation = useNavigation()\n  const context = Menu.useMenuContext()\n  const profileLink = currentAccount ? makeProfileLink(currentAccount) : '/'\n  const [pathName] = useMemo(() => router.matchPath(profileLink), [profileLink])\n  const currentRouteInfo = useNavigationState(state => {\n    if (!state) {\n      return {name: 'Home'}\n    }\n    return getCurrentRoute(state)\n  })\n  const isCurrent = useMemo(() => {\n    if (currentRouteInfo.name === 'Profile') {\n      return (\n        isTab(currentRouteInfo.name, pathName) &&\n        (currentRouteInfo.params as CommonNavigatorParams['Profile']).name ===\n          currentAccount?.handle\n      )\n    } else {\n      return isTab(currentRouteInfo.name, pathName)\n    }\n  }, [currentAccount?.handle, currentRouteInfo, pathName])\n\n  const onProfilePress = useCallback(\n    (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {\n      if (e.ctrlKey || e.metaKey || e.altKey) {\n        return\n      }\n      e.preventDefault()\n      context.control.close()\n      if (isCurrent) {\n        emitSoftReset()\n      } else {\n        const [screen, params] = router.matchPath(profileLink)\n        // @ts-expect-error TODO: type matchPath well enough that it can be plugged into navigation.navigate directly\n        navigation.navigate(screen, params, {pop: true})\n      }\n    },\n    [navigation, profileLink, isCurrent, context],\n  )\n  return (\n    <Menu.Item\n      label={l`Go to profile`}\n      // @ts-expect-error The function signature differs on web -inb\n      onPress={onProfilePress}\n      href={profileLink}>\n      <Menu.ItemIcon icon={UserCircleIcon} />\n      <Menu.ItemText>\n        <Trans>Go to profile</Trans>\n      </Menu.ItemText>\n    </Menu.Item>\n  )\n}",
+          "graph_context": "Renders: Menu, Trans (external)\nCalls: useLingui (external), useSession, useNavigation (external), useMemo (external), useNavigationState (external), useCallback (external)\nRendered by: SwitchMenuItems",
+          "relevance": 0.5242
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 119.07,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "File",
+            "n_results": 5,
+            "query": "Navigation.tsx"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "File",
+            "n_results": 20,
+            "query": "src/Navigation.tsx tab navigator"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 20,
+            "query": "Navigation.tsx"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Component",
+            "n_results": 50,
+            "query": "Navigation.tsx#"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "File",
+            "n_results": 1,
+            "query": "src/Navigation.tsx"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q15",
+      "question": "What breaks if the useAgent hook changes its behavior -- who calls it directly?",
+      "expected_answer": "Direct callers include useFeedFeedback (state/feed-feedback.tsx), useMigrateMutes (state/cache/thread-mutes.tsx), and the app-passwords query/mutation hooks in state/queries/app-passwords.ts.",
+      "expected_entities": [
+        "src/state/session/index.tsx#useAgent",
+        "src/state/feed-feedback.tsx#useFeedFeedback",
+        "src/state/cache/thread-mutes.tsx#useMigrateMutes"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The **`useAgent`** hook is used directly by a handful of other hooks.\u202fIf its behavior changes, any of those callers will be affected because they rely on the `AtpAgent` instance returned by `useAgent`.\n\n**Direct callers of `useAgent`**\n\n| Caller (hook) | File & line range |\n|---------------|-------------------|\n| `useFeedFeedback` | `src/state/feed-feedback.tsx:62\u2011251` |\n| `useMigrateMutes` | `src/state/cache/thread-mutes.tsx:58\u2011104` |\n| `useAppPasswordsQuery` | `src/state/queries/app-passwords.ts:10\u201120` |\n| `useAppPasswordCreateMutation` | `src/state/queries/app-passwords.ts:22\u201144` |\n| `useAppPasswordDeleteMutation` | `src/state/queries/app-passwords.ts:46\u201161` |\n| `usePinnedPostMutation` | `src/state/queries/pinned\u2011post.ts:12\u201187` |\n\nThese six hooks invoke `useAgent` (as shown by the \u201cCalled by\u201d edges in the code graph). Any change to `useAgent`\u2014for example, altering the returned `AtpAgent` instance, throwing different errors, or modifying its side\u2011effects\u2014could break the functionality of these hooks and, consequently, any UI components or screens that depend on them.",
+      "confidence": "Low",
+      "confidence_rationale": "0 of 5 retrieved entities scored >=0.6 relevance; top match scored 0.36.",
+      "sources": [
+        {
+          "id": "src/state/session/index.tsx#useAgent",
+          "type": "Hook",
+          "name": "useAgent",
+          "file": "src/state/session/index.tsx",
+          "start_line": 456,
+          "end_line": 462,
+          "snippet": "export function useAgent(): AtpAgent {\n  const agent = useContext(AgentContext)\n  if (!agent) {\n    throw Error('useAgent() must be below <SessionProvider>.')\n  }\n  return agent\n}",
+          "graph_context": "Calls: useContext (external)\nCalled by: useFeedFeedback, useMigrateMutes, useAppPasswordsQuery, useAppPasswordCreateMutation, useAppPasswordDeleteMutation, usePinnedPostMutation",
+          "relevance": 0.3587
+        },
+        {
+          "id": "src/ageAssurance/data.tsx#useAgeAssuranceServerDataContext",
+          "type": "Hook",
+          "name": "useAgeAssuranceServerDataContext",
+          "file": "src/ageAssurance/data.tsx",
+          "start_line": 719,
+          "end_line": 721,
+          "snippet": "export function useAgeAssuranceServerDataContext() {\n  return useContext(AgeAssuranceServerDataContext)\n}",
+          "graph_context": "Calls: useContext (external)",
+          "relevance": 0.255
+        },
+        {
+          "id": "src/components/dms/ChatInvite/Context.tsx#useChatInvite",
+          "type": "Hook",
+          "name": "useChatInvite",
+          "file": "src/components/dms/ChatInvite/Context.tsx",
+          "start_line": 51,
+          "end_line": 57,
+          "snippet": "export function useChatInvite(): ChatInviteContextValue {\n  const ctx = useContext(ChatInviteContext)\n  if (!ctx) {\n    throw new Error('useChatInvite must be used within a ChatInvite.Root')\n  }\n  return ctx\n}",
+          "graph_context": "Calls: useContext (external)\nCalled by: Card, JoinButton, Unavailable",
+          "relevance": 0.2499
+        },
+        {
+          "id": "src/state/feed-feedback.tsx#useFeedFeedback",
+          "type": "Hook",
+          "name": "useFeedFeedback",
+          "file": "src/state/feed-feedback.tsx",
+          "start_line": 62,
+          "end_line": 251,
+          "relation": "calls",
+          "direction": "in"
+        },
+        {
+          "id": "src/state/cache/thread-mutes.tsx#useMigrateMutes",
+          "type": "Hook",
+          "name": "useMigrateMutes",
+          "file": "src/state/cache/thread-mutes.tsx",
+          "start_line": 58,
+          "end_line": 104,
+          "relation": "calls",
+          "direction": "in"
+        },
+        {
+          "id": "src/state/queries/app-passwords.ts#useAppPasswordsQuery",
+          "type": "Hook",
+          "name": "useAppPasswordsQuery",
+          "file": "src/state/queries/app-passwords.ts",
+          "start_line": 10,
+          "end_line": 20,
+          "relation": "calls",
+          "direction": "in"
+        },
+        {
+          "id": "src/state/queries/app-passwords.ts#useAppPasswordCreateMutation",
+          "type": "Hook",
+          "name": "useAppPasswordCreateMutation",
+          "file": "src/state/queries/app-passwords.ts",
+          "start_line": 22,
+          "end_line": 44,
+          "relation": "calls",
+          "direction": "in"
+        },
+        {
+          "id": "src/state/queries/app-passwords.ts#useAppPasswordDeleteMutation",
+          "type": "Hook",
+          "name": "useAppPasswordDeleteMutation",
+          "file": "src/state/queries/app-passwords.ts",
+          "start_line": 46,
+          "end_line": 61,
+          "relation": "calls",
+          "direction": "in"
+        },
+        {
+          "id": "src/state/queries/pinned-post.ts#usePinnedPostMutation",
+          "type": "Hook",
+          "name": "usePinnedPostMutation",
+          "file": "src/state/queries/pinned-post.ts",
+          "start_line": 12,
+          "end_line": 87,
+          "relation": "calls",
+          "direction": "in"
+        },
+        {
+          "id": "src/state/session/agent.ts",
+          "type": "File",
+          "name": "agent.ts",
+          "file": "src/state/session/agent.ts",
+          "start_line": 1,
+          "end_line": 418,
+          "snippet": "import {\n  Agent as BaseAgent,\n  type AppBskyActorProfile,\n  AtpAgent,\n  type AtprotoServiceType,\n  type AtpSessionData,\n  type AtpSessionEvent,\n  type Did,\n  type Un$Typed,\n} from '@atproto/api'\nimport {TID} from '@atproto/common-web'\n\nimport {networkRetry} from '#/lib/async/retry'\nimport {\n  BLUESKY_PROXY_HEADER,\n  BSKY_SERVICE,\n  DISCOVER_SAVED_FEED,\n  IS_PROD_SERVICE,\n  PUBLIC_BSKY_SERVICE,\n  TIMELINE_SAVED_FEED,\n} from '#/lib/constants'\nimport {logger} from '#/logger'\nimport {snoozeBirthdateUpdateAllowedForDid} from '#/state/birthdate'\nimport {restrictChatSettings} from '#/state/queries/messages/restrictChatSettings'\nimport {snoozeEmailConfirmationPrompt} from '#/state/shell/reminders'\nimport {\n  prefetchAgeAssuranceServerData,\n  setBirthdateForDid,\n  setCreatedAtForDid,\n} from '#/ageAssurance/data'\nimport {unsafeGetAndComputeAgeAssurance} from '#/ageAssurance/state'\nimport {features} from '#/analytics'\nimport {emitNetworkConfirmed, emitNetworkLost} from '../events'\nimport {addSessionErrorLog} from './logging'\nimport {\n  configureModerationForAccount,\n  configureModerationForGuest,\n} from './moderation'\nimport {type SessionAccount} from './types'\nimport {isSessionExpired, isSignupQueued} from './util'\n\nexport type ProxyHeaderValue = `${Did}#${AtprotoServiceType}`\n\nexport function createPublicAgent() {\n  configureModerationForGuest() // Side effect but only relevant for tests\n\n  const agent = new BskyAppAgent({service: PUBLIC_BSKY_SERVICE})\n  agent.configureProxy(BLUESKY_PROXY_HEADER.get())\n  return agent\n}\n\nexport async function createAgentAndResume(\n  storedAccount: SessionAccount,\n  onSessionChange: (\n    agent: AtpAgent,\n    did: string,\n    event: AtpSessionEvent,\n  ) => void,\n) {\n  const agent = new BskyAppAgent({service: storedAccount.service})\n# ... truncated ...",
+          "graph_context": "Depends on: lib/async/retry, lib/constants, logger, state/birthdate, state/queries/messages/restrictChatSettings, state/shell/reminders, ageAssurance/data, ageAssurance/state (+6 more)\nDepended on by: handle-availability.ts, service.ts, index.tsx, reducer.ts, util.ts",
+          "relevance": 0.3167
+        },
+        {
+          "id": "src/lib/hooks/useDedupe.ts",
+          "type": "File",
+          "name": "useDedupe.ts",
+          "file": "src/lib/hooks/useDedupe.ts",
+          "start_line": 1,
+          "end_line": 21,
+          "snippet": "import {useCallback, useRef} from 'react'\n\nexport function useDedupe(timeout = 250) {\n  const canDo = useRef(true)\n\n  return useCallback(\n    (cb: () => unknown) => {\n      if (canDo.current) {\n        canDo.current = false\n        setTimeout(() => {\n          canDo.current = true\n        }, timeout)\n        cb()\n        return true\n      }\n      return false\n    },\n    [timeout],\n  )\n}",
+          "graph_context": "Defines: useDedupe",
+          "relevance": 0.2951
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 78.05,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 10,
+            "query": "useAgent"
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "edge_type": "calls",
+            "entity_id": "src/state/session/index.tsx#useAgent",
+            "limit": 20
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": null,
+            "n_results": 20,
+            "query": "useAgent("
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "edge_type": "calls",
+            "entity_id": "src/state/session/index.tsx#useAgent",
+            "limit": 100
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q16",
+      "question": "Where is the MessagesScreen defined? Note the file name may not match the screen name.",
+      "expected_answer": "src/screens/Messages/ChatList.tsx#MessagesScreen (lines 82-107) -- the chat-list file defines the MessagesScreen.",
+      "expected_entities": [
+        "src/screens/Messages/ChatList.tsx#MessagesScreen"
+      ],
+      "entity_hit": false,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The model exhausted its tool-call budget before producing a final synthesis. The cited sources below were still retrieved and are valid evidence for this question.",
+      "confidence": "Medium",
+      "confidence_rationale": "5 of 5 retrieved entities scored >=0.6 relevance; top match scored 0.64.",
+      "sources": [
+        {
+          "id": "src/screens/Messages/components/MessageInputReply.tsx#MessageInputReplyInner",
+          "type": "Screen",
+          "name": "MessageInputReplyInner",
+          "file": "src/screens/Messages/components/MessageInputReply.tsx",
+          "start_line": 29,
+          "end_line": 91,
+          "snippet": "function MessageInputReplyInner({\n  replyTo,\n}: {\n  replyTo: ChatBskyConvoDefs.MessageView\n}) {\n  const t = useTheme()\n  const {t: l} = useLingui()\n  const convo = useConvoActive()\n  const {clearReply} = useMessageReplies()\n  const getReplyPreviewText = useReplyPreviewText()\n  const {text, subtle} = getReplyPreviewText(replyTo)\n\n  const onRemove = () => {\n    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)\n    clearReply()\n  }\n\n  const senderProfile = convo.relatedProfiles.get(replyTo.sender.did)\n  const displayName = senderProfile\n    ? createSanitizedDisplayName(senderProfile, false)\n    : null\n\n  return (\n    <View\n      style={[\n        a.flex_1,\n        a.flex_row,\n        a.gap_sm,\n        a.align_start,\n        t.atoms.border_contrast_high,\n        a.rounded_md,\n        a.border,\n        a.p_sm,\n        a.mt_sm,\n        a.mx_sm,\n        a.gap_2xs,\n      ]}>\n      <View style={[a.flex_1]}>\n        {displayName && (\n          <Text\n            style={[a.text_xs, t.atoms.text_contrast_high]}\n            emoji\n            numberOfLines={1}>\n            {displayName}\n          </Text>\n        )}\n        <Text\n          style={[a.text_sm, subtle && [a.italic, t.atoms.text_contrast_high]]}\n          emoji\n          numberOfLines={2}>\n          {text}\n        </Text>\n      </View>\n      <Button\n        label={l`Cancel reply`}\n        onPress={onRemove}\n        style={[a.px_2xs, {transform: [{translateX: 2}]}]}\n        hitSlop={HITSLOP_20}>\n        <XIcon size=\"xs\" style={t.atoms.text_contrast_high} />\n      </Button>\n# ... truncated ...",
+          "graph_context": "Renders: View (external), Text, Button, XIcon\nCalls: useTheme, useLingui (external), useConvoActive, useMessageReplies, useReplyPreviewText\nRendered by: MessageInputReply",
+          "relevance": 0.6357
+        },
+        {
+          "id": "src/screens/Messages/Conversation.tsx#MessagesConversationScreen",
+          "type": "Screen",
+          "name": "MessagesConversationScreen",
+          "file": "src/screens/Messages/Conversation.tsx",
+          "start_line": 58,
+          "end_line": 68,
+          "snippet": "export function MessagesConversationScreen(props: Props) {\n  const {t: l} = useLingui()\n  const aaCopy = useAgeAssuranceCopy()\n  return (\n    <AgeRestrictedScreen\n      screenTitle={l`Conversation`}\n      infoText={aaCopy.chatsInfoText}>\n      <MessagesConversationScreenInner {...props} />\n    </AgeRestrictedScreen>\n  )\n}",
+          "graph_context": "Renders: AgeRestrictedScreen, MessagesConversationScreenInner\nCalls: useLingui (external), useAgeAssuranceCopy",
+          "relevance": 0.6353
+        },
+        {
+          "id": "src/screens/Messages/components/MessageInputEmbed.tsx#MessageInputInviteEmbed",
+          "type": "Screen",
+          "name": "MessageInputInviteEmbed",
+          "file": "src/screens/Messages/components/MessageInputEmbed.tsx",
+          "start_line": 265,
+          "end_line": 303,
+          "snippet": "function MessageInputInviteEmbed({\n  code,\n  onRemove,\n}: {\n  code: string\n  onRemove: () => void\n}) {\n  const t = useTheme()\n  const {t: l} = useLingui()\n\n  return (\n    <ChatInvite.Root code={code} hasFixedHeight={false}>\n      <View\n        style={[\n          a.flex_1,\n          t.atoms.border_contrast_high,\n          a.rounded_md,\n          a.border,\n          a.p_sm,\n          a.mt_sm,\n          a.mx_sm,\n        ]}>\n        <MessageInputInviteEmbedBody />\n        <Button\n          label={l`Remove embed`}\n          onPress={onRemove}\n          style={[\n            a.absolute,\n            {top: 10, right: 8},\n            a.px_2xs,\n            {transform: [{translateY: -2}]},\n          ]}\n          hitSlop={HITSLOP_20}>\n          <XIcon size=\"xs\" style={t.atoms.text_contrast_high} />\n        </Button>\n      </View>\n    </ChatInvite.Root>\n  )\n}",
+          "graph_context": "Renders: ChatInvite, View (external), MessageInputInviteEmbedBody, Button, XIcon\nCalls: useTheme, useLingui (external)\nRendered by: MessageInputEmbed",
+          "relevance": 0.6071
+        },
+        {
+          "id": "src/screens/Messages/Inbox.tsx#MessagesInboxScreen",
+          "type": "Screen",
+          "name": "MessagesInboxScreen",
+          "file": "src/screens/Messages/Inbox.tsx",
+          "start_line": 57,
+          "end_line": 67,
+          "snippet": "export function MessagesInboxScreen(props: Props) {\n  const {t: l} = useLingui()\n  const aaCopy = useAgeAssuranceCopy()\n  return (\n    <AgeRestrictedScreen\n      screenTitle={l`Chat requests`}\n      infoText={aaCopy.chatsInfoText}>\n      <MessagesInboxScreenInner {...props} />\n    </AgeRestrictedScreen>\n  )\n}",
+          "graph_context": "Renders: AgeRestrictedScreen, MessagesInboxScreenInner\nCalls: useLingui (external), useAgeAssuranceCopy",
+          "relevance": 0.6088
+        },
+        {
+          "id": "src/screens/Messages/Settings.tsx#MessagesSettingsScreen",
+          "type": "Screen",
+          "name": "MessagesSettingsScreen",
+          "file": "src/screens/Messages/Settings.tsx",
+          "start_line": 42,
+          "end_line": 53,
+          "snippet": "export function MessagesSettingsScreen(props: Props) {\n  const {t: l} = useLingui()\n  const aaCopy = useAgeAssuranceCopy()\n\n  return (\n    <AgeRestrictedScreen\n      screenTitle={l`Chat settings`}\n      infoText={aaCopy.chatsInfoText}>\n      <MessagesSettingsScreenInner {...props} />\n    </AgeRestrictedScreen>\n  )\n}",
+          "graph_context": "Renders: AgeRestrictedScreen, MessagesSettingsScreenInner\nCalls: useLingui (external), useAgeAssuranceCopy",
+          "relevance": 0.6056
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 148.21,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 5,
+            "query": "MessagesScreen"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": null,
+            "n_results": 10,
+            "query": "MessagesScreen"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": null,
+            "n_results": 20,
+            "query": "\"MessagesScreen\""
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": null,
+            "n_results": 20,
+            "query": "MessagesScreen"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": null,
+            "n_results": 50,
+            "query": "MessagesScreen"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q17",
+      "question": "Which screen shows the user's notifications, and which hooks does it call for unread-notification state?",
+      "expected_answer": "NotificationsScreen in src/view/screens/Notifications.tsx, which calls useUnreadNotifications and useUnreadNotificationsApi from state/queries/notifications/unread.",
+      "expected_entities": [
+        "src/view/screens/Notifications.tsx#NotificationsScreen"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The notifications UI is rendered by **`NotificationsScreen`** (defined in\u202f`src/view/screens/Notifications.tsx`\u202flines\u202f49\u2011170)\u202f\u3010source:src/view/screens/Notifications.tsx:49-170\u3011.  \n\nFor the unread\u2011notification state the screen (and the components it composes) rely on the hooks defined in the notifications query module:\n\n* **`useUnreadNotifications`** \u2013 returns the unread\u2011notifications context\u202f\u3010source:src/state/queries/notifications/unread.tsx#useUnreadNotifications:220-222\u3011  \n* **`useUnreadNotificationsApi`** \u2013 returns the API helpers for checking unread notifications\u202f\u3010source:src/state/queries/notifications/unread.tsx#useUnreadNotificationsApi:224-226\u3011\n\nThese two hooks provide the current unread\u2011notification count and the function to sync/check it with the server, and are used by the notifications screen to display the user's notifications and indicate unread items.",
+      "confidence": "Medium",
+      "confidence_rationale": "3 of 12 retrieved entities scored >=0.6 relevance; top match scored 0.65.",
+      "sources": [
+        {
+          "id": "src/screens/Notifications/ActivityList.tsx#NotificationsActivityListScreen",
+          "type": "Screen",
+          "name": "NotificationsActivityListScreen",
+          "file": "src/screens/Notifications/ActivityList.tsx",
+          "start_line": 17,
+          "end_line": 50,
+          "snippet": "export function NotificationsActivityListScreen({\n  route: {\n    params: {posts},\n  },\n}: Props) {\n  const uris = decodeURIComponent(posts)\n  const {_} = useLingui()\n\n  return (\n    <Layout.Screen testID=\"NotificationsActivityListScreen\">\n      <Layout.Header.Outer>\n        <Layout.Header.BackButton />\n        <Layout.Header.Content>\n          <Layout.Header.TitleText>\n            <Trans>Notifications</Trans>\n          </Layout.Header.TitleText>\n        </Layout.Header.Content>\n        <Layout.Header.Slot />\n      </Layout.Header.Outer>\n      <PostFeed\n        feed={`posts|${uris}`}\n        disablePoll\n        renderEmptyState={() => (\n          <EmptyState\n            icon={EditIcon}\n            iconSize=\"2xl\"\n            message={_(msg`No posts here`)}\n          />\n        )}\n        renderEndOfFeed={() => <ListFooter />}\n      />\n    </Layout.Screen>\n  )\n}",
+          "graph_context": "Renders: Layout, Trans (external), PostFeed, EmptyState, ListFooter\nCalls: useLingui (external)",
+          "relevance": 0.5686
+        },
+        {
+          "id": "src/view/screens/Notifications.tsx#NotificationsScreen",
+          "type": "Screen",
+          "name": "NotificationsScreen",
+          "file": "src/view/screens/Notifications.tsx",
+          "start_line": 49,
+          "end_line": 170,
+          "snippet": "export function NotificationsScreen({}: Props) {\n  const {_} = useLingui()\n  const t = useTheme()\n  const {openComposer} = useOpenComposer()\n  const unreadNotifs = useUnreadNotifications()\n  const hasNew = !!unreadNotifs\n  const {checkUnread: checkUnreadAll} = useUnreadNotificationsApi()\n  const [isLoadingAll, setIsLoadingAll] = useState(false)\n  const [isLoadingMentions, setIsLoadingMentions] = useState(false)\n  const initialActiveTab = lastActiveTab\n  const [activeTab, setActiveTab] = useState(initialActiveTab)\n  const isLoading = activeTab === 0 ? isLoadingAll : isLoadingMentions\n\n  const onPageSelected = useCallback(\n    (index: number) => {\n      setActiveTab(index)\n      lastActiveTab = index\n    },\n    [setActiveTab],\n  )\n\n  const queryClient = useQueryClient()\n  const checkUnreadMentions = useCallback(\n    async ({invalidate}: {invalidate: boolean}) => {\n      if (invalidate) {\n        return truncateAndInvalidate(queryClient, NOTIFS_RQKEY('mentions'))\n      } else {\n        // Background polling is not implemented for the mentions tab.\n        // Just ignore it.\n      }\n    },\n    [queryClient],\n  )\n\n  const sections = useMemo(() => {\n    return [\n      {\n        title: _(msg`All`),\n        component: (\n          <NotificationsTab\n            filter=\"all\"\n            isActive={activeTab === 0}\n            isLoading={isLoadingAll}\n            hasNew={hasNew}\n            setIsLoadingLatest={setIsLoadingAll}\n            checkUnread={checkUnreadAll}\n          />\n        ),\n      },\n      {\n        title: _(msg`Mentions`),\n        component: (\n          <NotificationsTab\n            filter=\"mentions\"\n            isActive={activeTab === 1}\n            isLoading={isLoadingMentions}\n            hasNew={false /* We don't know for sure */}\n            setIsLoadingLatest={setIsLoadingMentions}\n            checkUnread={checkUnreadMentions}\n          />\n# ... truncated ...",
+          "graph_context": "Renders: NotificationsTab, Layout, Trans (external), Link, ButtonIcon, Pager, TabBar, View (external) (+2 more)\nCalls: useLingui (external), useTheme, useOpenComposer, useUnreadNotifications, useUnreadNotificationsApi, useState (external), useCallback (external), useQueryClient (external) (+1 more)",
+          "relevance": 0.5588
+        },
+        {
+          "id": "src/view/screens/Notifications.tsx#NotificationsTab",
+          "type": "Screen",
+          "name": "NotificationsTab",
+          "file": "src/view/screens/Notifications.tsx",
+          "start_line": 172,
+          "end_line": 277,
+          "snippet": "function NotificationsTab({\n  filter,\n  isActive,\n  isLoading,\n  hasNew,\n  checkUnread,\n  setIsLoadingLatest,\n}: {\n  filter: 'all' | 'mentions'\n  isActive: boolean\n  isLoading: boolean\n  hasNew: boolean\n  checkUnread: ({invalidate}: {invalidate: boolean}) => Promise<void>\n  setIsLoadingLatest: (v: boolean) => void\n}) {\n  const {_} = useLingui()\n  const [isScrolledDown, setIsScrolledDown] = useState(false)\n  const scrollElRef = useRef<ListMethods>(null)\n  const queryClient = useQueryClient()\n  const isScreenFocused = useIsFocused()\n  const isFocusedAndActive = isScreenFocused && isActive\n\n  // event handlers\n  // =\n  const scrollToTop = useCallback(() => {\n    scrollElRef.current?.scrollToOffset({animated: IS_NATIVE, offset: 0})\n  }, [scrollElRef])\n\n  const onPressLoadLatest = useCallback(() => {\n    scrollToTop()\n    if (hasNew) {\n      // render what we have now\n      truncateAndInvalidate(queryClient, NOTIFS_RQKEY(filter))\n    } else if (!isLoading) {\n      // check with the server\n      setIsLoadingLatest(true)\n      checkUnread({invalidate: true})\n        .catch(() => undefined)\n        .then(() => setIsLoadingLatest(false))\n    }\n  }, [\n    scrollToTop,\n    queryClient,\n    checkUnread,\n    hasNew,\n    isLoading,\n    setIsLoadingLatest,\n    filter,\n  ])\n\n  const onFocusCheckLatest = useNonReactiveCallback(() => {\n    // on focus, check for latest, but only invalidate if the user\n    // isnt scrolled down to avoid moving content underneath them\n    let currentIsScrolledDown\n    if (IS_NATIVE) {\n      currentIsScrolledDown = isScrolledDown\n    } else {\n      // On the web, this isn't always updated in time so\n      // we're just going to look it up synchronously.\n      currentIsScrolledDown = window.scrollY > 200\n# ... truncated ...",
+          "graph_context": "Renders: NotificationFeed, DisabledNotificationsWarning, LoadLatestBtn\nCalls: useLingui (external), useState (external), useRef (external), useQueryClient (external), useIsFocused (external), useCallback (external), useNonReactiveCallback, useFocusEffect (external) (+1 more)\nRendered by: NotificationsScreen",
+          "relevance": 0.5356
+        },
+        {
+          "id": "src/screens/PostThread/components/ThreadItemAnchor.tsx",
+          "type": "File",
+          "name": "ThreadItemAnchor.tsx",
+          "file": "src/screens/PostThread/components/ThreadItemAnchor.tsx",
+          "start_line": 1,
+          "end_line": 707,
+          "snippet": "import {memo, useMemo} from 'react'\nimport {Text as RNText, View} from 'react-native'\nimport {\n  AppBskyFeedDefs,\n  AppBskyFeedPost,\n  type AppBskyFeedThreadgate,\n  AtUri,\n  RichText as RichTextAPI,\n} from '@atproto/api'\nimport {Plural, Trans, useLingui} from '@lingui/react/macro'\n\nimport {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'\nimport {useOpenComposer} from '#/lib/hooks/useOpenComposer'\nimport {makeProfileLink} from '#/lib/routes/links'\nimport {sanitizeDisplayName} from '#/lib/strings/display-names'\nimport {sanitizeHandle} from '#/lib/strings/handles'\nimport {niceDate} from '#/lib/strings/time'\nimport {\n  POST_TOMBSTONE,\n  type Shadow,\n  usePostShadow,\n} from '#/state/cache/post-shadow'\nimport {useProfileShadow} from '#/state/cache/profile-shadow'\nimport {FeedFeedbackProvider, useFeedFeedback} from '#/state/feed-feedback'\nimport {type ThreadItem} from '#/state/queries/usePostThread/types'\nimport {useSession} from '#/state/session'\nimport {type OnPostSuccessData} from '#/state/shell/composer'\nimport {useMergedThreadgateHiddenReplies} from '#/state/threadgate-hidden-replies'\nimport {type PostSource} from '#/state/unstable-post-source'\nimport {PreviewableUserAvatar} from '#/view/com/util/UserAvatar'\nimport {ThreadItemAnchorFollowButton} from '#/screens/PostThread/components/ThreadItemAnchorFollowButton'\nimport {\n  LINEAR_AVI_WIDTH,\n  OUTER_SPACE,\n  REPLY_LINE_WIDTH,\n} from '#/screens/PostThread/const'\nimport {atoms as a, useTheme} from '#/alf'\nimport {Button} from '#/components/Button'\nimport {DebugFieldDisplay} from '#/components/DebugFieldDisplay'\nimport {CalendarClock_Stroke2_Corner0_Rounded as CalendarClockIcon} from '#/components/icons/CalendarClock'\nimport {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'\nimport {GalleryBleed} from '#/components/images/Gallery'\nimport {Link} from '#/components/Link'\nimport {ContentHider} from '#/components/moderation/ContentHider'\nimport {LabelsOnMyPost} from '#/components/mod",
+          "graph_context": "Depends on: lib/hooks/useNonReactiveCallback, lib/hooks/useOpenComposer, lib/routes/links, lib/strings/display-names, lib/strings/handles, lib/strings/time, state/cache/post-shadow, state/cache/profile-shadow (+34 more)\nDefines: ThreadItemAnchor, ThreadItemAnchorDeleted, ThreadItemAnchorParentReplyLine, ExpandedPostDetails, BackdatedPostIndicator, ThreadItemAnchorSkeleton",
+          "relevance": 0.3426
+        },
+        {
+          "id": "src/state/queries/notifications/feed.ts",
+          "type": "File",
+          "name": "feed.ts",
+          "file": "src/state/queries/notifications/feed.ts",
+          "start_line": 1,
+          "end_line": 346,
+          "snippet": "/**\n * NOTE\n * The ./unread.ts API:\n *\n * - Provides a `checkUnread()` function to sync with the server,\n * - Periodically calls `checkUnread()`, and\n * - Caches the first page of notifications.\n *\n * IMPORTANT: This query uses ./unread.ts's cache as its first page,\n * IMPORTANT: which means the cache-freshness of this query is driven by the unread API.\n *\n * Follow these rules:\n *\n * 1. Call `checkUnread()` if you want to fetch latest in the background.\n * 2. Call `checkUnread({invalidate: true})` if you want latest to sync into this query's results immediately.\n * 3. Don't call this query's `refetch()` if you're trying to sync latest; call `checkUnread()` instead.\n */\n\nimport {useCallback, useEffect, useMemo, useRef} from 'react'\nimport {\n  AppBskyFeedDefs,\n  AppBskyFeedPost,\n  AtUri,\n  moderatePost,\n} from '@atproto/api'\nimport {\n  type InfiniteData,\n  type QueryClient,\n  type QueryKey,\n  useInfiniteQuery,\n  useQueryClient,\n} from '@tanstack/react-query'\n\nimport {useModerationOpts} from '#/state/preferences/moderation-opts'\nimport {STALE} from '#/state/queries'\nimport {useAgent} from '#/state/session'\nimport {useThreadgateHiddenReplyUris} from '#/state/threadgate-hidden-replies'\nimport type * as bsky from '#/types/bsky'\nimport {\n  didOrHandleUriMatches,\n  embedViewRecordToPostView,\n  getEmbeddedPost,\n} from '../util'\nimport {type FeedPage} from './types'\nimport {useUnreadNotificationsApi} from './unread'\nimport {fetchPage} from './util'\n\nexport type {FeedNotification, FeedPage, NotificationType} from './types'\n\nconst PAGE_SIZE = 30\n\ntype RQPageParam = string | undefined\n\nconst RQKEY_ROOT = 'notification-feed'\nexport function RQKEY(filter: 'all' | 'mentions') {\n  return [RQKEY_ROOT, filter]\n}\n\nexport function useNotificationFeedQuery(opts: {\n  enabled?: boolean\n# ... truncated ...",
+          "graph_context": "Depends on: state/preferences/moderation-opts, state/queries, state/session, state/threadgate-hidden-replies, types/bsky, util.ts, types.ts, unread.tsx (+1 more)\nDefines: useNotificationFeedQuery\nDepended on by: unread.tsx",
+          "relevance": 0.3341
+        },
+        {
+          "id": "src/screens/PostThread/components/ThreadItemTreePost.tsx",
+          "type": "File",
+          "name": "ThreadItemTreePost.tsx",
+          "file": "src/screens/PostThread/components/ThreadItemTreePost.tsx",
+          "start_line": 1,
+          "end_line": 451,
+          "snippet": "import {memo, useCallback, useMemo, useState} from 'react'\nimport {View} from 'react-native'\nimport {\n  type AppBskyFeedDefs,\n  type AppBskyFeedThreadgate,\n  AtUri,\n  RichText as RichTextAPI,\n} from '@atproto/api'\nimport {Trans} from '@lingui/react/macro'\n\nimport {MAX_POST_LINES} from '#/lib/constants'\nimport {useOpenComposer} from '#/lib/hooks/useOpenComposer'\nimport {makeProfileLink} from '#/lib/routes/links'\nimport {countLines} from '#/lib/strings/helpers'\nimport {\n  POST_TOMBSTONE,\n  type Shadow,\n  usePostShadow,\n} from '#/state/cache/post-shadow'\nimport {type ThreadItem} from '#/state/queries/usePostThread/types'\nimport {useSession} from '#/state/session'\nimport {type OnPostSuccessData} from '#/state/shell/composer'\nimport {useMergedThreadgateHiddenReplies} from '#/state/threadgate-hidden-replies'\nimport {PostMeta} from '#/view/com/util/PostMeta'\nimport {\n  OUTER_SPACE,\n  REPLY_LINE_WIDTH,\n  TREE_AVI_WIDTH,\n  TREE_INDENT,\n} from '#/screens/PostThread/const'\nimport {atoms as a, useTheme} from '#/alf'\nimport {DebugFieldDisplay} from '#/components/DebugFieldDisplay'\nimport {useInteractionState} from '#/components/hooks/useInteractionState'\nimport {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'\nimport {GalleryBleed} from '#/components/images/Gallery'\nimport {LabelsOnMyPost} from '#/components/moderation/LabelsOnMe'\nimport {PostAlerts} from '#/components/moderation/PostAlerts'\nimport {PostHider} from '#/components/moderation/PostHider'\nimport {type AppModerationCause} from '#/components/Pills'\nimport {Embed, PostEmbedViewContext} from '#/components/Post/Embed'\nimport {ShowMoreTextButton} from '#/components/Post/ShowMoreTextButton'\nimport {TranslatedPost} from '#/components/Post/Translated'\nimport {PostControls, PostControlsSkeleton} from '#/components/PostControls'\nimport {RichText} from '#/components/RichText'\nimport * as Skele from '#/components/Skeleton'\nimport {SubtleHover} from '#/components/SubtleHover'\nimport {Text} from '#/compon",
+          "graph_context": "Depends on: lib/constants, lib/hooks/useOpenComposer, lib/routes/links, lib/strings/helpers, state/cache/post-shadow, state/queries/usePostThread/types, state/session, state/shell/composer (+20 more)\nDefines: ThreadItemTreePost, ThreadItemTreePostDeleted, SubtleHoverWrapper, ThreadItemTreePostSkeleton",
+          "relevance": 0.3288
+        },
+        {
+          "id": "src/state/queries/notifications/unread.tsx#useUnreadNotifications",
+          "type": "Hook",
+          "name": "useUnreadNotifications",
+          "file": "src/state/queries/notifications/unread.tsx",
+          "start_line": 220,
+          "end_line": 222,
+          "snippet": "export function useUnreadNotifications() {\n  return useContext(stateContext)\n}",
+          "graph_context": "Calls: useContext (external)",
+          "relevance": 0.2985
+        },
+        {
+          "id": "src/state/queries/notifications/unread.tsx#useUnreadNotificationsApi",
+          "type": "Hook",
+          "name": "useUnreadNotificationsApi",
+          "file": "src/state/queries/notifications/unread.tsx",
+          "start_line": 224,
+          "end_line": 226,
+          "snippet": "export function useUnreadNotificationsApi() {\n  return useContext(apiContext)\n}",
+          "graph_context": "Calls: useContext (external)\nCalled by: useNotificationFeedQuery",
+          "relevance": 0.2785
+        },
+        {
+          "id": "src/state/threadgate-hidden-replies.tsx#useMergedThreadgateHiddenReplies",
+          "type": "Hook",
+          "name": "useMergedThreadgateHiddenReplies",
+          "file": "src/state/threadgate-hidden-replies.tsx",
+          "start_line": 74,
+          "end_line": 87,
+          "snippet": "export function useMergedThreadgateHiddenReplies({\n  threadgateRecord,\n}: {\n  threadgateRecord?: AppBskyFeedThreadgate.Record\n}) {\n  const {uris, recentlyUnhiddenUris} = useThreadgateHiddenReplyUris()\n  return useMemo(() => {\n    const set = new Set([...(threadgateRecord?.hiddenReplies || []), ...uris])\n    for (const uri of recentlyUnhiddenUris) {\n      set.delete(uri)\n    }\n    return set\n  }, [uris, recentlyUnhiddenUris, threadgateRecord])\n}",
+          "graph_context": "Calls: useThreadgateHiddenReplyUris, useMemo (external)",
+          "relevance": 0.2485
+        },
+        {
+          "id": "src/view/screens/Notifications.tsx",
+          "type": "File",
+          "name": "Notifications.tsx",
+          "file": "src/view/screens/Notifications.tsx",
+          "start_line": 1,
+          "end_line": 309,
+          "snippet": "import {useCallback, useEffect, useMemo, useRef, useState} from 'react'\nimport {View} from 'react-native'\nimport {msg} from '@lingui/core/macro'\nimport {useLingui} from '@lingui/react'\nimport {Trans} from '@lingui/react/macro'\nimport {useFocusEffect, useIsFocused} from '@react-navigation/native'\nimport {useQueryClient} from '@tanstack/react-query'\n\nimport {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'\nimport {useOpenComposer} from '#/lib/hooks/useOpenComposer'\nimport {\n  type NativeStackScreenProps,\n  type NotificationsTabNavigatorParams,\n} from '#/lib/routes/types'\nimport {logger} from '#/logger'\nimport {emitSoftReset, listenSoftReset} from '#/state/events'\nimport {RQKEY as NOTIFS_RQKEY} from '#/state/queries/notifications/feed'\nimport {useNotificationSettingsQuery} from '#/state/queries/notifications/settings'\nimport {\n  useUnreadNotifications,\n  useUnreadNotificationsApi,\n} from '#/state/queries/notifications/unread'\nimport {truncateAndInvalidate} from '#/state/queries/util'\nimport {NotificationFeed} from '#/view/com/notifications/NotificationFeed'\nimport {Pager} from '#/view/com/pager/Pager'\nimport {TabBar} from '#/view/com/pager/TabBar'\nimport {FAB} from '#/view/com/util/fab/FAB'\nimport {type ListMethods} from '#/view/com/util/List'\nimport {LoadLatestBtn} from '#/view/com/util/load-latest/LoadLatestBtn'\nimport {atoms as a, useTheme, web} from '#/alf'\nimport {Admonition} from '#/components/Admonition'\nimport {ButtonIcon} from '#/components/Button'\nimport {EditBig_Stroke2_Corner2_Rounded as EditBigIcon} from '#/components/icons/EditBig'\nimport {SettingsGear2_Stroke2_Corner0_Rounded as SettingsIcon} from '#/components/icons/SettingsGear2'\nimport * as Layout from '#/components/Layout'\nimport {InlineLinkText, Link} from '#/components/Link'\nimport {Loader} from '#/components/Loader'\nimport {IS_NATIVE} from '#/env'\n\n// We don't currently persist this across reloads since\n// you gotta visit All to clear the badge anyway.\n// But let's at least persis",
+          "graph_context": "Depends on: lib/hooks/useNonReactiveCallback, lib/hooks/useOpenComposer, lib/routes/types, logger, state/events, state/queries/notifications/feed, state/queries/notifications/settings, state/queries/notifications/unread (+16 more)\nDefines: NotificationsScreen, NotificationsTab, DisabledNotificationsWarning",
+          "relevance": 0.6539
+        },
+        {
+          "id": "src/lib/notifications/util.ts",
+          "type": "File",
+          "name": "util.ts",
+          "file": "src/lib/notifications/util.ts",
+          "start_line": 1,
+          "end_line": 4,
+          "snippet": "import {Logger} from '#/logger'\n\nexport const logger = Logger.create(Logger.Context.Notifications)",
+          "graph_context": "Depends on: logger",
+          "relevance": 0.6116
+        },
+        {
+          "id": "src/screens/Notifications/ActivityList.tsx",
+          "type": "File",
+          "name": "ActivityList.tsx",
+          "file": "src/screens/Notifications/ActivityList.tsx",
+          "start_line": 1,
+          "end_line": 51,
+          "snippet": "import {msg} from '@lingui/core/macro'\nimport {useLingui} from '@lingui/react'\nimport {Trans} from '@lingui/react/macro'\nimport {type NativeStackScreenProps} from '@react-navigation/native-stack'\n\nimport {type AllNavigatorParams} from '#/lib/routes/types'\nimport {PostFeed} from '#/view/com/posts/PostFeed'\nimport {EmptyState} from '#/view/com/util/EmptyState'\nimport {EditBig_Stroke1_Corner0_Rounded as EditIcon} from '#/components/icons/EditBig'\nimport * as Layout from '#/components/Layout'\nimport {ListFooter} from '#/components/Lists'\n\ntype Props = NativeStackScreenProps<\n  AllNavigatorParams,\n  'NotificationsActivityList'\n>\nexport function NotificationsActivityListScreen({\n  route: {\n    params: {posts},\n  },\n}: Props) {\n  const uris = decodeURIComponent(posts)\n  const {_} = useLingui()\n\n  return (\n    <Layout.Screen testID=\"NotificationsActivityListScreen\">\n      <Layout.Header.Outer>\n        <Layout.Header.BackButton />\n        <Layout.Header.Content>\n          <Layout.Header.TitleText>\n            <Trans>Notifications</Trans>\n          </Layout.Header.TitleText>\n        </Layout.Header.Content>\n        <Layout.Header.Slot />\n      </Layout.Header.Outer>\n      <PostFeed\n        feed={`posts|${uris}`}\n        disablePoll\n        renderEmptyState={() => (\n          <EmptyState\n            icon={EditIcon}\n            iconSize=\"2xl\"\n            message={_(msg`No posts here`)}\n          />\n        )}\n        renderEndOfFeed={() => <ListFooter />}\n      />\n    </Layout.Screen>\n  )\n}",
+          "graph_context": "Depends on: lib/routes/types, view/com/posts/PostFeed, view/com/util/EmptyState, components/icons/EditBig, components/Layout, components/Lists\nDefines: NotificationsActivityListScreen",
+          "relevance": 0.6088
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 91.72,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 5,
+            "query": "notifications screen"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Screen",
+            "n_results": 20,
+            "query": "NotificationsScreen"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "File",
+            "n_results": 20,
+            "query": "useUnread"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 20,
+            "query": "unread"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "File",
+            "n_results": 20,
+            "query": "src/view/screens/Notifications.tsx"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q18",
+      "question": "Which components or screens use the useAccountSwitcher hook?",
+      "expected_answer": "RoutesContainer (src/Navigation.tsx), Deactivated (src/screens/Deactivated.tsx), SwitchAccountDialog (src/components/dialogs/SwitchAccount.tsx), useNotificationsHandler (src/lib/hooks/useNotificationHandler.ts), SettingsScreen (src/screens/Settings/Settings.tsx), and SwitchMenuItem (src/view/shell/desktop/LeftNav.tsx).",
+      "expected_entities": [
+        "src/lib/hooks/useAccountSwitcher.ts#useAccountSwitcher",
+        "src/screens/Settings/Settings.tsx#SettingsScreen",
+        "src/components/dialogs/SwitchAccount.tsx#SwitchAccountDialog"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The **useAccountSwitcher** hook is defined in `src/lib/hooks/useAccountSwitcher.ts` (lines\u202f13\u201165)\u30100\u2020L13-L65\u3011.  \n\nNo other components, screens, or hooks were shown to call or import this hook in the retrieved graph data. The only related component that appears in the search results is `SwitchAccountDialog` (in `src/components/dialogs/SwitchAccount.tsx`), but its snippet does not indicate that it uses `useAccountSwitcher`; it only shows usage of `useLingui` and other UI elements\u30102\u2020L15-L65\u3011.  \n\nTherefore, based on the current evidence, **no components or screens have been identified as using the `useAccountSwitcher` hook**.",
+      "confidence": "Medium",
+      "confidence_rationale": "0 of 3 retrieved entities scored >=0.6 relevance; top match scored 0.50.",
+      "sources": [
+        {
+          "id": "src/lib/hooks/useAccountSwitcher.ts#useAccountSwitcher",
+          "type": "Hook",
+          "name": "useAccountSwitcher",
+          "file": "src/lib/hooks/useAccountSwitcher.ts",
+          "start_line": 13,
+          "end_line": 65
+        },
+        {
+          "id": "src/lib/hooks/useAccountSwitcher.ts",
+          "type": "File",
+          "name": "useAccountSwitcher.ts",
+          "file": "src/lib/hooks/useAccountSwitcher.ts",
+          "start_line": 1,
+          "end_line": 66,
+          "relation": "defines",
+          "direction": "in"
+        },
+        {
+          "id": "src/components/dialogs/SwitchAccount.tsx#SwitchAccountDialog",
+          "type": "Component",
+          "name": "SwitchAccountDialog",
+          "file": "src/components/dialogs/SwitchAccount.tsx",
+          "start_line": 15,
+          "end_line": 65,
+          "snippet": "export function SwitchAccountDialog({\n  control,\n}: {\n  control: Dialog.DialogControlProps\n}) {\n  const {_} = useLingui()\n  const {currentAccount} = useSession()\n  const {onPressSwitchAccount, pendingDid} = useAccountSwitcher()\n  const {setShowLoggedOut} = useLoggedOutViewControls()\n\n  const onSelectAccount = useCallback(\n    (account: SessionAccount) => {\n      if (account.did !== currentAccount?.did) {\n        control.close(() => {\n          onPressSwitchAccount(account, 'SwitchAccount')\n        })\n      } else {\n        control.close()\n      }\n    },\n    [currentAccount, control, onPressSwitchAccount],\n  )\n\n  const onPressAddAccount = useCallback(() => {\n    control.close(() => {\n      setShowLoggedOut(true)\n    })\n  }, [setShowLoggedOut, control])\n\n  return (\n    <Dialog.Outer control={control} nativeOptions={{preventExpansion: true}}>\n      <Dialog.Handle />\n      <Dialog.ScrollableInner label={_(msg`Switch account`)}>\n        <View style={[a.gap_lg]}>\n          <Text style={[a.text_2xl, a.font_semi_bold]}>\n            <Trans>Switch account</Trans>\n          </Text>\n\n          <AccountList\n            onSelectAccount={onSelectAccount}\n            onSelectOther={onPressAddAccount}\n            otherLabel={_(msg`Add account`)}\n            pendingDid={pendingDid}\n          />\n        </View>\n\n        <Dialog.Close />\n      </Dialog.ScrollableInner>\n    </Dialog.Outer>\n  )\n}",
+          "graph_context": "Renders: Dialog, View (external), Text, Trans (external), AccountList\nCalls: useLingui (external), useSession, useAccountSwitcher, useLoggedOutViewControls, useCallback (external)",
+          "relevance": 0.5043
+        },
+        {
+          "id": "src/lib/hooks/useIntentHandler.ts#useGroupChatJoinIntent",
+          "type": "Hook",
+          "name": "useGroupChatJoinIntent",
+          "file": "src/lib/hooks/useIntentHandler.ts",
+          "start_line": 176,
+          "end_line": 214,
+          "snippet": "export function useGroupChatJoinIntent() {\n  const closeAllActiveElements = useCloseAllActiveElements()\n  const {hasSession} = useSession()\n  const {groupChatJoinDialogControl: control, setGroupChatJoinState: setState} =\n    useIntentDialogs()\n  const {requestSwitchToAccount} = useLoggedOutViewControls()\n  const setActiveLanding = useSetActiveLanding()\n  const prefetchJoinLinkPreviews = usePrefetchJoinLinkPreviews()\n  return useCallback(\n    (code: string, uri?: string) => {\n      closeAllActiveElements()\n      if (hasSession) {\n        setState({code})\n        const prefetch = prefetchJoinLinkPreviews({\n          codes: [code],\n          hasSession: true,\n        })\n        void Promise.race([\n          prefetch,\n          new Promise(res => setTimeout(res, 200)),\n        ]).finally(() => {\n          control.open()\n        })\n      } else {\n        setActiveLanding({type: 'groupchat', uri: uri ?? '', code})\n        requestSwitchToAccount({requestedAccount: 'groupchat'})\n      }\n    },\n    [\n      closeAllActiveElements,\n      hasSession,\n      control,\n      setState,\n      prefetchJoinLinkPreviews,\n      requestSwitchToAccount,\n      setActiveLanding,\n    ],\n  )\n}",
+          "graph_context": "Calls: useCloseAllActiveElements, useSession, useIntentDialogs, useLoggedOutViewControls, useSetActiveLanding, usePrefetchJoinLinkPreviews, useCallback (external)\nCalled by: useIntentHandler",
+          "relevance": 0.4148
+        },
+        {
+          "id": "src/lib/notifications/notifications.ts#useRegisterPushToken",
+          "type": "Hook",
+          "name": "useRegisterPushToken",
+          "file": "src/lib/notifications/notifications.ts",
+          "start_line": 76,
+          "end_line": 100,
+          "snippet": "export function useRegisterPushToken() {\n  const agent = useAgent()\n  const {currentAccount} = useSession()\n\n  return useCallback(\n    ({\n      token,\n      isAgeRestricted,\n    }: {\n      token: Notifications.DevicePushToken\n      isAgeRestricted: boolean\n    }) => {\n      if (!currentAccount) return\n      return _registerPushTokenDebounced({\n        agent,\n        currentAccount,\n        token,\n        extra: {\n          ageRestricted: isAgeRestricted,\n        },\n      })\n    },\n    [agent, currentAccount],\n  )\n}",
+          "graph_context": "Calls: useAgent, useSession, useCallback (external)\nCalled by: useGetAndRegisterPushToken, useNotificationsRegistration",
+          "relevance": 0.3824
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 57.42,
+      "tool_calls": [
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "Hook",
+            "limit": 5,
+            "query": "useAccountSwitcher"
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "edge_type": "calls",
+            "entity_id": "src/lib/hooks/useAccountSwitcher.ts#useAccountSwitcher",
+            "limit": 20
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "direction": "in",
+            "entity_id": "src/lib/hooks/useAccountSwitcher.ts#useAccountSwitcher",
+            "limit": 50
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": null,
+            "n_results": 20,
+            "query": "useAccountSwitcher"
+          }
+        },
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": "Hook",
+            "n_results": 5,
+            "query": "useAccountSwitcher"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q19",
+      "question": "What does the SearchScreen's file (src/screens/Search/index.tsx) depend on?",
+      "expected_answer": "lib/routes/types and the Search Shell (src/screens/Search/Shell.tsx).",
+      "expected_entities": [
+        "src/screens/Search/index.tsx",
+        "src/screens/Search/index.tsx#SearchScreen"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "The **SearchScreen** file (`src/screens/Search/index.tsx`) has two direct dependencies:\n\n1. **`lib/routes/types`** \u2013 a module that provides route\u2011type definitions.  \n2. **`src/screens/Search/Shell.tsx`** \u2013 the shell component that implements the screen\u2019s UI and logic.  \n\nThese dependencies are shown by the graph edge\u202f`depends_on` for the file `src/screens/Search/index.tsx`\u3010src/screens/Search/index.tsx:1-20\u3011\u3010lib/routes/types\u3011\u3010src/screens/Search/Shell.tsx:1-817\u3011.",
+      "confidence": "Low",
+      "confidence_rationale": "No semantically-scored evidence was retrieved for this answer.",
+      "sources": [
+        {
+          "id": "src/screens/Search/index.tsx",
+          "type": "File",
+          "name": "index.tsx",
+          "file": "src/screens/Search/index.tsx",
+          "start_line": 1,
+          "end_line": 20
+        },
+        {
+          "id": "lib/routes/types",
+          "type": "Unknown",
+          "name": "lib/routes/types",
+          "file": "",
+          "start_line": 0,
+          "end_line": 0,
+          "relation": "depends_on",
+          "direction": "out"
+        },
+        {
+          "id": "src/screens/Search/Shell.tsx",
+          "type": "File",
+          "name": "Shell.tsx",
+          "file": "src/screens/Search/Shell.tsx",
+          "start_line": 1,
+          "end_line": 817,
+          "relation": "depends_on",
+          "direction": "out"
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 27.62,
+      "tool_calls": [
+        {
+          "tool": "find_entity_by_id_or_name",
+          "args": {
+            "entity_type": "File",
+            "query": "src/screens/Search/index.tsx"
+          }
+        },
+        {
+          "tool": "get_related_entities",
+          "args": {
+            "edge_type": "depends_on",
+            "entity_id": "src/screens/Search/index.tsx"
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "q20",
+      "question": "Is there an internal storybook or developer showcase screen in the app? Where is it defined?",
+      "expected_answer": "Yes -- Storybook, defined in src/view/screens/Storybook/Storybook.tsx (lines 31-160).",
+      "expected_entities": [
+        "src/view/screens/Storybook/Storybook.tsx#Storybook"
+      ],
+      "entity_hit": true,
+      "error": null,
+      "blank_answer": false,
+      "answer": "Yes. The app includes an internal **Storybook / developer\u2011showcase screen**.\n\n* It is exposed as the `StorybookScreen` component, which renders a layout wrapper and lazily loads the actual storybook UI.  \n  **Defined in:** `src/view/screens/Storybook/index.tsx` (lines\u202f7\u201124)\u3010src/view/screens/Storybook/index.tsx#StorybookScreen\u3011.\n\n* The lazily\u2011loaded UI itself is the `Storybook` component, which sets theme preferences and renders the storybook UI.  \n  **Defined in:** `src/view/screens/Storybook/Storybook.tsx` (lines\u202f31\u2011160)\u3010src/view/screens/Storybook/Storybook.tsx#Storybook\u3011.",
+      "confidence": "Medium",
+      "confidence_rationale": "1 of 3 retrieved entities scored >=0.6 relevance; top match scored 0.72.",
+      "sources": [
+        {
+          "id": "src/view/screens/Storybook/index.tsx#StorybookScreen",
+          "type": "Screen",
+          "name": "StorybookScreen",
+          "file": "src/view/screens/Storybook/index.tsx",
+          "start_line": 7,
+          "end_line": 24,
+          "snippet": "export function StorybookScreen() {\n  return (\n    <Layout.Screen>\n      <Layout.Header.Outer>\n        <Layout.Header.BackButton />\n        <Layout.Header.Content>\n          <Layout.Header.TitleText>Storybook</Layout.Header.TitleText>\n        </Layout.Header.Content>\n        <Layout.Header.Slot />\n      </Layout.Header.Outer>\n      <Layout.Content keyboardShouldPersistTaps=\"handled\">\n        <Suspense fallback={null}>\n          <Storybook />\n        </Suspense>\n      </Layout.Content>\n    </Layout.Screen>\n  )\n}",
+          "graph_context": "Renders: Layout, Suspense (external), Storybook",
+          "relevance": 0.7163
+        },
+        {
+          "id": "src/view/screens/Storybook/Storybook.tsx#Storybook",
+          "type": "Screen",
+          "name": "Storybook",
+          "file": "src/view/screens/Storybook/Storybook.tsx",
+          "start_line": 31,
+          "end_line": 160,
+          "snippet": "export default function Storybook() {\n  const {setColorMode, setDarkTheme} = useSetThemePrefs()\n  const [showContainedList, setShowContainedList] = useState(false)\n  const navigation = useNavigation<NavigationProp>()\n  const requestDeviceGeolocation = useRequestDeviceGeolocation()\n  const {setDeviceGeolocation} = useDeviceGeolocationApi()\n  const inviteFriendsControl = Dialog.useDialogControl()\n\n  return (\n    <>\n      <View style={[a.p_xl, a.gap_5xl, {paddingBottom: 100}]}>\n        {!showContainedList ? (\n          <>\n            <View style={[a.flex_row, a.align_start, a.gap_md]}>\n              <Button\n                color=\"primary\"\n                size=\"small\"\n                label='Set theme to \"system\"'\n                onPress={() => setColorMode('system')}>\n                <ButtonText>System</ButtonText>\n              </Button>\n              <Button\n                color=\"secondary\"\n                size=\"small\"\n                label='Set theme to \"light\"'\n                onPress={() => setColorMode('light')}>\n                <ButtonText>Light</ButtonText>\n              </Button>\n              <Button\n                color=\"secondary\"\n                size=\"small\"\n                label='Set theme to \"dim\"'\n                onPress={() => {\n                  setColorMode('dark')\n                  setDarkTheme('dim')\n                }}>\n                <ButtonText>Dim</ButtonText>\n              </Button>\n              <Button\n                color=\"secondary\"\n                size=\"small\"\n                label='Set theme to \"dark\"'\n                onPress={() => {\n                  setColorMode('dark')\n                  setDarkTheme('dark')\n                }}>\n                <ButtonText>Dark</ButtonText>\n              </Button>\n            </View>\n\n            <Button\n              color=\"primary\"\n              size=\"small\"\n              onPress={() => navigation.navigate('SharedPreferencesTester')}\n              label=\"two\"\n              testID=\"sharedPrefsTestOp",
+          "graph_context": "Renders: View (external), Button, ButtonText, InviteFriendsDialog, ThemeProvider, Theming, Toasts, Buttons (+12 more)\nCalls: useSetThemePrefs, useState (external), useNavigation (external), useRequestDeviceGeolocation, useDeviceGeolocationApi",
+          "relevance": 0.5626
+        },
+        {
+          "id": "src/view/screens/Storybook/index.tsx",
+          "type": "File",
+          "name": "index.tsx",
+          "file": "src/view/screens/Storybook/index.tsx",
+          "start_line": 1,
+          "end_line": 25,
+          "snippet": "import {lazy, Suspense} from 'react'\n\nimport * as Layout from '#/components/Layout'\n\nconst Storybook = lazy(() => import('./Storybook'))\n\nexport function StorybookScreen() {\n  return (\n    <Layout.Screen>\n      <Layout.Header.Outer>\n        <Layout.Header.BackButton />\n        <Layout.Header.Content>\n          <Layout.Header.TitleText>Storybook</Layout.Header.TitleText>\n        </Layout.Header.Content>\n        <Layout.Header.Slot />\n      </Layout.Header.Outer>\n      <Layout.Content keyboardShouldPersistTaps=\"handled\">\n        <Suspense fallback={null}>\n          <Storybook />\n        </Suspense>\n      </Layout.Content>\n    </Layout.Screen>\n  )\n}",
+          "graph_context": "Depends on: components/Layout\nDefines: StorybookScreen",
+          "relevance": 0.5547
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 14.62,
+      "tool_calls": [
+        {
+          "tool": "search_code",
+          "args": {
+            "entity_type": null,
+            "n_results": 10,
+            "query": "storybook screen"
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "openai/gpt-oss-120b": {
+      "total": 10,
+      "errors": 0,
+      "blank_answers": 0,
+      "entity_hit_rate": 0.8,
+      "avg_latency_s": 71.47,
+      "confidence_counts": {
+        "Medium": 7,
+        "Low": 3
+      }
+    }
+  }
+}

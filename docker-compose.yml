@@ -1,0 +1,49 @@
+services:
+  pipeline:
+    build: .
+    image: codeiq-pipeline
+    env_file: .env            # provides GROQ_API_KEY
+    environment:
+      REPO_OWNER: ${REPO_OWNER:-bluesky-social}
+      REPO_NAME: ${REPO_NAME:-social-app}
+      BRANCH: ${BRANCH:-main}
+      LLM: ${LLM:-remote}
+      DESC_ARGS: ${DESC_ARGS:-}
+    volumes:
+      - ./data:/app/data      # persist raw clone, jsonl outputs, and chroma index
+
+  # Shiny chat UI over an already-built index: docker compose up app
+  # then open http://localhost:8000
+  app:
+    build: .
+    image: codeiq-pipeline
+    profiles: ["app"]         # not started by a plain `docker compose up`
+    env_file: .env
+    environment:
+      REPO_OWNER: ${REPO_OWNER:-bluesky-social}
+      REPO_NAME: ${REPO_NAME:-social-app}
+      BRANCH: ${BRANCH:-main}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    entrypoint: ["shiny", "run", "--host", "0.0.0.0", "--port", "8000", "app/app.py"]
+
+  # JupyterLab inside the container: docker compose up -d jupyter
+  # then open http://localhost:8888 (no token; local use only)
+  jupyter:
+    build: .
+    image: codeiq-pipeline
+    profiles: ["jupyter"]
+    env_file: .env
+    environment:
+      REPO_OWNER: ${REPO_OWNER:-bluesky-social}
+      REPO_NAME: ${REPO_NAME:-social-app}
+      BRANCH: ${BRANCH:-main}
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./data:/app/data
+      - ./notebooks:/app/notebooks   # notebooks saved here survive the container
+    entrypoint: ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser",
+                 "--allow-root", "--ServerApp.token=", "--ServerApp.password="]
