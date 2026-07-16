@@ -365,6 +365,13 @@ h1.slide-title { font-size: 40px; font-weight: 800; letter-spacing: -0.5px; line
 .nav-btn:hover { background: var(--accent-3); }
 .nav-btn:active { transform: scale(0.96); }
 .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.dots { display: flex; gap: 8px; }
+.dot-btn {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--bg-1); border: 1.5px solid var(--border);
+  cursor: pointer; padding: 0;
+}
+.dot-btn.active { background: var(--accent); }
 .nav-hint { font-size: 10.5px; color: var(--text-2); position: absolute; right: 24px; }
 
 /* ------------------------------------------------------------- Print */
@@ -815,6 +822,7 @@ h1.slide-title { font-size: 40px; font-weight: 800; letter-spacing: -0.5px; line
 <!-- ============================================================ Nav -->
 <nav class="deck-nav">
   <button class="nav-btn" id="prev-btn" aria-label="Previous slide">← Prev</button>
+  <div class="dots" id="dots"></div>
   <button class="nav-btn" id="next-btn" aria-label="Next slide">Next →</button>
   <span class="nav-hint">← → arrow keys · F for fullscreen</span>
 </nav>
@@ -822,15 +830,30 @@ h1.slide-title { font-size: 40px; font-weight: 800; letter-spacing: -0.5px; line
 <script>
 (function () {
   const slides = Array.from(document.querySelectorAll(".slide"));
+  const dotsWrap = document.getElementById("dots");
   const prevBtn = document.getElementById("prev-btn");
   const nextBtn = document.getElementById("next-btn");
+  const curEl = document.getElementById("cur-slide"); // may be null if header removed
+  const totalEl = document.getElementById("total-slides");
+  if (totalEl) totalEl.textContent = slides.length;
+
+  slides.forEach((_, i) => {
+    const d = document.createElement("button");
+    d.className = "dot-btn";
+    d.setAttribute("aria-label", "Go to slide " + (i + 1));
+    d.addEventListener("click", () => go(i));
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(dotsWrap.children);
 
   let cur = 0;
   function go(i) {
     cur = Math.max(0, Math.min(slides.length - 1, i));
     slides.forEach((s, j) => s.classList.toggle("active", j === cur));
+    dots.forEach((d, j) => d.classList.toggle("active", j === cur));
     prevBtn.disabled = cur === 0;
     nextBtn.disabled = cur === slides.length - 1;
+    if (curEl) curEl.textContent = cur + 1;
     history.replaceState(null, "", "#" + (cur + 1));
     slides[cur].scrollTop = 0;
   }
