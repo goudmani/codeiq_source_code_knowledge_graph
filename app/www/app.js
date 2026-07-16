@@ -131,6 +131,7 @@
         file: viewFileBtn.getAttribute("data-file"),
         start: parseInt(viewFileBtn.getAttribute("data-start"), 10) || 0,
         end: parseInt(viewFileBtn.getAttribute("data-end"), 10) || 0,
+        tag: viewFileBtn.getAttribute("data-tag") || "",
         _ts: Date.now(),
       };
       if (window.Shiny) {

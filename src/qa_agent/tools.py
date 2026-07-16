@@ -23,10 +23,15 @@ src/vector_index/build_index.py rather than reloading entities.jsonl/
 edges.jsonl with new logic. All three return hits shaped like search_code()'s
 so all four tools' outputs can be treated uniformly as "sources" by the agent.
 
+All three take an optional `tag` -- selects data/processed/<tag>/ instead of
+the compiled-in default (TAG in src/clone_raw/clone_raw.py), so a caller can
+point at any indexed repo without needing to know its exact file paths.
+
 Runnable directly for manual sanity checks:
   python3 tools.py find "useSessionId"
   python3 tools.py related "src/App.tsx#InnerApp" --edge-type calls --direction out
   python3 tools.py transitive "src/App.tsx#InnerApp" --edge-type depends_on --direction out
+  python3 tools.py find "LoginScreen" --tag raysk4ever_Simple-React-Native-App_main
 """
 import argparse
 import sys
@@ -79,6 +84,7 @@ def find_entity_by_id_or_name(
     query: str,
     entity_type: str | None = None,
     limit: int = 10,
+    tag: str | None = None,
 ) -> list[dict]:
     """Look up a code entity by its exact id or name, without relying on semantic similarity.
 
@@ -96,6 +102,9 @@ def find_entity_by_id_or_name(
         entity_type: Optionally restrict to one entity type -- one of
             "File", "Component", "Hook", "Screen". Omit to search all types.
         limit: Max number of matches to return (default 10).
+        tag: Optional repo tag; selects data/processed/<tag>/entities_with_desc.jsonl
+            instead of the default indexed repo. Omit to use the default (TAG
+            in src/clone_raw/clone_raw.py).
 
     Returns:
         A list of up to `limit` dicts, ordered exact-name matches before
@@ -103,7 +112,8 @@ def find_entity_by_id_or_name(
         end_line, description (one-line LLM-generated summary, empty string
         if none). Empty list if nothing matches.
     """
-    entities = _get_entities()
+    entities_path = f"data/processed/{tag}/entities_with_desc.jsonl" if tag else DEFAULT_ENTITIES_PATH
+    entities = _get_entities(entities_path)
     query_stripped = query.strip()
     query_lower = query_stripped.lower()
 
@@ -131,6 +141,7 @@ def get_related_entities(
     edge_type: str | None = None,
     direction: str = "both",
     limit: int = 15,
+    tag: str | None = None,
 ) -> list[dict]:
     """Get an entity's graph relationships, uncapped, via real edges.jsonl traversal.
 
@@ -148,6 +159,9 @@ def get_related_entities(
         direction: "out" (this entity -> others), "in" (others -> this
             entity), or "both" (default).
         limit: Max number of related entities to return (default 15).
+        tag: Optional repo tag; selects data/processed/<tag>/{entities_with_desc.jsonl,
+            edges.jsonl} instead of the default indexed repo. Omit to use the
+            default (TAG in src/clone_raw/clone_raw.py).
 
     Returns:
         A list of up to `limit` dicts, each with: id, type, name, file,
@@ -157,8 +171,10 @@ def get_related_entities(
         (call/render-site line numbers). Empty list if the entity has no
         matching edges.
     """
-    entities = _get_entities()
-    outgoing, incoming = _get_adjacency()
+    entities_path = f"data/processed/{tag}/entities_with_desc.jsonl" if tag else DEFAULT_ENTITIES_PATH
+    edges_path = f"data/processed/{tag}/edges.jsonl" if tag else DEFAULT_EDGES_PATH
+    entities = _get_entities(entities_path)
+    outgoing, incoming = _get_adjacency(edges_path)
 
     results = []
 
@@ -189,6 +205,7 @@ def get_transitive_related_entities(
     direction: str = "out",
     max_depth: int = 3,
     limit: int = 30,
+    tag: str | None = None,
 ) -> list[dict]:
     """Multi-hop BFS from one entity, along a single relation/direction, via networkx.
 
@@ -214,6 +231,9 @@ def get_transitive_related_entities(
         max_depth: Max hops to walk (default 3, matches build_graph.py's BFS default).
         limit: Max number of related entities to return (default 30), closest
             hops first.
+        tag: Optional repo tag; selects data/processed/<tag>/ (entities_with_desc.jsonl
+            + edges.jsonl, via the graph loader) instead of the default indexed
+            repo. Omit to use the default (TAG in src/clone_raw/clone_raw.py).
 
     Returns:
         A list of up to `limit` dicts, each with: id, type, name, file,
@@ -221,12 +241,14 @@ def get_transitive_related_entities(
         direction ("in" or "out"), depth (hop count from entity_id, >= 1).
         Empty list if the entity isn't in the graph or has no matching edges.
     """
-    g = _get_graph()
+    processed_dir = f"data/processed/{tag}" if tag else DEFAULT_PROCESSED_DIR
+    entities_path = f"data/processed/{tag}/entities_with_desc.jsonl" if tag else DEFAULT_ENTITIES_PATH
+    g = _get_graph(processed_dir)
     if entity_id not in g:
         return []
 
     depths = transitive_deps(g, entity_id, edge_type=edge_type, max_depth=max_depth, direction=direction)
-    entities = _get_entities()
+    entities = _get_entities(entities_path)
 
     ranked = sorted(depths.items(), key=lambda kv: kv[1])[:limit]
     return [
@@ -243,12 +265,14 @@ def main():
     find_ap.add_argument("query")
     find_ap.add_argument("--type", dest="entity_type")
     find_ap.add_argument("--limit", type=int, default=10)
+    find_ap.add_argument("--tag", default=None, help="repo tag; selects data/processed/<tag>/entities_with_desc.jsonl")
 
     rel_ap = sub.add_parser("related", help="get_related_entities")
     rel_ap.add_argument("entity_id")
     rel_ap.add_argument("--edge-type", dest="edge_type")
     rel_ap.add_argument("--direction", default="both", choices=["in", "out", "both"])
     rel_ap.add_argument("--limit", type=int, default=15)
+    rel_ap.add_argument("--tag", default=None, help="repo tag; selects data/processed/<tag>/{entities_with_desc.jsonl,edges.jsonl}")
 
     trans_ap = sub.add_parser("transitive", help="get_transitive_related_entities")
     trans_ap.add_argument("entity_id")
@@ -256,17 +280,20 @@ def main():
     trans_ap.add_argument("--direction", default="out", choices=["in", "out"])
     trans_ap.add_argument("--max-depth", dest="max_depth", type=int, default=3)
     trans_ap.add_argument("--limit", type=int, default=30)
+    trans_ap.add_argument("--tag", default=None, help="repo tag; selects data/processed/<tag>/")
 
     args = ap.parse_args()
 
     if args.cmd == "find":
-        hits = find_entity_by_id_or_name(args.query, entity_type=args.entity_type, limit=args.limit)
+        hits = find_entity_by_id_or_name(args.query, entity_type=args.entity_type, limit=args.limit, tag=args.tag)
     elif args.cmd == "related":
-        hits = get_related_entities(args.entity_id, edge_type=args.edge_type, direction=args.direction, limit=args.limit)
+        hits = get_related_entities(
+            args.entity_id, edge_type=args.edge_type, direction=args.direction, limit=args.limit, tag=args.tag,
+        )
     else:
         hits = get_transitive_related_entities(
             args.entity_id, edge_type=args.edge_type, direction=args.direction,
-            max_depth=args.max_depth, limit=args.limit,
+            max_depth=args.max_depth, limit=args.limit, tag=args.tag,
         )
 
     print(f"{len(hits)} result(s):\n")
