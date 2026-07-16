@@ -24,11 +24,7 @@ describe:
 	python src/ts_extract/add_descriptions_stepped.py --tag $(TAG) --llm $(LLM) $(DESC_ARGS)
 
 index:
-	python src/vector_index/build_index.py \
-		--entities data/processed/$(TAG)/entities_with_desc.jsonl \
-		--edges data/processed/$(TAG)/edges.jsonl \
-		--raw-dir data/raw/$(TAG) \
-		--chroma-dir data/processed/$(TAG)/chroma
+	python src/vector_index/build_index.py --tag $(TAG)
 
 app:
 	shiny run app/app.py --reload
