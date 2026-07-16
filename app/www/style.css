@@ -214,6 +214,40 @@ a:hover { color: var(--border-soft); }
 }
 .repo-pill .repo-clear:hover { color: var(--accent); }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.header-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: var(--code-text-dim);
+  text-decoration: none;
+  border: 1.5px solid transparent;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.header-link:hover {
+  color: var(--accent);
+  background: var(--code-bg-1);
+  border-color: var(--code-border);
+}
+
+.header-link svg { display: block; }
+
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.45; transform: scale(0.8); }

@@ -1,9 +1,5 @@
-pandas
 numpy
 networkx
-pytest
-black
-flake8
 python-dotenv
 langchain
 langchain-openai
