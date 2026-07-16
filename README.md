@@ -111,6 +111,35 @@ env vars (defaults: bluesky-social/social-app/main), so
 `make describe` also accepts `LLM=local` (LM Studio) and
 `DESC_ARGS="--num-files 10"` to limit a run.
 
+### Building the vector index for a specific repo
+
+Chroma indexes are **not** committed to git (they exceed GitHub's file-size
+limit as they grow) — every machine builds them locally, and each repo gets
+its own independent index at `data/processed/<tag>/chroma/`. One `make index`
+run builds exactly one repo's index — whichever repo the env vars select:
+
+```bash
+make index                                                          # default repo (bluesky-social/social-app)
+REPO_OWNER=raysk4ever REPO_NAME=Simple-React-Native-App make index  # a specific repo
+```
+
+Or name the tag directly, bypassing the env vars:
+
+```bash
+python src/vector_index/build_index.py --tag raysk4ever_Simple-React-Native-App_main
+```
+
+Building an index needs no API key or network — it embeds locally on CPU
+(a few minutes for a large repo). The only prerequisite is that the earlier
+pipeline stages have run for that repo, so
+`data/processed/<tag>/entities_with_desc.jsonl` and `edges.jsonl` exist.
+Verify an index with a test query:
+
+```bash
+python src/vector_index/query_index.py "which hook manages session state" --n 3   # default repo
+python src/vector_index/query_index.py "toast hook" --tag <tag> --n 3             # specific repo
+```
+
 ## Q&A agent
 
 `src/qa_agent/` answers natural-language questions about the codebase using a
