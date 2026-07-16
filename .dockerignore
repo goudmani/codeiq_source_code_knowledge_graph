@@ -10,7 +10,6 @@ data/processed/*/chroma/
 data/processed/*/add-descriptions-intermediate/
 data/eval/
 node_modules/
-reports/
 img/
 **/__pycache__/
 *.pyc
