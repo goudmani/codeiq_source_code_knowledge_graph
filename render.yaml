@@ -5,13 +5,15 @@
 # this file.
 #
 # The image is built (from docker/Dockerfile.deploy -- a lean image with no
-# Node.js/ts-morph and no `make all` pipeline, see that file's header) and
-# pushed to GHCR by .github/workflows/publish.yml (GitHub Actions), NOT by
-# Render -- Render only pulls the already-built image. That same workflow
-# syncs GROQ_API_KEY* and calls the Render API to trigger the deploy, pinned
-# to the exact image digest it just pushed. autoDeploy is off since
-# image-backed services don't auto-redeploy on new pushes anyway (Render
-# has to be told to pull); the workflow is the only deploy trigger.
+# Node.js/ts-morph and no `make all` pipeline; cloning + vector-index
+# building happen once at image-build time and are baked into the image, see
+# that file's header) and pushed to GHCR by .github/workflows/publish.yml
+# (GitHub Actions), NOT by Render -- Render only pulls the already-built
+# image. That same workflow syncs GROQ_API_KEY* and calls the Render API to
+# trigger the deploy, pinned to the exact image digest it just pushed.
+# autoDeploy is off since image-backed services don't auto-redeploy on new
+# pushes anyway (Render has to be told to pull); the workflow is the only
+# deploy trigger.
 #
 # ./Dockerfile (the full clone -> extract -> describe -> index pipeline,
 # needs Node.js) is unrelated to this deploy path -- it's for developers via
