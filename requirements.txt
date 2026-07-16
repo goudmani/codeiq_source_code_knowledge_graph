@@ -8,3 +8,4 @@ langchain-core
 langchain-groq
 shiny
 markdown-it-py
+jupyterlab

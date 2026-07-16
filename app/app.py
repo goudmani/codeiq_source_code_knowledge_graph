@@ -141,10 +141,32 @@ header = ui.div(
 </div>
 """),
     ui.div(
-        ui.HTML('<span class="status-dot"></span><span class="pill-label">Exploring</span>'),
-        ui.input_select("repo", None, choices=REPO_CHOICES, selected=DEFAULT_TAG),
-        ui.output_ui("repo_meta", inline=True),
-        class_="repo-pill",
+        ui.div(
+            ui.HTML('<span class="status-dot"></span><span class="pill-label">Exploring</span>'),
+            ui.input_select("repo", None, choices=REPO_CHOICES, selected=DEFAULT_TAG),
+            ui.output_ui("repo_meta", inline=True),
+            class_="repo-pill",
+        ),
+        ui.HTML("""
+<div class="header-links">
+  <a class="header-link" href="/reports/codeiq_presentation.html" target="_blank" rel="noopener"
+     title="Docs &amp; presentation" aria-label="Docs and presentation">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 11v5"/>
+      <path d="M12 8h.01"/>
+    </svg>
+  </a>
+  <a class="header-link" href="https://github.com/goudmani/codeiq_source_code_knowledge_graph"
+     target="_blank" rel="noopener" title="GitHub repository" aria-label="GitHub repository">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
+      <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12 22 6.477 17.523 2 12 2z"/>
+    </svg>
+  </a>
+</div>
+"""),
+        class_="header-right",
     ),
     class_="app-header",
 )
@@ -339,4 +361,13 @@ def server(input, output, session):  # noqa: A002 - shiny convention
         )
 
 
-app = App(app_ui, server, static_assets=str(APP_DIR / "www"))
+# "/" serves app/www (CSS/JS/img); "/reports" serves the presentation deck
+# so the header docs link works without copying the HTML into www.
+app = App(
+    app_ui,
+    server,
+    static_assets={
+        "/": str(APP_DIR / "www"),
+        "/reports": str(PROJECT_ROOT / "reports"),
+    },
+)

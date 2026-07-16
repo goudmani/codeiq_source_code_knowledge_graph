@@ -18,6 +18,7 @@ RUN pip install -r requirements.txt \
 
 COPY src/ src/
 COPY app/ app/
+COPY reports/ reports/
 COPY Makefile ./
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

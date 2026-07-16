@@ -25,6 +25,7 @@ RUN pip install -r requirements.txt
 
 COPY src/ src/
 COPY app/ app/
+COPY reports/ reports/
 # entities_with_desc.jsonl, edges.jsonl, graph.graphml only -- data/raw/ and
 # data/processed/*/chroma/ are excluded via .dockerignore and built below
 COPY data/processed/ data/processed/
