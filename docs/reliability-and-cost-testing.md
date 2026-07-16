@@ -106,21 +106,48 @@ Notes so far, to pick back up next round:
 - **"Which part of the process uses tokens"**: tag each message when it's
   appended in `ask()`'s loop (system prompt / question / a specific tool's
   result / final answer), then sum estimated tokens by tag per question.
-- **"Which type of prompts use the most tokens"**: needs some bucketing
-  scheme for questions — candidates: by which tool the question triggers
-  first (mirrors the existing identifier-first system-prompt rule), or by
-  how many tool calls it took to answer. Not decided yet.
-- **Sequencing recommendation**: build this before the reliability test.
-  It's the lower-level primitive — the reliability test's own cost tracking
-  can just reuse it rather than duplicating instrumentation. It's also
-  independently useful immediately: a single (non-repeated) pass over the
-  existing `questions.json`/`questions_2.json`/`questions_3.json` sets would
-  already produce a first cost profile, at a fraction of the quota cost of
-  any 3–5x repeated reliability run.
+- **Sequencing recommendation**: design the bucketing schema before writing
+  the logger (see below), then build the logger. Reasoning: the only truly
+  new raw data the logger adds is per-call token usage — everything else it
+  attaches to already exists in `ask()`'s return value. The one-shot,
+  hard-to-redo decision is what fields each log record needs to carry so
+  bucketing can be computed from the log afterward without re-running live
+  (quota-costing) Groq calls. Actual bucketing/aggregation code can be
+  iterated on cheaply after the fact, same as `eval.py`'s `summarize()`
+  re-aggregates `results.json` — that part doesn't need to exist yet.
+  Once the logger is built, it should also come before the reliability
+  test — the reliability test's own cost tracking can just reuse it rather
+  than duplicating instrumentation, and a single non-repeated pass over the
+  existing `questions.json`/`questions_2.json`/`questions_3.json` sets
+  already gives a first cost profile at a fraction of the quota cost of any
+  3–5x repeated reliability run.
+
+### Prompt-type bucketing scheme (decided)
+
+For "which type of prompts cost the most," reuse the four question
+categories already implicit in `SYSTEM_PROMPT`'s tool-selection rules,
+rather than inventing a new taxonomy:
+
+1. **Identifier lookup** — question names a specific entity directly
+   (CamelCase name, `useX` hook) → should trigger `find_entity_by_id_or_name` first.
+2. **Discovery / semantic** — open-ended ("which hook does X", "where is Y
+   implemented") → should trigger `search_code` first.
+3. **Relationship** — "who calls X", "what does X render" → `get_related_entities`.
+4. **Transitive impact** — "what breaks if X changes" → `get_transitive_related_entities`.
+
+Reusing this taxonomy is free — no new classification scheme, just labeling
+each question by which of the four patterns it matches. It also gives a
+bonus signal beyond cost: since the tool-call trace records which tool was
+*actually* used first, we get a free "intended category vs. actual tool
+used" cross-tab. A mismatch (e.g. a question labeled "identifier lookup"
+that actually triggered `search_code` first) is the same tool-selection
+failure mode already fixed once in eval set 2 (commit `f21ed7f`) — and those
+mismatches are exactly the cases likely to cost more (extra tool calls, more
+turns, more re-sent context). So this bucketing doubles as a cheap
+correctness check, not just a cost one.
 
 ## Open questions for next round
 
-- Question-bucketing scheme for "which prompt types cost the most."
 - Exact fingerprint-equality rule for entity-overlap (a hard threshold, e.g.
   ≥80% Jaccard overlap counts as "same"?).
 - Where results get written (mirror `eval.py`'s `results.json`/`RESULTS.md`
