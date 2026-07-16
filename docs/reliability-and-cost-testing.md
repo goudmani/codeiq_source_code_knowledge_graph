@@ -2,8 +2,47 @@
 
 Branch: `feat/reducancy_and_cost`. Two pieces of work: (1) a repeated-sampling
 reliability test for the Q&A agent, (2) a token/cost instrumentation layer.
-This doc tracks the decisions made so far and the open questions, so the
-reasoning behind the approach is visible, not just the final code.
+This doc tracks the decisions made, so the reasoning behind the approach is
+visible, not just the final code.
+
+## Status: built and validated
+
+Both pieces are implemented and verified against real Groq calls (not
+mocks -- see the note on that below):
+
+- `src/qa_agent/cost_logger.py` — prompt-type classifier, per-source token
+  attribution, JSONL cost log writer, aggregation/report functions.
+- `src/qa_agent/agent.py` — `ask()` gained an optional `cost_sink` param
+  (default `None`, existing callers unaffected) that captures real
+  per-call token usage and tags messages by source.
+- `src/qa_agent/reliability.py` — behavioral fingerprinting, the 4
+  comparison signals, adaptive 3-then-5 sampling, the three-valued verdict,
+  and the missing-description test scenario.
+
+**Real validation, not mocked**: early in this work we deliberately avoided
+building anything against fabricated/mocked LLM responses, since a mock
+that turns out to not match real behavior just means rework later. Instead:
+the pure data-plumbing pieces (classifier, char attribution, JSONL I/O,
+aggregation math, fingerprint/verdict arithmetic) were tested against
+fixture data we control, since those tests validate our own code's
+correctness, not any claim about LLM behavior; the one place with real
+external-API risk (Groq's exact token-usage field names) was verified by
+reading the installed `langchain_groq` source directly, not guessed; and
+everything whose validity depends on genuine LLM variance (the reliability
+harness's adaptive sampling and verdict) was validated against real live
+questions once permission for live testing was given:
+- An unambiguous identifier question passed 3/3 (agreement_fraction 1.0),
+  stopping early per the adaptive-sampling rule.
+- A known-ambiguous question (mirroring the old q25 eval miss) correctly
+  ran the full 5 samples and landed on **INCONCLUSIVE** (2/5 agreement) --
+  traced to genuine first-tool variability (`search_code` vs.
+  `find_entity_by_id_or_name`) on a question that doesn't name one specific
+  identifier, not measurement noise.
+- Cost-logger reuse confirmed: all LLM calls across a 5-sample reliability
+  run landed in one shared cost log.
+- The multi-account rate-limit rotation fired live during this testing
+  (Account_1 → 2 → 3), confirming that infrastructure still works
+  end-to-end.
 
 ## Why build a custom harness instead of adopting a framework
 
@@ -37,7 +76,7 @@ temperature 0 (batched GPU floating-point execution varies run to run), so
 "consistent" can't mean exact text match. Every signal below compares
 *structured decisions*, not prose.
 
-### What we compare across runs (building #1–4; #5 deferred)
+### What we compare across runs (built #1–4; #5 deferred)
 
 1. **Tool-call trace agreement** — did the runs call the same first tool /
    same tool sequence for the same question? Cheapest, most stable signal;
@@ -82,7 +121,7 @@ temperature 0 (batched GPU floating-point execution varies run to run), so
   - 2–3/5 agree → **INCONCLUSIVE**
   - ≤1/5 agree → **FAIL**
 
-## Cost / token instrumentation — still being ideated, not decided yet
+## Cost / token instrumentation (built)
 
 Notes so far, to pick back up next round:
 
