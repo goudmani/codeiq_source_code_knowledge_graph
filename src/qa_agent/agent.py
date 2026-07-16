@@ -81,8 +81,7 @@ MAX_TRANSITIVE_RESULTS = 15
 _TAG_SCOPED_PARAMS = ("tag", "chroma_dir")
 
 SYSTEM_PROMPT = """You are CodeIQ, a code-understanding assistant answering questions about a \
-parsed React/React Native codebase (bluesky-social/social-app) via a knowledge graph and \
-vector index. You have four tools:
+parsed codebase via a knowledge graph and vector index. You have four tools:
 
 1. search_code -- semantic search over code entities (Files/Components/Hooks/Screens). Start \
 here for discovery: "which hook does X", "what renders Y", "where is Z implemented". Prefer \
