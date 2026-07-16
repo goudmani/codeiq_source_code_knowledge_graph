@@ -78,6 +78,8 @@ When it runs, it calls several other hooks to perform its work:
 
 These call relationships are recorded in the graph for `useNotificationsRegistration` 【src/lib/notifications/notifications.ts#useNotificationsRegistration】 and are listed by the “calls” edges 【src/lib/notifications/notifications.ts#useNotificationsRegistration → useSession, useRegisterPushToken, useGetAndRegisterPushToken, useAgeAssurance, useEffect】.
 
+> **Known issue (entity hit: no):** the agent surfaced `useNotificationsRegistration` — a related but different hook in the same area of the codebase — instead of the expected `useNotificationsHandler`, most likely because semantic search returned the wrong one first. Diagnosed fix: add a system-prompt nudge to try a second, differently-worded `search_code` query before drilling into a possibly-wrong hit via `get_related_entities`. Not yet implemented — this is a prompt change with broader ripple potential that needs careful testing, so it is tracked as a future recommendation rather than done now.
+
 ---
 
 ### q26: Which screen shows the user's saved feeds?
@@ -131,6 +133,8 @@ export class ErrorBoundary extends Component<Props, State> {
 ```
 
 (see `src/view/com/util/ErrorBoundary.tsx:21-50`).
+
+> **Known issue (entity hit: no):** the agent found a genuine class component (`ErrorBoundary`), but not the specific examples named in the expected answer (`GifView`, `BottomSheetNativeComponent`), since there is currently no way to filter or enumerate entities by kind (e.g. class vs. function component) — the agent can only surface components already returned by keyword/semantic search. Diagnosed as needing a new capability (a `kind` filter mirroring the existing `entity_type` filter) rather than a prompt fix. Not yet designed or implemented — a larger piece of future work, tracked as a future recommendation.
 
 ---
 
