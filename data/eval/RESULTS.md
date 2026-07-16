@@ -183,4 +183,6 @@ So, the screen depends on:
 
 These three pieces together enable the Bookmarks screen to show individual posts and track their views.
 
+> **Known issue (entity hit: no):** the answer correctly identifies `Post` and `usePostViewTracking`, but the automated entity-hit check does not credit it, and it does not explicitly name `useInitialNumToRender` as a rendering-behavior dependency. This has been diagnosed as most likely a metric-definition gap in `eval.py`'s `entity_hit` check (or in this question's `expected_entities` list) rather than a genuine agent failure. Not yet fixed — a low-risk fix, tracked as a future recommendation.
+
 ---
