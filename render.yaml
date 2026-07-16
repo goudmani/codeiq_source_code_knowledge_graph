@@ -1,0 +1,21 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# One-time setup: in the Render Dashboard, choose "New +" -> "Blueprint" and
+# point it at this GitHub repo. Render will create the service below from
+# this file. autoDeploy is off because .github/workflows/publish.yml is the
+# deploy trigger (it syncs GROQ_API_KEY* and calls the Render API), avoiding
+# duplicate deploys from Render's own push webhook.
+services:
+  - type: web
+    name: codeiq
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: false
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_API_KEY_2
+        sync: false
+      - key: GROQ_API_KEY_3
+        sync: false
