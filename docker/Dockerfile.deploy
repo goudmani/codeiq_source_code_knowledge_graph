@@ -1,0 +1,29 @@
+# CodeIQ deploy image: clone raw source -> build vector index -> serve the
+# Shiny app. No Node.js/ts-morph and no LLM description calls -- those only
+# matter for *building* entities.jsonl/edges.jsonl, which are already
+# committed to data/processed/ by the full pipeline (see ../Dockerfile, used
+# by developers via `docker compose up`). This image just re-clones the raw
+# source (for source-snippet display) and re-embeds it into ChromaDB at
+# container start, then starts the app.
+FROM python:3.11-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# Dependencies first, so source edits don't invalidate this layer
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
+
+COPY src/ src/
+COPY app/ app/
+# entities_with_desc.jsonl, edges.jsonl, graph.graphml only -- data/raw/ and
+# data/processed/*/chroma/ are excluded via .dockerignore and rebuilt below
+COPY data/processed/ data/processed/
+COPY docker/deploy_entrypoint.sh /usr/local/bin/deploy_entrypoint.sh
+RUN chmod +x /usr/local/bin/deploy_entrypoint.sh
+
+EXPOSE 8000
+
+ENTRYPOINT ["/usr/local/bin/deploy_entrypoint.sh"]

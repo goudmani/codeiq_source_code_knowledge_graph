@@ -2,14 +2,31 @@
 #
 # One-time setup: in the Render Dashboard, choose "New +" -> "Blueprint" and
 # point it at this GitHub repo. Render will create the service below from
-# this file. autoDeploy is off because .github/workflows/publish.yml is the
-# deploy trigger (it syncs GROQ_API_KEY* and calls the Render API), avoiding
-# duplicate deploys from Render's own push webhook.
+# this file.
+#
+# The image is built (from docker/Dockerfile.deploy -- a lean image with no
+# Node.js/ts-morph and no `make all` pipeline, see that file's header) and
+# pushed to GHCR by .github/workflows/publish.yml (GitHub Actions), NOT by
+# Render -- Render only pulls the already-built image. That same workflow
+# syncs GROQ_API_KEY* and calls the Render API to trigger the deploy, pinned
+# to the exact image digest it just pushed. autoDeploy is off since
+# image-backed services don't auto-redeploy on new pushes anyway (Render
+# has to be told to pull); the workflow is the only deploy trigger.
+#
+# ./Dockerfile (the full clone -> extract -> describe -> index pipeline,
+# needs Node.js) is unrelated to this deploy path -- it's for developers via
+# `docker compose up`, and is not used by Render at all.
+#
+# One-time manual step: after the first workflow run pushes a package to
+# https://github.com/goudmani/codeiq_source_code_knowledge_graph/pkgs/container/codeiq_source_code_knowledge_graph,
+# open its package settings and set visibility to Public so Render can pull
+# it without registry credentials.
 services:
   - type: web
     name: codeiq
-    runtime: docker
-    dockerfilePath: ./Dockerfile
+    runtime: image
+    image:
+      url: ghcr.io/goudmani/codeiq_source_code_knowledge_graph:latest
     plan: free
     autoDeploy: false
     envVars:
