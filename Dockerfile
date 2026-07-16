@@ -25,7 +25,4 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # Shiny chat UI (docker compose up app)
 EXPOSE 8000
 
-# Pipeline outputs land here; mount a host volume to keep them
-VOLUME ["/app/data"]
-
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
