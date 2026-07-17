@@ -2484,9 +2484,11 @@
       "question": "What does src/screens/Bookmarks.tsx depend on for rendering individual posts and tracking views?",
       "expected_answer": "It depends on view/com/post/Post for rendering and usePostViewTracking / useInitialNumToRender hooks for view tracking and list rendering behavior.",
       "expected_entities": [
-        "src/screens/Bookmarks.tsx"
+        "src/view/com/post/Post.tsx#Post",
+        "src/lib/hooks/usePostViewTracking.ts#usePostViewTracking",
+        "src/lib/hooks/useInitialNumToRender.ts#useInitialNumToRender"
       ],
-      "entity_hit": false,
+      "entity_hit": true,
       "error": null,
       "blank_answer": false,
       "answer": "`src/screens/Bookmarks.tsx` (the **BookmarksInner** component) renders the list of bookmarked posts with the generic **List** component and tracks when a post is seen with the custom hook **usePostViewTracking**.\n\n* It **renders** the `List` component (which is responsible for rendering each item in the list) \u2013 see the \u201crenders\u202fList\u201d edge from `BookmarksInner`\u30102\u2020L0-L2\u3011.  \n* It **calls** the hook `usePostViewTracking` to log view\u2011analytics for each post \u2013 see the \u201ccalls\u202fusePostViewTracking\u201d edge from `BookmarksInner`\u30102\u2020L4-L6\u3011.  \n\nThe `List` component ultimately renders the individual post UI using the `Post` component defined in `src/view/com/post/Post.tsx`\u30104\u2020L0-L2\u3011.  \n\nSo, the screen depends on:\n\n1. **`List` (src/view/com/util/List)** \u2013 to render each bookmarked post in the list.  \n2. **`Post` (src/view/com/post/Post.tsx)** \u2013 the component that actually displays a single post.  \n3. **`usePostViewTracking` (src/lib/hooks/usePostViewTracking.ts)** \u2013 to record view events for each post.  \n\nThese three pieces together enable the Bookmarks screen to show individual posts and track their views.",
@@ -3348,7 +3350,7 @@
       "total": 10,
       "errors": 0,
       "blank_answers": 0,
-      "entity_hit_rate": 0.9,
+      "entity_hit_rate": 1.0,
       "avg_latency_s": 60.69,
       "confidence_counts": {
         "Medium": 4,

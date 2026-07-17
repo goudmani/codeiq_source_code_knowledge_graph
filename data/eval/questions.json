@@ -64,6 +64,6 @@
     "id": "q10",
     "question": "What does src/screens/Bookmarks.tsx depend on for rendering individual posts and tracking views?",
     "expected_answer": "It depends on view/com/post/Post for rendering and usePostViewTracking / useInitialNumToRender hooks for view tracking and list rendering behavior.",
-    "expected_entities": ["src/screens/Bookmarks.tsx"]
+    "expected_entities": ["src/view/com/post/Post.tsx#Post", "src/lib/hooks/usePostViewTracking.ts#usePostViewTracking", "src/lib/hooks/useInitialNumToRender.ts#useInitialNumToRender"]
   }
 ]

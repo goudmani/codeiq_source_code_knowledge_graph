@@ -6,7 +6,7 @@
 
 | Model | Entity-hit rate | Avg latency (s) | Errors | Blank answers | Confidence (H/M/L) |
 |---|---|---|---|---|---|
-| `openai/gpt-oss-120b` | 0.9 | 60.69 | 0 | 0 | 1/4/5 |
+| `openai/gpt-oss-120b` | 1.0 | 60.69 | 0 | 0 | 1/4/5 |
 
 ## Per-question comparison
 
@@ -167,7 +167,7 @@ _Expected: FindContactsFlowScreen, in src/screens/FindContactsFlowScreen.tsx._
 
 _Expected: It depends on view/com/post/Post for rendering and usePostViewTracking / useInitialNumToRender hooks for view tracking and list rendering behavior._
 
-**`openai/gpt-oss-120b`** -- confidence: Medium (0 of 6 retrieved entities scored >=0.6 relevance; top match scored 0.53.) -- entity hit: no -- latency: 69.76s
+**`openai/gpt-oss-120b`** -- confidence: Medium (0 of 6 retrieved entities scored >=0.6 relevance; top match scored 0.53.) -- entity hit: yes -- latency: 69.76s
 > `src/screens/Bookmarks.tsx` (the **BookmarksInner** component) renders the list of bookmarked posts with the generic **List** component and tracks when a post is seen with the custom hook **usePostViewTracking**.
 
 * It **renders** the `List` component (which is responsible for rendering each item in the list) – see the “renders List” edge from `BookmarksInner`【2†L0-L2】.  
@@ -183,6 +183,6 @@ So, the screen depends on:
 
 These three pieces together enable the Bookmarks screen to show individual posts and track their views.
 
-> **Known issue (entity hit: no):** the answer correctly identifies `Post` and `usePostViewTracking`, but the automated entity-hit check does not credit it, and it does not explicitly name `useInitialNumToRender` as a rendering-behavior dependency. This has been diagnosed as most likely a metric-definition gap in `eval.py`'s `entity_hit` check (or in this question's `expected_entities` list) rather than a genuine agent failure. Not yet fixed — a low-risk fix, tracked as a future recommendation.
+> **Fixed (was a metric-definition gap, not an agent failure):** `expected_entities` originally listed only the bare subject file (`src/screens/Bookmarks.tsx`) rather than the actual dependencies the question asks for, so a correct answer could never match it. Updated to the real dependencies (`Post`, `usePostViewTracking`, `useInitialNumToRender`), which the answer above already cites correctly — entity hit now scores `yes`.
 
 ---
