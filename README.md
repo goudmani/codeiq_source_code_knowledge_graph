@@ -86,6 +86,9 @@ REPO_OWNER=raysk4ever REPO_NAME=Simple-React-Native-App docker compose up -d app
    echo "GROQ_API_KEY=your-key-here" > .env
    ```
 
+   Optional: add `GROQ_API_KEY_2`, `GROQ_API_KEY_3`, … — the agent rotates
+   to the next key when one hits a rate limit.
+
 ## Running the pipeline (local)
 
 One line runs everything (the same stages `docker compose up` runs):
@@ -156,8 +159,7 @@ Every answer gets a deterministic **High/Medium/Low confidence** level (from
 retrieval relevance, not self-reported by the LLM) plus cited sources.
 
 ```bash
-python -m src.qa_agent.agent "which hook manages session state?" --model llama-3.3-70b-versatile
-make eval   # run data/eval/questions.json against every model, write RESULTS.md
+python -m src.qa_agent.agent "which hook manages session state?"
 ```
 
 Or launch the chat UI:
@@ -165,6 +167,26 @@ Or launch the chat UI:
 ```bash
 shiny run app/app.py --reload
 ```
+
+## Evaluation, cost & reliability testing
+
+All three harnesses spend real Groq quota — run `make probe-quota` first.
+Design notes: [reports/reliability-and-cost-testing.md](reports/reliability-and-cost-testing.md).
+
+- **Answer quality** — 30 questions in 3 committed sets
+  (`data/eval/questions*.json`). `make eval` runs set 1, `make eval-all` runs
+  all three. A question is a hit if the cited sources include the expected
+  entities. Latest: 1.0 / 1.0 / 0.8 per set (28/30), 0 errors — reports:
+  [set 1](data/eval/RESULTS.md), [set 2](data/eval/RESULTS_2.md),
+  [set 3](data/eval/RESULTS_3.md).
+- **Token cost** — `make cost-eval`: one pass over the 30 questions, exact
+  token counts per call, broken down by prompt type and message source →
+  [COST_REPORT.md](data/cost/COST_REPORT.md). `make cost-plots` renders the
+  charts → [data/cost/plots/](data/cost/plots) (offline).
+- **Reliability** — `make reliability`: asks each of 10 fixed questions 3–5
+  times and checks the runs agree (first tool, cited entities, confidence) →
+  [RELIABILITY_REPORT.md](data/reliability/RELIABILITY_REPORT.md). Latest:
+  6 PASS / 3 INCONCLUSIVE / 1 error (quota).
 
 ## Project structure
 
@@ -174,6 +196,9 @@ environment.yml, requirements.txt      conda + pip dependency specs
 package.json                           node deps (ts-morph)
 Dockerfile, docker-compose.yml         container image + pipeline/app/jupyter services
 docker/entrypoint.sh                   what `docker compose up` runs (all pipeline stages)
+reports/                              served by the app at /reports
+├── codeiq_presentation.html          presentation deck
+└── reliability-and-cost-testing.md   design notes for the cost/reliability harnesses
 
 src/
 ├── clone_raw/
@@ -190,7 +215,12 @@ src/
 └── qa_agent/
     ├── tools.py                        find_entity / get_related / get_transitive_related
     ├── agent.py                        ask() — LangChain tool-calling loop + confidence scoring
-    ├── eval.py                         runs data/eval/questions.json, writes RESULTS.md
+    ├── eval.py                         answer-quality harness over data/eval/questions*.json
+    ├── cost_logger.py                  per-call token logging + prompt-type/source aggregation
+    ├── cost_eval.py                    single-pass cost profile over the 30 eval questions
+    ├── cost_plots.py                   renders the cost report as PNG charts
+    ├── reliability.py                  self-consistency fingerprints + adaptive 3-then-5 sampling
+    ├── reliability_eval.py             batch reliability runner (10-question subset)
     └── probe_quota.py                  checks configured Groq keys' quota
 
 app/                                  Shiny chat UI over the qa_agent
@@ -200,16 +230,22 @@ app/                                  Shiny chat UI over the qa_agent
 └── www/                                static assets (JS, CSS, images)
 
 img/demo.gif                          demo GIF (see Demo section above)
-
-data/
-├── raw/<tag>/                         gitignored, regenerated with `make clone`
-├── processed/<tag>/                   entities/edges (source of truth)
-│   ├── entities.jsonl, entities_with_desc.jsonl, edges.jsonl
-│   ├── graph.graphml                   derived, for Gephi/yEd
-│   ├── chroma/                         derived, ChromaDB persistent store
-│   └── add-descriptions-intermediate/  checkpoint + LLM call log
-└── eval/                              question sets + eval reports (checked into git)
 ```
+
+`data/`:
+
+- `raw/<tag>/` — gitignored, regenerated with `make clone`
+- `processed/<tag>/` — entities/edges (source of truth): `entities.jsonl`,
+  `entities_with_desc.jsonl`, `edges.jsonl`; `graph.graphml` (derived, for
+  Gephi/yEd); `chroma/` (derived ChromaDB store, gitignored);
+  `add-descriptions-intermediate/` (checkpoint + LLM call log)
+- [`eval/`](data/eval) — question sets + eval reports:
+  [set 1](data/eval/RESULTS.md), [set 2](data/eval/RESULTS_2.md),
+  [set 3](data/eval/RESULTS_3.md)
+- [`cost/`](data/cost) — token/cost log,
+  [report](data/cost/COST_REPORT.md) + [charts](data/cost/plots)
+- [`reliability/`](data/reliability) — run results +
+  [report](data/reliability/RELIABILITY_REPORT.md)
 
 ## Roadmap
 
@@ -218,6 +254,8 @@ data/
 - [x] Vector search index (ChromaDB, local embeddings + LLM-generated descriptions)
 - [x] LLM Q&A agent with 1-hop and multi-hop (BFS) graph tools
 - [x] Confidence scoring per answer
-- [x] Answer-quality evaluation harness (10 questions x 2 Groq models)
+- [x] Answer-quality evaluation harness (30 questions across 3 committed sets)
 - [x] Chat UI (Shiny, `app/app.py`)
-- [ ] Demo GIF
+- [x] Token/cost instrumentation + cost profile (`data/cost/`)
+- [x] Self-consistency reliability harness (`data/reliability/`)
+- [x] Demo GIF

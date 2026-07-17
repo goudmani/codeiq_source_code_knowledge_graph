@@ -4,7 +4,7 @@ reliability.py
 
 Self-consistency / test-retest reliability testing for the qa_agent: ask the
 same question multiple times and check the agent's *decisions* agree across
-runs. See docs/reliability-and-cost-testing.md for the full design reasoning.
+runs. See reports/reliability-and-cost-testing.md for the full design reasoning.
 
 LLM output isn't deterministic even at temperature 0 (batched GPU
 floating-point execution varies run to run), so "consistent" can't mean
@@ -186,7 +186,7 @@ def evaluate_reliability(
 
 
 # Entities in the bluesky-social/social-app index with no LLM-generated
-# `description` field (7/3820, see docs/reliability-and-cost-testing.md).
+# `description` field (7/3820, see reports/reliability-and-cost-testing.md).
 # Ready-to-run scenario: does the agent stay grounded in the code snippet
 # when asked about one of these, or does it hallucinate a plausible-sounding
 # description across repeated runs? A per-entity question, not a general
