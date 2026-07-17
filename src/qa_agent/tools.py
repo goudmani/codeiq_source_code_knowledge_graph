@@ -64,8 +64,35 @@ def _get_graph(processed_dir: str = DEFAULT_PROCESSED_DIR):
     return load_graph(Path(processed_dir))
 
 
-def _to_hit(entity_id: str, entities: dict, extra: dict | None = None) -> dict:
+@lru_cache(maxsize=None)
+def _get_name_index(entities_path: str = DEFAULT_ENTITIES_PATH) -> dict:
+    """name.lower() -> [entity ids] sharing that name, for _to_hit()'s fallback.
+
+    Edge targets sometimes carry a parser-guessed id (edges.jsonl's
+    unresolvedFileGuess: true, e.g. "lib/hooks/useX#useX") instead of the
+    entity's real id ("src/lib/hooks/useX.ts#useX") -- a direct entities.get()
+    misses even though the entity is indexed under a different id. Building
+    this once (cached like _get_entities) lets _to_hit() recover it by name
+    when the guess is unambiguous, without touching edges.jsonl or the parser.
+    """
+    index: dict[str, list[str]] = {}
+    for eid, e in _get_entities(entities_path).items():
+        index.setdefault(e["name"].lower(), []).append(eid)
+    return index
+
+
+def _to_hit(
+    entity_id: str, entities: dict, extra: dict | None = None, entities_path: str = DEFAULT_ENTITIES_PATH,
+) -> dict:
     e = entities.get(entity_id)
+    if e is None and "#" in entity_id:
+        # Fallback only for entity-level ids (has a "#"), and only when the
+        # guessed name resolves to exactly one real entity -- never guess
+        # across an ambiguous name (e.g. useSessionId exists in two files).
+        name_matches = _get_name_index(entities_path).get(entity_id.split("#")[-1].lower(), [])
+        if len(name_matches) == 1:
+            entity_id = name_matches[0]
+            e = entities.get(entity_id)
     hit = {
         "id": entity_id,
         "type": e["type"] if e else ("External" if entity_id.startswith("external:") else "Unknown"),
@@ -189,7 +216,7 @@ def get_related_entities(
                     "external": info.get("external", False),
                     "lines": info.get("lines", []),
                 }
-                results.append(_to_hit(info["other"], entities, extra))
+                results.append(_to_hit(info["other"], entities, extra, entities_path))
 
     if direction in ("out", "both"):
         collect(outgoing, "out")
@@ -252,7 +279,7 @@ def get_transitive_related_entities(
 
     ranked = sorted(depths.items(), key=lambda kv: kv[1])[:limit]
     return [
-        _to_hit(other_id, entities, {"relation": edge_type, "direction": direction, "depth": depth})
+        _to_hit(other_id, entities, {"relation": edge_type, "direction": direction, "depth": depth}, entities_path)
         for other_id, depth in ranked
     ]
 
