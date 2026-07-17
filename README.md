@@ -171,7 +171,7 @@ shiny run app/app.py --reload
 ## Evaluation, cost & reliability testing
 
 All three harnesses spend real Groq quota — run `make probe-quota` first.
-Design notes: [docs/reliability-and-cost-testing.md](docs/reliability-and-cost-testing.md).
+Design notes: [reports/reliability-and-cost-testing.md](reports/reliability-and-cost-testing.md).
 
 - **Answer quality** — 30 questions in 3 committed sets
   (`data/eval/questions*.json`). `make eval` runs set 1, `make eval-all` runs
@@ -196,7 +196,8 @@ environment.yml, requirements.txt      conda + pip dependency specs
 package.json                           node deps (ts-morph)
 Dockerfile, docker-compose.yml         container image + pipeline/app/jupyter services
 docker/entrypoint.sh                   what `docker compose up` runs (all pipeline stages)
-docs/
+reports/                              served by the app at /reports
+├── codeiq_presentation.html          presentation deck
 └── reliability-and-cost-testing.md   design notes for the cost/reliability harnesses
 
 src/

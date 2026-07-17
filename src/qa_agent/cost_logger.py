@@ -4,7 +4,7 @@ cost_logger.py
 
 Token/cost instrumentation for the qa_agent, built as a lower-level layer
 that the reliability test (and any other repeated-run tooling) can reuse
-rather than duplicating instrumentation. See docs/reliability-and-cost-testing.md
+rather than duplicating instrumentation. See reports/reliability-and-cost-testing.md
 for the design decisions behind this module.
 
 Groq gives us exact prompt_tokens/completion_tokens/total_tokens per LLM
