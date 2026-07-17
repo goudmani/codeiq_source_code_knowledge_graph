@@ -1,0 +1,411 @@
+[
+  {
+    "question_id": "q1",
+    "question": "Which hook manages the app's authenticated session state, and where is it defined?",
+    "verdict": "PASS",
+    "num_samples": 3,
+    "agreement_fraction": 1.0,
+    "recovered_from_stdout": true,
+    "note": "Original run crashed before full fingerprint detail was persisted; only the final verdict/samples/agreement printed to stdout survived."
+  },
+  {
+    "question_id": "q4",
+    "question": "Which screen implements the Bookmarks feature, and what does it depend on for fetching bookmark data?",
+    "verdict": "INCONCLUSIVE",
+    "num_samples": 5,
+    "agreement_fraction": 0.4,
+    "recovered_from_stdout": true,
+    "note": "Original run crashed before full fingerprint detail was persisted; only the final verdict/samples/agreement printed to stdout survived."
+  },
+  {
+    "question_id": "q5",
+    "question": "What breaks if useSession changes its behavior -- who calls it directly?",
+    "verdict": "PASS",
+    "num_samples": 3,
+    "agreement_fraction": 1.0,
+    "recovered_from_stdout": true,
+    "note": "Original run crashed before full fingerprint detail was persisted; only the final verdict/samples/agreement printed to stdout survived."
+  },
+  {
+    "question_id": "q6",
+    "question": "Where is HashtagScreen defined?",
+    "verdict": "PASS",
+    "num_samples": 3,
+    "agreement_fraction": 1.0,
+    "recovered_from_stdout": true,
+    "note": "Original run crashed before full fingerprint detail was persisted; only the final verdict/samples/agreement printed to stdout survived."
+  },
+  {
+    "question_id": "q13",
+    "question": "What does the TabsNavigator component in src/Navigation.tsx render?",
+    "verdict": "ERROR",
+    "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01kpffev9cfjcrh0mbyrzgwycr` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 198321, Requested 10772. Please try again in 1h5m28.176s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "recovered_from_stdout": false
+  },
+  {
+    "question": "What breaks if the useAgent hook changes its behavior -- who calls it directly?",
+    "verdict": "PASS",
+    "num_samples": 3,
+    "agreement_fraction": 1.0,
+    "tool_trace_agreement": 1.0,
+    "entity_overlap_agreement": 1.0,
+    "confidence_stability": 1.0,
+    "fingerprints": [
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "src/state/cache/thread-mutes.tsx#useMigrateMutes",
+          "src/state/feed-feedback.tsx#useFeedFeedback",
+          "src/state/queries/app-passwords.ts#useAppPasswordCreateMutation",
+          "src/state/queries/app-passwords.ts#useAppPasswordDeleteMutation",
+          "src/state/queries/app-passwords.ts#useAppPasswordsQuery",
+          "src/state/queries/pinned-post.ts#usePinnedPostMutation",
+          "src/state/session/index.tsx#useAgent"
+        ],
+        "confidence": "Low"
+      },
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "src/state/cache/thread-mutes.tsx#useMigrateMutes",
+          "src/state/feed-feedback.tsx#useFeedFeedback",
+          "src/state/queries/app-passwords.ts#useAppPasswordCreateMutation",
+          "src/state/queries/app-passwords.ts#useAppPasswordDeleteMutation",
+          "src/state/queries/app-passwords.ts#useAppPasswordsQuery",
+          "src/state/queries/pinned-post.ts#usePinnedPostMutation",
+          "src/state/session/index.tsx#useAgent"
+        ],
+        "confidence": "Low"
+      },
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "src/state/cache/thread-mutes.tsx#useMigrateMutes",
+          "src/state/feed-feedback.tsx#useFeedFeedback",
+          "src/state/queries/app-passwords.ts#useAppPasswordCreateMutation",
+          "src/state/queries/app-passwords.ts#useAppPasswordDeleteMutation",
+          "src/state/queries/app-passwords.ts#useAppPasswordsQuery",
+          "src/state/queries/pinned-post.ts#usePinnedPostMutation",
+          "src/state/session/index.tsx#useAgent"
+        ],
+        "confidence": "Low"
+      }
+    ],
+    "question_id": "q15",
+    "recovered_from_stdout": false
+  },
+  {
+    "question": "Which components or screens use the useAccountSwitcher hook?",
+    "verdict": "INCONCLUSIVE",
+    "num_samples": 5,
+    "agreement_fraction": 0.4,
+    "tool_trace_agreement": 1.0,
+    "entity_overlap_agreement": 0.4,
+    "confidence_stability": 1.0,
+    "fingerprints": [
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "external:@lingui/react#useLingui",
+          "external:react#useCallback",
+          "external:react#useState",
+          "src/analytics/index.tsx#useAnalytics",
+          "src/components/dialogs/SwitchAccount.tsx#SwitchAccountDialog",
+          "src/lib/hooks/useAccountSwitcher.ts",
+          "src/lib/hooks/useAccountSwitcher.ts#useAccountSwitcher",
+          "src/state/session/index.tsx#useSessionApi",
+          "src/state/shell/logged-out.tsx#useLoggedOutViewControls"
+        ],
+        "confidence": "Medium"
+      },
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "src/components/dialogs/SwitchAccount.tsx#SwitchAccountDialog",
+          "src/lib/hooks/useAccountSwitcher.ts",
+          "src/lib/hooks/useAccountSwitcher.ts#useAccountSwitcher"
+        ],
+        "confidence": "Medium"
+      },
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "src/components/dialogs/SwitchAccount.tsx#SwitchAccountDialog",
+          "src/lib/hooks/useAccountSwitcher.ts",
+          "src/lib/hooks/useAccountSwitcher.ts#useAccountSwitcher",
+          "src/view/shell/desktop/LeftNav.tsx#SwitchMenuItem",
+          "src/view/shell/desktop/LeftNav.tsx#SwitchMenuItems"
+        ],
+        "confidence": "Medium"
+      },
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "external:@lingui/react#useLingui",
+          "external:react#useCallback",
+          "external:react#useState",
+          "src/analytics/index.tsx#useAnalytics",
+          "src/components/dialogs/SwitchAccount.tsx#SwitchAccountDialog",
+          "src/lib/hooks/useAccountSwitcher.ts",
+          "src/lib/hooks/useAccountSwitcher.ts#useAccountSwitcher",
+          "src/state/session/index.tsx#useSessionApi",
+          "src/state/shell/logged-out.tsx#useLoggedOutViewControls"
+        ],
+        "confidence": "Medium"
+      },
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "src/components/dialogs/SwitchAccount.tsx#SwitchAccountDialog",
+          "src/lib/hooks/useAccountSwitcher.ts",
+          "src/lib/hooks/useAccountSwitcher.ts#useAccountSwitcher"
+        ],
+        "confidence": "Medium"
+      }
+    ],
+    "question_id": "q18",
+    "recovered_from_stdout": false
+  },
+  {
+    "question": "Is there an internal storybook or developer showcase screen in the app? Where is it defined?",
+    "verdict": "PASS",
+    "num_samples": 3,
+    "agreement_fraction": 1.0,
+    "tool_trace_agreement": 1.0,
+    "entity_overlap_agreement": 1.0,
+    "confidence_stability": 1.0,
+    "fingerprints": [
+      {
+        "first_tool_used": "search_code",
+        "cited_entity_ids": [
+          "src/view/screens/Storybook/Settings.tsx#Settings",
+          "src/view/screens/Storybook/Storybook.tsx#Storybook",
+          "src/view/screens/Storybook/index.tsx#StorybookScreen"
+        ],
+        "confidence": "Medium"
+      },
+      {
+        "first_tool_used": "search_code",
+        "cited_entity_ids": [
+          "src/view/screens/Storybook/Settings.tsx#Settings",
+          "src/view/screens/Storybook/Storybook.tsx#Storybook",
+          "src/view/screens/Storybook/index.tsx#StorybookScreen"
+        ],
+        "confidence": "Medium"
+      },
+      {
+        "first_tool_used": "search_code",
+        "cited_entity_ids": [
+          "src/view/screens/Storybook/Settings.tsx#Settings",
+          "src/view/screens/Storybook/Storybook.tsx#Storybook",
+          "src/view/screens/Storybook/index.tsx#StorybookScreen"
+        ],
+        "confidence": "Medium"
+      }
+    ],
+    "question_id": "q20",
+    "recovered_from_stdout": false
+  },
+  {
+    "question": "Does the app have a reusable error boundary component? Where is it defined?",
+    "verdict": "PASS",
+    "num_samples": 3,
+    "agreement_fraction": 1.0,
+    "tool_trace_agreement": 1.0,
+    "entity_overlap_agreement": 1.0,
+    "confidence_stability": 1.0,
+    "fingerprints": [
+      {
+        "first_tool_used": "search_code",
+        "cited_entity_ids": [
+          "src/view/com/composer/Composer.tsx#ErrorBanner",
+          "src/view/com/util/ErrorBoundary.tsx#ErrorBoundary",
+          "src/view/com/util/error/ErrorMessage.tsx#ErrorMessage"
+        ],
+        "confidence": "Low"
+      },
+      {
+        "first_tool_used": "search_code",
+        "cited_entity_ids": [
+          "src/view/com/composer/Composer.tsx#ErrorBanner",
+          "src/view/com/util/ErrorBoundary.tsx#ErrorBoundary",
+          "src/view/com/util/error/ErrorMessage.tsx#ErrorMessage"
+        ],
+        "confidence": "Low"
+      },
+      {
+        "first_tool_used": "search_code",
+        "cited_entity_ids": [
+          "src/view/com/composer/Composer.tsx#ErrorBanner",
+          "src/view/com/util/ErrorBoundary.tsx#ErrorBoundary",
+          "src/view/com/util/error/ErrorMessage.tsx#ErrorMessage"
+        ],
+        "confidence": "Low"
+      }
+    ],
+    "question_id": "q24",
+    "recovered_from_stdout": false
+  },
+  {
+    "question": "What does the file src/view/com/post/Post.tsx depend on for opening the composer and for post-state caching?",
+    "verdict": "INCONCLUSIVE",
+    "num_samples": 5,
+    "agreement_fraction": 0.4,
+    "tool_trace_agreement": 1.0,
+    "entity_overlap_agreement": 0.6,
+    "confidence_stability": 0.8,
+    "fingerprints": [
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "alf",
+          "components/images/Gallery",
+          "components/moderation/ContentHider",
+          "components/moderation/LabelsOnMe",
+          "components/moderation/PostAlerts",
+          "lib/constants",
+          "lib/hooks/useOpenComposer",
+          "lib/routes/links",
+          "lib/strings/helpers",
+          "src/lib/hooks/useOpenComposer.tsx#useOpenComposer",
+          "src/state/cache/post-shadow.ts",
+          "src/state/cache/types.ts",
+          "src/state/shell/composer/index.tsx#useComposerControls",
+          "src/state/shell/composer/index.tsx#useOpenComposer",
+          "src/view/com/post/Post.tsx",
+          "src/view/screens/Storybook/Shadows.tsx",
+          "state/cache/post-shadow",
+          "state/preferences/moderation-opts",
+          "state/queries/profile",
+          "view/com/util/Link",
+          "view/com/util/PostMeta",
+          "view/com/util/UserAvatar"
+        ],
+        "confidence": "Medium"
+      },
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "alf",
+          "components/images/Gallery",
+          "components/moderation/ContentHider",
+          "components/moderation/LabelsOnMe",
+          "components/moderation/PostAlerts",
+          "lib/constants",
+          "lib/hooks/useOpenComposer",
+          "lib/routes/links",
+          "lib/strings/helpers",
+          "src/view/com/post/Post.tsx",
+          "state/cache/post-shadow",
+          "state/preferences/moderation-opts",
+          "state/queries/profile",
+          "view/com/util/Link",
+          "view/com/util/PostMeta",
+          "view/com/util/UserAvatar"
+        ],
+        "confidence": "Low"
+      },
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "alf",
+          "bskyembed/src/components/post.tsx",
+          "components/images/Gallery",
+          "components/moderation/ContentHider",
+          "components/moderation/LabelsOnMe",
+          "components/moderation/PostAlerts",
+          "lib/constants",
+          "lib/hooks/useOpenComposer",
+          "lib/routes/links",
+          "lib/strings/helpers",
+          "src/lib/hooks/useOpenComposer.tsx#useOpenComposer",
+          "src/state/queries/usePostThread/context.tsx#usePostThreadContext",
+          "src/state/shell/composer/index.tsx#useOpenComposer",
+          "src/view/com/post/Post.tsx",
+          "state/cache/post-shadow",
+          "state/preferences/moderation-opts",
+          "state/queries/profile",
+          "view/com/util/Link",
+          "view/com/util/PostMeta",
+          "view/com/util/UserAvatar"
+        ],
+        "confidence": "Medium"
+      },
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "alf#useTheme",
+          "bskyembed/src/components/post.tsx#Post",
+          "bskyembed/src/components/post.tsx#PostContent",
+          "bskyembed/src/icons/Repost.tsx#Repost",
+          "components/Post/Embed#Embed",
+          "external:@tanstack/react-query#useQueryClient",
+          "external:react#useCallback",
+          "external:react#useMemo",
+          "external:react#useState",
+          "external:react-native#View",
+          "lib/hooks/useOpenComposer#useOpenComposer",
+          "src/components/Post/PostRepliedTo.tsx#PostRepliedTo",
+          "src/components/Post/ShowMoreTextButton.tsx#ShowMoreTextButton",
+          "src/components/Post/Translated/index.tsx#TranslatedPost",
+          "src/components/PostControls/index.tsx#PostControls",
+          "src/components/RichText.tsx#RichText",
+          "src/components/SubtleHover.tsx#SubtleHover",
+          "src/components/VideoPostCard.tsx#CompactVideoPostCard",
+          "src/components/VideoPostCard.tsx#CompactVideoPostCardPlaceholder",
+          "src/components/VideoPostCard.tsx#VideoPostCard",
+          "src/components/VideoPostCard.tsx#VideoPostCardPlaceholder",
+          "src/components/VideoPostCard.tsx#VideoPostCardTextPlaceholder",
+          "src/components/dialogs/PostInteractionSettingsDialog.tsx#PostInteractionSettingsControlledDialog",
+          "src/components/images/Gallery/index.tsx#GalleryBleed",
+          "src/components/moderation/ContentHider.tsx#ContentHider",
+          "src/components/moderation/LabelsOnMe.tsx#LabelsOnMyPost",
+          "src/components/moderation/PostAlerts.tsx#PostAlerts",
+          "src/lib/hooks/useOpenComposer.tsx#useOpenComposer",
+          "src/state/cache/post-shadow.ts#usePostShadow",
+          "src/state/preferences/moderation-opts.tsx#useModerationOpts",
+          "src/state/shell/composer/index.tsx#useComposerControls",
+          "src/state/shell/composer/index.tsx#useOpenComposer",
+          "src/view/com/post/Post.tsx#Post",
+          "src/view/com/post/Post.tsx#PostInner",
+          "src/view/com/posts/PostFeedItem.tsx#PostContent",
+          "src/view/com/util/LoadingPlaceholder.tsx#PostFeedLoadingPlaceholder",
+          "src/view/com/util/PostMeta.tsx#PostMeta",
+          "src/view/com/util/UserAvatar.tsx#PreviewableUserAvatar",
+          "view/com/util/Link#Link"
+        ],
+        "confidence": "Medium"
+      },
+      {
+        "first_tool_used": "find_entity_by_id_or_name",
+        "cited_entity_ids": [
+          "alf",
+          "bskyembed/src/components/post.tsx",
+          "bskyembed/src/icons/Repost.tsx",
+          "components/images/Gallery",
+          "components/moderation/ContentHider",
+          "components/moderation/LabelsOnMe",
+          "components/moderation/PostAlerts",
+          "lib/constants",
+          "lib/hooks/useOpenComposer",
+          "lib/routes/links",
+          "lib/strings/helpers",
+          "src/lib/hooks/useOpenComposer.tsx#useOpenComposer",
+          "src/state/queries/usePostThread/context.tsx#usePostThreadContext",
+          "src/state/shell/composer/index.tsx#useOpenComposer",
+          "src/state/shell/drawer-open.tsx#useSetDrawerOpen",
+          "src/view/com/post/Post.tsx",
+          "state/cache/post-shadow",
+          "state/preferences/moderation-opts",
+          "state/queries/profile",
+          "view/com/util/Link",
+          "view/com/util/PostMeta",
+          "view/com/util/UserAvatar"
+        ],
+        "confidence": "Medium"
+      }
+    ],
+    "question_id": "q30",
+    "recovered_from_stdout": false
+  }
+]
