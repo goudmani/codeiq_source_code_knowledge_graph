@@ -18,9 +18,9 @@ flowchart TD
     raw --> describe
     describe --> descOut[("entities_with_desc.jsonl")]
 
-    descOut --> graph["build_graph.py"]
-    edges --> graph
-    graph --> graphml[("graph.graphml")]
+    descOut --> build_graph["build_graph.py"]
+    edges --> build_graph
+    build_graph --> graphml[("graph.graphml")]
 
     descOut --> index["build_index.py"]
     edges --> index
@@ -30,7 +30,7 @@ flowchart TD
     chroma --> query["query_index.py"]
     descOut --> tools["tools.py"]
     edges --> tools
-    graph -. reuses load_graph/transitive_deps .-> tools
+    build_graph -. reuses load_graph/transitive_deps .-> tools
 
     query --> agent["agent.py"]
     tools --> agent
