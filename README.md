@@ -171,18 +171,21 @@ shiny run app/app.py --reload
 ## Evaluation, cost & reliability testing
 
 All three harnesses spend real Groq quota — run `make probe-quota` first.
-Design notes: `docs/reliability-and-cost-testing.md`.
+Design notes: [docs/reliability-and-cost-testing.md](docs/reliability-and-cost-testing.md).
 
 - **Answer quality** — 30 questions in 3 committed sets
   (`data/eval/questions*.json`). `make eval` runs set 1, `make eval-all` runs
-  all three → `data/eval/`. A question is a hit if the cited sources include
-  the expected entities. Latest: 1.0 / 1.0 / 0.8 per set (28/30), 0 errors.
+  all three. A question is a hit if the cited sources include the expected
+  entities. Latest: 1.0 / 1.0 / 0.8 per set (28/30), 0 errors — reports:
+  [set 1](data/eval/RESULTS.md), [set 2](data/eval/RESULTS_2.md),
+  [set 3](data/eval/RESULTS_3.md).
 - **Token cost** — `make cost-eval`: one pass over the 30 questions, exact
   token counts per call, broken down by prompt type and message source →
-  `data/cost/`. `make cost-plots` renders the charts (offline).
+  [COST_REPORT.md](data/cost/COST_REPORT.md). `make cost-plots` renders the
+  charts → [data/cost/plots/](data/cost/plots) (offline).
 - **Reliability** — `make reliability`: asks each of 10 fixed questions 3–5
   times and checks the runs agree (first tool, cited entities, confidence) →
-  PASS/FAIL/INCONCLUSIVE per question in `data/reliability/`. Latest:
+  [RELIABILITY_REPORT.md](data/reliability/RELIABILITY_REPORT.md). Latest:
   6 PASS / 3 INCONCLUSIVE / 1 error (quota).
 
 ## Project structure
