@@ -86,9 +86,8 @@ REPO_OWNER=raysk4ever REPO_NAME=Simple-React-Native-App docker compose up -d app
    echo "GROQ_API_KEY=your-key-here" > .env
    ```
 
-   Optional: add `GROQ_API_KEY_2`, `GROQ_API_KEY_3`, … as well — when the
-   active account hits a rate limit, the agent rotates to the next one
-   automatically (each free-tier account has its own independent quota).
+   Optional: add `GROQ_API_KEY_2`, `GROQ_API_KEY_3`, … — the agent rotates
+   to the next key when one hits a rate limit.
 
 ## Running the pipeline (local)
 
@@ -171,30 +170,20 @@ shiny run app/app.py --reload
 
 ## Evaluation, cost & reliability testing
 
-Three complementary harnesses measure the agent. All of them spend real Groq
-quota — run `make probe-quota` first to check the configured keys' headroom.
-The design decisions behind the cost and reliability pieces are documented in
-`docs/reliability-and-cost-testing.md`.
+All three harnesses spend real Groq quota — run `make probe-quota` first.
+Design notes: `docs/reliability-and-cost-testing.md`.
 
-- **Answer quality** — 30 grounded question/expected-answer pairs across three
-  committed sets (`data/eval/questions*.json`). `make eval` runs set 1,
-  `make eval-all` runs all three, writing `data/eval/results*.json` and
-  `RESULTS*.md`. Each question is scored on whether the agent's cited sources
-  include the expected entities. Latest committed runs: entity-hit rate
-  1.0 / 1.0 / 0.8 per set (28/30 overall), 0 errors.
-- **Token cost** — `make cost-eval` runs a single pass over all 30 questions
-  with per-call token logging (`src/qa_agent/cost_logger.py`: exact Groq
-  token counts per call, attributed by prompt type and by message source),
-  writing `data/cost/cost_log.jsonl` and `COST_REPORT.md`. `make cost-plots`
-  renders the report as PNG charts (`data/cost/plots/`, offline, no API
-  calls).
-- **Reliability (self-consistency)** — LLM output varies run to run even at
-  temperature 0, so `make reliability` asks each question in a fixed
-  10-question subset 3–5 times (adaptive early stopping) and compares the
-  runs' *decisions* — first tool called, cited entities, confidence level —
-  rather than answer prose, yielding a PASS/FAIL/INCONCLUSIVE verdict per
-  question in `data/reliability/`. Latest run: 6 PASS / 3 INCONCLUSIVE /
-  1 error (quota).
+- **Answer quality** — 30 questions in 3 committed sets
+  (`data/eval/questions*.json`). `make eval` runs set 1, `make eval-all` runs
+  all three → `data/eval/`. A question is a hit if the cited sources include
+  the expected entities. Latest: 1.0 / 1.0 / 0.8 per set (28/30), 0 errors.
+- **Token cost** — `make cost-eval`: one pass over the 30 questions, exact
+  token counts per call, broken down by prompt type and message source →
+  `data/cost/`. `make cost-plots` renders the charts (offline).
+- **Reliability** — `make reliability`: asks each of 10 fixed questions 3–5
+  times and checks the runs agree (first tool, cited entities, confidence) →
+  PASS/FAIL/INCONCLUSIVE per question in `data/reliability/`. Latest:
+  6 PASS / 3 INCONCLUSIVE / 1 error (quota).
 
 ## Project structure
 
