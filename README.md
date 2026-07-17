@@ -229,18 +229,22 @@ app/                                  Shiny chat UI over the qa_agent
 └── www/                                static assets (JS, CSS, images)
 
 img/demo.gif                          demo GIF (see Demo section above)
-
-data/
-├── raw/<tag>/                         gitignored, regenerated with `make clone`
-├── processed/<tag>/                   entities/edges (source of truth)
-│   ├── entities.jsonl, entities_with_desc.jsonl, edges.jsonl
-│   ├── graph.graphml                   derived, for Gephi/yEd
-│   ├── chroma/                         derived, ChromaDB persistent store (gitignored)
-│   └── add-descriptions-intermediate/  checkpoint + LLM call log
-├── eval/                              question sets + eval reports (checked into git)
-├── cost/                              token/cost log, report + presentation charts
-└── reliability/                       reliability run results + report
 ```
+
+`data/`:
+
+- `raw/<tag>/` — gitignored, regenerated with `make clone`
+- `processed/<tag>/` — entities/edges (source of truth): `entities.jsonl`,
+  `entities_with_desc.jsonl`, `edges.jsonl`; `graph.graphml` (derived, for
+  Gephi/yEd); `chroma/` (derived ChromaDB store, gitignored);
+  `add-descriptions-intermediate/` (checkpoint + LLM call log)
+- [`eval/`](data/eval) — question sets + eval reports:
+  [set 1](data/eval/RESULTS.md), [set 2](data/eval/RESULTS_2.md),
+  [set 3](data/eval/RESULTS_3.md)
+- [`cost/`](data/cost) — token/cost log,
+  [report](data/cost/COST_REPORT.md) + [charts](data/cost/plots)
+- [`reliability/`](data/reliability) — run results +
+  [report](data/reliability/RELIABILITY_REPORT.md)
 
 ## Roadmap
 
