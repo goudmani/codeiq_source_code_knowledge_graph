@@ -5,7 +5,8 @@
 Code files under `src/` only (`.py`/`.js`/`.mjs`); cylinders are the intermediate data files/folders each step reads or writes. `app/` (the frontend) is left out of this diagram -- see [2. Frontend: App](#2-frontend-app) below.
 
 ```mermaid
-flowchart TD
+%%{init: {'flowchart': {'curve': 'linear'}}}%%
+graph TD
     raw[("data/raw/{tag}/\n*.ts, *.tsx")]
 
     clone["clone_raw.py"] --> raw
