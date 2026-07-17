@@ -8,6 +8,7 @@ dependencies:
   - make
   - numpy
   - networkx
+  - matplotlib
   - jupyterlab
   - pytest
   - black

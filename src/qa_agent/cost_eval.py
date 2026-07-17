@@ -5,7 +5,7 @@ cost_eval.py
 Runs a single, non-repeated pass over the eval question sets (default:
 data/eval/questions.json, questions_2.json, questions_3.json) against the
 Q&A agent with cost_sink wired in, producing a first token/cost profile.
-See docs/reliability-and-cost-testing.md for the design behind this.
+See reports/reliability-and-cost-testing.md for the design behind this.
 
 This intentionally does NOT repeat questions the way the reliability harness
 does -- a single pass over the existing 30 questions already gives a cost

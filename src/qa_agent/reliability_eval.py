@@ -4,7 +4,7 @@ reliability_eval.py
 
 Batch runner for reliability.py's evaluate_reliability() over a fixed,
 hand-picked subset of the eval questions -- not the full 30, see
-docs/reliability-and-cost-testing.md's sequencing note on cost -- with cost
+reports/reliability-and-cost-testing.md's sequencing note on cost -- with cost
 tracking wired in via cost_sink, same pattern as cost_eval.py.
 
 Question selection (10 of 30): spans all three prompt types that actually
