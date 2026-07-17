@@ -1,6 +1,6 @@
 # Cost report
 
-Generated from 106 logged LLM calls.
+Generated from 106 logged LLM calls, made from the 30 eval questions log.
 
 ## Tokens by prompt type
 
