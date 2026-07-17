@@ -13,3 +13,4 @@ data/processed/*/chroma/
 # Local context/reference material (notes, briefs, transcripts, etc.)
 # provided for understanding only -- never committed.
 context/
+profiles/
