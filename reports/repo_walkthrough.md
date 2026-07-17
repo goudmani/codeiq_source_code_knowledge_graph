@@ -225,6 +225,60 @@ python src/qa_agent/eval.py --questions data/eval/questions.json --out-dir data/
 - Output: `results<suffix>.json` (raw runs + per-model summary) and `RESULTS<suffix>.md` (human-readable report: summary table + per-question, per-model comparison), both under `--out-dir`.
 - Scores each run by whether the cited sources overlap `expected_entities` (`entity_hit`), and flags "successful but empty" runs separately (`blank_answer`) so they can't hide inside the hit rate.
 
+### Step 7: Cost Analysis
+
+File: `src/qa_agent/cost_logger.py`
+
+- Not a script -- the token/cost instrumentation layer imported by `agent.py` and the two runners below. Groq returns exact `prompt_tokens`/`completion_tokens` per LLM call for free (`response_metadata["token_usage"]`); `agent.ask()` captures that at its invocation site whenever a `cost_sink` is passed (default `None`, so existing callers are unaffected) and writes one JSONL record per call.
+- What Groq does *not* give is attribution -- one combined prompt-token count, not how much came from the system prompt vs. a tool's results vs. the question. `estimate_char_shares()` fills that in by each message's share of the call's total prompt characters (an estimate, good enough for relative ranking). `classify_prompt_type()` buckets each question as `identifier_lookup`/`relationship`/`transitive_impact`/`discovery` -- the same taxonomy already implicit in the agent's system-prompt tool-selection rules, so cost is analyzed in the terms the agent itself reasons with.
+- Important functions: `CostLogWriter` (JSONL appender), `load_cost_log()`, `aggregate_by_prompt_type()`/`aggregate_by_source()` (the two report tables), `cross_tab_intended_vs_actual()` (intended question type vs. the tool the agent actually called first), `write_cost_report()`.
+
+File: `src/qa_agent/cost_eval.py`
+
+Sample Command (run from repo root):
+
+```bash
+python src/qa_agent/cost_eval.py
+```
+
+- A single, non-repeated pass over the eval question sets with a `cost_sink` wired in -- the first cost profile at a fraction of the quota cost of any repeated-sampling run. Each run starts from a fresh cost log, and a failed question is logged and skipped, not fatal.
+- Input: `--questions` (default: all three `data/eval/questions*.json` sets, 30 questions), `--model`, `--cost-log`, `--report`.
+- Output: `data/cost/cost_log.jsonl` (one record per LLM call) and `data/cost/COST_REPORT.md` (tokens by prompt type, estimated tokens by source, intended-vs-actual first-tool cross-tab). From the committed run: the system prompt is 57.7% of all estimated tokens (it's resent on every call), `search_code` results 30.8%, and `identifier_lookup` questions are the priciest per question (~16.4K avg tokens).
+
+File: `src/qa_agent/cost_plots.py`
+
+Sample Command (run from repo root):
+
+```bash
+python src/qa_agent/cost_plots.py
+```
+
+- Renders the cost report's tables as two PNG charts (avg tokens per question by prompt type, stacked prompt/completion; avg tokens per question by source), reusing `cost_logger.py`'s aggregation functions rather than recomputing. Fully offline -- reads the JSONL log, no API calls. Needs `matplotlib`.
+- Input: `data/cost/cost_log.jsonl`.
+- Output: `data/cost/plots/tokens_by_prompt_type.png` and `tokens_by_source.png`.
+
+### Step 8: Reliability (Redundancy) Testing
+
+File: `src/qa_agent/reliability.py`
+
+- Not a script -- the self-consistency (test-retest) library: ask the same question multiple times and check whether the agent's *decisions* agree across runs. LLM output varies run to run even at temperature 0, so exact answer-text match is the wrong bar -- structured decisions are compared instead.
+- Each run is reduced to a `Fingerprint`: first tool called, cited entity ids, confidence level. Two runs agree if the first tool and confidence match exactly and the cited-entity sets overlap at Jaccard >= 0.7 (`ENTITY_JACCARD_THRESHOLD`, a starting default kept as one named constant).
+- Adaptive sampling (`evaluate_reliability()`): run 3 samples; if all agree -> **PASS**, stop early (saves 2 calls). Otherwise run 2 more and verdict on all 5: >=4/5 agree -> **PASS**, 2-3/5 -> **INCONCLUSIVE**, <=1/5 -> **FAIL**.
+- The design reasoning (why a custom harness over RAGAS/DeepEval/promptfoo, where the three-valued verdict and early stopping come from) is in `reports/reliability-and-cost-testing.md`.
+
+File: `src/qa_agent/reliability_eval.py`
+
+Sample Command (run from repo root):
+
+```bash
+python src/qa_agent/reliability_eval.py
+python src/qa_agent/reliability_eval.py --ids q13 q15 --cost-log data/cost/partial.jsonl   # resume a partial run
+```
+
+- Batch runner for `evaluate_reliability()` over a fixed, hand-picked 10-question subset (spans all three prompt types that occur in the eval sets, deliberately excludes the three already-diagnosed eval misses), with cost tracking through the same `cost_sink`. Results are checkpointed after every question, and a failed question is recorded as `verdict: ERROR` instead of crashing -- a mid-run quota hit can't lose completed results.
+- Input: `--ids` (question ids to run, default the full 10), `--cost-log` (pass a different path when resuming a partial run so it doesn't clobber prior records).
+- Output: `data/reliability/reliability_results.json` + `RELIABILITY_REPORT.md`, plus a distinct "Reliability run" section appended to `data/cost/COST_REPORT.md` -- kept separate from the single-pass tables, since 3-5 repeated samples per question would skew those averages. First committed run: **6 PASS / 3 INCONCLUSIVE / 1 ERROR** (quota) across the 10 questions, 141 logged calls.
+
 ### Misc Files
 
 File: `src/qa_agent/probe_quota.py`
