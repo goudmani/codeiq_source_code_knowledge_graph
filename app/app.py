@@ -2,7 +2,7 @@
 """
 app.py
 
-CodeIQ -- a dark-mode Shiny chat UI over the qa_agent (src/qa_agent/agent.py).
+CodeIQ -- a Shiny chat UI over the qa_agent (src/qa_agent/agent.py).
 Every question is answered by ask(), and the UI surfaces every field ask()
 returns: answer, a deterministic confidence tag (with hover/click rationale),
 a "more info" popover (model/latency/tool_calls), tabbed sources with
