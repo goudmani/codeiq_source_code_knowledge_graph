@@ -5,8 +5,7 @@
 Code files under `src/` only (`.py`/`.js`/`.mjs`); cylinders are the intermediate data files/folders each step reads or writes. `app/` (the frontend) is left out of this diagram -- see [2. Frontend: App](#2-frontend-app) below.
 
 ```mermaid
-%%{init: {'flowchart': {'curve': 'linear'}}}%%
-graph TD
+flowchart TD
     raw[("data/raw/{tag}/\n*.ts, *.tsx")]
 
     clone["clone_raw.py"] --> raw
@@ -19,18 +18,22 @@ graph TD
     raw --> describe
     describe --> descOut[("entities_with_desc.jsonl")]
 
-    descOut --> build_graph["build_graph.py"]
-    edges --> build_graph
+    subgraph metadata["Processed metadata"]
+        direction TB
+        descOut
+        edges
+    end
+
+    metadata --> build_graph["build_graph.py"]
     build_graph --> graphml[("graph.graphml")]
 
-    descOut --> index["build_index.py"]
-    edges --> index
+    metadata --> index["build_index.py"]
     raw --> index
     index --> chroma[("chroma/\n(vector store)")]
 
     chroma --> query["query_index.py"]
-    descOut --> tools["tools.py"]
-    edges --> tools
+
+    metadata --> tools["tools.py"]
     build_graph -. reuses load_graph/transitive_deps .-> tools
 
     query --> agent["agent.py"]
