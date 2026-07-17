@@ -111,9 +111,14 @@ def plot_tokens_by_prompt_type(records: list[dict], out_path: Path) -> None:
 
 def plot_tokens_by_source(records: list[dict], out_path: Path) -> None:
     by_source = aggregate_by_source(records)
+    # Normalize by question count, not call count -- same standard as
+    # plot_tokens_by_prompt_type, and it keeps this chart comparable across
+    # future runs with a different number of questions. Share-of-total is
+    # unaffected by the divisor (it's a ratio), only the token axis changes.
+    num_questions = len({r["question_id"] for r in records})
     items = list(by_source.items())[::-1]  # reverse: barh draws bottom-up, want largest on top
     labels = [tag.replace("tool:", "").replace("_", " ") for tag, _ in items]
-    values = [v["estimated_tokens"] for _, v in items]
+    values = [v["estimated_tokens"] / num_questions for _, v in items]
     shares = [v["share_of_total"] for _, v in items]
 
     fig, ax = plt.subplots(figsize=(7.5, 5))
@@ -130,9 +135,9 @@ def plot_tokens_by_source(records: list[dict], out_path: Path) -> None:
     ax.set_yticks(list(y))
     ax.set_yticklabels(labels, fontsize=10)
     ax.set_xlim(0, max_v * 1.18)
-    ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{int(v):,}"))
-    ax.set_xlabel("Estimated tokens (share of total, direct-labeled)")
-    ax.set_title("Estimated tokens by source", fontsize=13, fontweight="bold", loc="left", pad=14)
+    ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{v:,.0f}"))
+    ax.set_xlabel("Avg estimated tokens per question (share of total, direct-labeled)")
+    ax.set_title("Average tokens per question, by source", fontsize=13, fontweight="bold", loc="left", pad=14)
     ax.grid(axis="x", color=GRIDLINE, linewidth=1, zorder=0)
     ax.set_axisbelow(True)
     _clean_axes(ax)
