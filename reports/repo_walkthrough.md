@@ -37,7 +37,7 @@ flowchart TD
     agent --> answer[("answer + sources")]
 
     questions[("data/eval/questions.json")] --> eval["eval.py"]
-    agent -. invoked via agent.ask .-> eval
+    agent -. "invoked via agent.ask" .-> eval
     eval --> results[("results.json /\nRESULTS.md")]
 
     probe["probe_quota.py"] -. checks quota before .-> eval
