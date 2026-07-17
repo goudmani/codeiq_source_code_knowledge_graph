@@ -1,9 +1,6 @@
-pandas
 numpy
 networkx
-pytest
-black
-flake8
+matplotlib
 python-dotenv
 langchain
 langchain-openai
@@ -12,3 +9,4 @@ langchain-core
 langchain-groq
 shiny
 markdown-it-py
+jupyterlab
