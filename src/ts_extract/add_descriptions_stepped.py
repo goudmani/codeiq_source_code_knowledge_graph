@@ -244,6 +244,12 @@ class Checkpoint:
     record() when they finish successfully.
     """
 
+    @staticmethod
+    def _norm_key(file_key: str) -> str:
+        # Checkpoints written on Windows store backslash paths; normalize so
+        # a run on macOS/Linux (or in Docker) still recognizes them as done.
+        return str(file_key).replace("\\", "/")
+
     def __init__(self, checkpoint_path: str):
         self.checkpoint_path = checkpoint_path
         self._lock = threading.Lock()
@@ -253,17 +259,17 @@ class Checkpoint:
             file_key = record.get("file")
             if file_key is None:
                 continue
-            self.done[file_key] = record
+            self.done[self._norm_key(file_key)] = record
 
         # Open in append mode - existing good lines stay, new ones get added.
         # (We never rewrite the checkpoint file in place, only append.)
         self._fh = open(checkpoint_path, "a", encoding="utf-8")
 
     def is_done(self, file_key: str) -> bool:
-        return file_key in self.done
+        return self._norm_key(file_key) in self.done
 
     def record(self, result: dict):
-        file_key = result["file"]
+        file_key = self._norm_key(result["file"])
         with self._lock:
             self.done[file_key] = result
             self._fh.write(json.dumps(result) + "\n")

@@ -1,0 +1,634 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d14" for="edge" attr.name="sameFile" attr.type="string" />
+  <key id="d13" for="edge" attr.name="unresolvedFileGuess" attr.type="string" />
+  <key id="d12" for="edge" attr.name="lines" attr.type="string" />
+  <key id="d11" for="edge" attr.name="external" attr.type="string" />
+  <key id="d10" for="edge" attr.name="type" attr.type="string" />
+  <key id="d9" for="node" attr.name="inferred" attr.type="string" />
+  <key id="d8" for="node" attr.name="kindGuess" attr.type="string" />
+  <key id="d7" for="node" attr.name="description" attr.type="string" />
+  <key id="d6" for="node" attr.name="endLine" attr.type="string" />
+  <key id="d5" for="node" attr.name="startLine" attr.type="string" />
+  <key id="d4" for="node" attr.name="isScreenDir" attr.type="string" />
+  <key id="d3" for="node" attr.name="file" attr.type="string" />
+  <key id="d2" for="node" attr.name="name" attr.type="string" />
+  <key id="d1" for="node" attr.name="type" attr.type="string" />
+  <key id="d0" for="node" attr.name="id" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="App.tsx">
+      <data key="d0">App.tsx</data>
+      <data key="d1">File</data>
+      <data key="d2">App.tsx</data>
+      <data key="d3">App.tsx</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">33</data>
+      <data key="d7">Main entry point file for the React Native application defining global styles and root layout.</data>
+    </node>
+    <node id="App.tsx#App">
+      <data key="d0">App.tsx#App</data>
+      <data key="d1">Component</data>
+      <data key="d2">App</data>
+      <data key="d3">App.tsx</data>
+      <data key="d8">function</data>
+      <data key="d5">15</data>
+      <data key="d6">30</data>
+      <data key="d7">Root component function that renders the main application structure including routes and status bar.</data>
+    </node>
+    <node id="constants.ts">
+      <data key="d0">constants.ts</data>
+      <data key="d1">File</data>
+      <data key="d2">constants.ts</data>
+      <data key="d3">constants.ts</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">3</data>
+      <data key="d7">Defines mock authentication credentials for development and testing.</data>
+    </node>
+    <node id="routes.tsx">
+      <data key="d0">routes.tsx</data>
+      <data key="d1">File</data>
+      <data key="d2">routes.tsx</data>
+      <data key="d3">routes.tsx</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">38</data>
+      <data key="d7">File containing navigation configuration for the React Native application</data>
+    </node>
+    <node id="routes.tsx#Routes">
+      <data key="d0">routes.tsx#Routes</data>
+      <data key="d1">Component</data>
+      <data key="d2">Routes</data>
+      <data key="d3">routes.tsx</data>
+      <data key="d8">function</data>
+      <data key="d5">13</data>
+      <data key="d6">36</data>
+      <data key="d7">Component that defines the navigation stack with Home, Post, and Login screens</data>
+    </node>
+    <node id="types.ts">
+      <data key="d0">types.ts</data>
+      <data key="d1">File</data>
+      <data key="d2">types.ts</data>
+      <data key="d3">types.ts</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">6</data>
+      <data key="d7">Defines TypeScript types for the application.</data>
+    </node>
+    <node id="utils.ts">
+      <data key="d0">utils.ts</data>
+      <data key="d1">File</data>
+      <data key="d2">utils.ts</data>
+      <data key="d3">utils.ts</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">5</data>
+      <data key="d7">Utility function to create a Promise that resolves after a specified time delay.</data>
+    </node>
+    <node id="components/Float.tsx">
+      <data key="d0">components/Float.tsx</data>
+      <data key="d1">File</data>
+      <data key="d2">Float.tsx</data>
+      <data key="d3">components/Float.tsx</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">23</data>
+      <data key="d7">A TypeScript file defining the Float React component.</data>
+    </node>
+    <node id="components/Float.tsx#Float">
+      <data key="d0">components/Float.tsx#Float</data>
+      <data key="d1">Component</data>
+      <data key="d2">Float</data>
+      <data key="d3">components/Float.tsx</data>
+      <data key="d8">function</data>
+      <data key="d5">4</data>
+      <data key="d6">11</data>
+      <data key="d7">A React component that renders two absolute positioned views with rounded bottom corners.</data>
+    </node>
+    <node id="components/LoginHint.tsx">
+      <data key="d0">components/LoginHint.tsx</data>
+      <data key="d1">File</data>
+      <data key="d2">LoginHint.tsx</data>
+      <data key="d3">components/LoginHint.tsx</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">88</data>
+      <data key="d7">A TypeScript React component file that displays login hints for username and password fields on a login screen</data>
+    </node>
+    <node id="components/LoginHint.tsx#LoginHint">
+      <data key="d0">components/LoginHint.tsx#LoginHint</data>
+      <data key="d1">Component</data>
+      <data key="d2">LoginHint</data>
+      <data key="d3">components/LoginHint.tsx</data>
+      <data key="d8">function</data>
+      <data key="d5">6</data>
+      <data key="d6">66</data>
+      <data key="d7">A React component that displays hidden login hints (username/password) to users on a login screen with a toggle button</data>
+    </node>
+    <node id="components/Toast.tsx">
+      <data key="d0">components/Toast.tsx</data>
+      <data key="d1">File</data>
+      <data key="d2">Toast.tsx</data>
+      <data key="d3">components/Toast.tsx</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">9</data>
+      <data key="d7">This file defines the Toast component used for displaying notifications within the React Native application.</data>
+    </node>
+    <node id="components/Toast.tsx#Toast">
+      <data key="d0">components/Toast.tsx#Toast</data>
+      <data key="d1">Component</data>
+      <data key="d2">Toast</data>
+      <data key="d3">components/Toast.tsx</data>
+      <data key="d8">arrow</data>
+      <data key="d5">4</data>
+      <data key="d6">6</data>
+      <data key="d7">This component renders a toast notification message using the react-native-toast-message library.</data>
+    </node>
+    <node id="hooks/usePosts.ts">
+      <data key="d0">hooks/usePosts.ts</data>
+      <data key="d1">File</data>
+      <data key="d2">usePosts.ts</data>
+      <data key="d3">hooks/usePosts.ts</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">56</data>
+      <data key="d7">Custom hook file that manages posts data fetching with pagination and loading states in a React Native application</data>
+    </node>
+    <node id="hooks/usePosts.ts#usePosts">
+      <data key="d0">hooks/usePosts.ts#usePosts</data>
+      <data key="d1">Hook</data>
+      <data key="d2">usePosts</data>
+      <data key="d3">hooks/usePosts.ts</data>
+      <data key="d8">function</data>
+      <data key="d5">6</data>
+      <data key="d6">55</data>
+      <data key="d7">Custom React hook that fetches posts data with pagination, loading, and refresh functionality</data>
+    </node>
+    <node id="hooks/useToast.ts">
+      <data key="d0">hooks/useToast.ts</data>
+      <data key="d1">File</data>
+      <data key="d2">useToast.ts</data>
+      <data key="d3">hooks/useToast.ts</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">16</data>
+      <data key="d7">A TypeScript file defining a custom hook for displaying toast notifications in React Native applications.</data>
+    </node>
+    <node id="hooks/useToast.ts#useToast">
+      <data key="d0">hooks/useToast.ts#useToast</data>
+      <data key="d1">Hook</data>
+      <data key="d2">useToast</data>
+      <data key="d3">hooks/useToast.ts</data>
+      <data key="d8">function</data>
+      <data key="d5">2</data>
+      <data key="d6">15</data>
+      <data key="d7">A custom hook that allows showing toast messages with customizable types, titles, and descriptions, including an error variant.</data>
+    </node>
+    <node id="screens/Home.tsx">
+      <data key="d0">screens/Home.tsx</data>
+      <data key="d1">File</data>
+      <data key="d2">Home.tsx</data>
+      <data key="d3">screens/Home.tsx</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">110</data>
+      <data key="d7">A React Native screen component that displays a flatlist of posts with refresh and logout functionality</data>
+    </node>
+    <node id="screens/Home.tsx#HeaderRightButton">
+      <data key="d0">screens/Home.tsx#HeaderRightButton</data>
+      <data key="d1">Component</data>
+      <data key="d2">HeaderRightButton</data>
+      <data key="d3">screens/Home.tsx</data>
+      <data key="d8">function</data>
+      <data key="d5">13</data>
+      <data key="d6">20</data>
+      <data key="d7">A component that provides refresh and logout icons with click handlers in the header</data>
+    </node>
+    <node id="screens/Home.tsx#HomeScreen">
+      <data key="d0">screens/Home.tsx#HomeScreen</data>
+      <data key="d1">Screen</data>
+      <data key="d2">HomeScreen</data>
+      <data key="d3">screens/Home.tsx</data>
+      <data key="d8">function</data>
+      <data key="d5">22</data>
+      <data key="d6">81</data>
+      <data key="d7">A screen component that fetches and displays posts in a FlatList with loading and navigation states</data>
+    </node>
+    <node id="screens/Login.tsx">
+      <data key="d0">screens/Login.tsx</data>
+      <data key="d1">File</data>
+      <data key="d2">Login.tsx</data>
+      <data key="d3">screens/Login.tsx</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">153</data>
+      <data key="d7">React Native TypeScript file containing user authentication login screen with username/password input and credential validation</data>
+    </node>
+    <node id="screens/Login.tsx#LoginScreen">
+      <data key="d0">screens/Login.tsx#LoginScreen</data>
+      <data key="d1">Screen</data>
+      <data key="d2">LoginScreen</data>
+      <data key="d3">screens/Login.tsx</data>
+      <data key="d8">function</data>
+      <data key="d5">47</data>
+      <data key="d6">107</data>
+      <data key="d7">React component handling user login functionality with input fields, credential validation, and navigation to Home screen</data>
+    </node>
+    <node id="screens/Post.tsx">
+      <data key="d0">screens/Post.tsx</data>
+      <data key="d1">File</data>
+      <data key="d2">Post.tsx</data>
+      <data key="d3">screens/Post.tsx</data>
+      <data key="d4">False</data>
+      <data key="d5">1</data>
+      <data key="d6">27</data>
+      <data key="d7">A React Native screen component for displaying post content.</data>
+    </node>
+    <node id="screens/Post.tsx#Post">
+      <data key="d0">screens/Post.tsx#Post</data>
+      <data key="d1">Component</data>
+      <data key="d2">Post</data>
+      <data key="d3">screens/Post.tsx</data>
+      <data key="d8">function</data>
+      <data key="d5">6</data>
+      <data key="d6">15</data>
+      <data key="d7">A component that renders a post's title and body from navigation parameters.</data>
+    </node>
+    <node id="external:react-native#SafeAreaView">
+      <data key="d1">External</data>
+      <data key="d2">SafeAreaView</data>
+    </node>
+    <node id="external:react-native#StatusBar">
+      <data key="d1">External</data>
+      <data key="d2">StatusBar</data>
+    </node>
+    <node id="external:react-native#useColorScheme">
+      <data key="d1">External</data>
+      <data key="d2">useColorScheme</data>
+    </node>
+    <node id="external:@react-navigation/native#NavigationContainer">
+      <data key="d1">External</data>
+      <data key="d2">NavigationContainer</data>
+    </node>
+    <node id="routes.tsx#Stack">
+      <data key="d1">Component</data>
+      <data key="d2">Stack</data>
+      <data key="d3">routes.tsx</data>
+      <data key="d9">True</data>
+    </node>
+    <node id="external:react-native#View">
+      <data key="d1">External</data>
+      <data key="d2">View</data>
+    </node>
+    <node id="external:react-native#Text">
+      <data key="d1">External</data>
+      <data key="d2">Text</data>
+    </node>
+    <node id="external:react-native#Animated">
+      <data key="d1">External</data>
+      <data key="d2">Animated</data>
+    </node>
+    <node id="external:react#useState">
+      <data key="d1">External</data>
+      <data key="d2">useState</data>
+    </node>
+    <node id="external:react#useCallback">
+      <data key="d1">External</data>
+      <data key="d2">useCallback</data>
+    </node>
+    <node id="external:react#useMemo">
+      <data key="d1">External</data>
+      <data key="d2">useMemo</data>
+    </node>
+    <node id="external:react#useEffect">
+      <data key="d1">External</data>
+      <data key="d2">useEffect</data>
+    </node>
+    <node id="external:react-native-toast-message#RNToast">
+      <data key="d1">External</data>
+      <data key="d2">RNToast</data>
+    </node>
+    <node id="external:react-native#TouchableOpacity">
+      <data key="d1">External</data>
+      <data key="d2">TouchableOpacity</data>
+    </node>
+    <node id="external:react-native#ActivityIndicator">
+      <data key="d1">External</data>
+      <data key="d2">ActivityIndicator</data>
+    </node>
+    <node id="external:react-native#FlatList">
+      <data key="d1">External</data>
+      <data key="d2">FlatList</data>
+    </node>
+    <node id="external:react-native#ImageBackground">
+      <data key="d1">External</data>
+      <data key="d2">ImageBackground</data>
+    </node>
+    <node id="external:react-native#TextInput">
+      <data key="d1">External</data>
+      <data key="d2">TextInput</data>
+    </node>
+    <node id="screens/Login.tsx#LoginHint">
+      <data key="d1">Component</data>
+      <data key="d2">LoginHint</data>
+      <data key="d3">screens/Login.tsx</data>
+      <data key="d9">True</data>
+    </node>
+    <node id="external:react#useReducer">
+      <data key="d1">External</data>
+      <data key="d2">useReducer</data>
+    </node>
+    <node id="external:@react-navigation/native#useNavigation">
+      <data key="d1">External</data>
+      <data key="d2">useNavigation</data>
+    </node>
+    <node id="external:@react-navigation/native#useRoute">
+      <data key="d1">External</data>
+      <data key="d2">useRoute</data>
+    </node>
+    <edge source="App.tsx" target="routes.tsx" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="App.tsx" target="components/Toast.tsx" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="App.tsx" target="App.tsx#App" id="0">
+      <data key="d10">defines</data>
+    </edge>
+    <edge source="App.tsx#App" target="external:react-native#SafeAreaView" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[24]</data>
+    </edge>
+    <edge source="App.tsx#App" target="external:react-native#StatusBar" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[25]</data>
+    </edge>
+    <edge source="App.tsx#App" target="routes.tsx#Routes" id="0">
+      <data key="d10">renders</data>
+      <data key="d13">True</data>
+      <data key="d12">[26]</data>
+    </edge>
+    <edge source="App.tsx#App" target="components/Toast.tsx#Toast" id="0">
+      <data key="d10">renders</data>
+      <data key="d13">True</data>
+      <data key="d12">[27]</data>
+    </edge>
+    <edge source="App.tsx#App" target="external:react-native#useColorScheme" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[16]</data>
+    </edge>
+    <edge source="routes.tsx" target="screens/Home.tsx" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="routes.tsx" target="screens/Login.tsx" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="routes.tsx" target="screens/Post.tsx" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="routes.tsx" target="routes.tsx#Routes" id="0">
+      <data key="d10">defines</data>
+    </edge>
+    <edge source="routes.tsx#Routes" target="external:@react-navigation/native#NavigationContainer" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[20]</data>
+    </edge>
+    <edge source="routes.tsx#Routes" target="routes.tsx#Stack" id="0">
+      <data key="d10">renders</data>
+      <data key="d14">True</data>
+      <data key="d12">[21, 24, 25, 26]</data>
+    </edge>
+    <edge source="components/Float.tsx" target="components/Float.tsx#Float" id="0">
+      <data key="d10">defines</data>
+    </edge>
+    <edge source="components/Float.tsx#Float" target="external:react-native#View" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[7, 8]</data>
+    </edge>
+    <edge source="components/LoginHint.tsx" target="constants.ts" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="components/LoginHint.tsx" target="components/LoginHint.tsx#LoginHint" id="0">
+      <data key="d10">defines</data>
+    </edge>
+    <edge source="components/LoginHint.tsx#LoginHint" target="external:react-native#View" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[54]</data>
+    </edge>
+    <edge source="components/LoginHint.tsx#LoginHint" target="external:react-native#Text" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[55, 61, 62]</data>
+    </edge>
+    <edge source="components/LoginHint.tsx#LoginHint" target="external:react-native#Animated" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[59]</data>
+    </edge>
+    <edge source="components/LoginHint.tsx#LoginHint" target="external:react#useState" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[7, 8]</data>
+    </edge>
+    <edge source="components/LoginHint.tsx#LoginHint" target="external:react#useCallback" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[9, 12]</data>
+    </edge>
+    <edge source="components/LoginHint.tsx#LoginHint" target="external:react#useMemo" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[10]</data>
+    </edge>
+    <edge source="components/LoginHint.tsx#LoginHint" target="external:react#useEffect" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[18, 27]</data>
+    </edge>
+    <edge source="components/Toast.tsx" target="components/Toast.tsx#Toast" id="0">
+      <data key="d10">defines</data>
+    </edge>
+    <edge source="components/Toast.tsx#Toast" target="external:react-native-toast-message#RNToast" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[5]</data>
+    </edge>
+    <edge source="hooks/usePosts.ts" target="types.ts" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="hooks/usePosts.ts" target="hooks/usePosts.ts#usePosts" id="0">
+      <data key="d10">defines</data>
+    </edge>
+    <edge source="hooks/usePosts.ts#usePosts" target="external:react#useState" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[7, 8, 9, 10, 11]</data>
+    </edge>
+    <edge source="hooks/usePosts.ts#usePosts" target="external:react#useCallback" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[13, 39]</data>
+    </edge>
+    <edge source="hooks/useToast.ts" target="hooks/useToast.ts#useToast" id="0">
+      <data key="d10">defines</data>
+    </edge>
+    <edge source="screens/Home.tsx" target="hooks/usePosts.ts" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="screens/Home.tsx" target="types.ts" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="screens/Home.tsx" target="screens/Home.tsx#HeaderRightButton" id="0">
+      <data key="d10">defines</data>
+    </edge>
+    <edge source="screens/Home.tsx" target="screens/Home.tsx#HomeScreen" id="0">
+      <data key="d10">defines</data>
+    </edge>
+    <edge source="screens/Home.tsx#HeaderRightButton" target="external:react-native#View" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[15]</data>
+    </edge>
+    <edge source="screens/Home.tsx#HeaderRightButton" target="external:react-native#Text" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[16, 17]</data>
+    </edge>
+    <edge source="screens/Home.tsx#HomeScreen" target="screens/Home.tsx#HeaderRightButton" id="0">
+      <data key="d10">renders</data>
+      <data key="d14">True</data>
+      <data key="d12">[33]</data>
+    </edge>
+    <edge source="screens/Home.tsx#HomeScreen" target="external:react-native#TouchableOpacity" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[54]</data>
+    </edge>
+    <edge source="screens/Home.tsx#HomeScreen" target="external:react-native#Text" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[55, 56]</data>
+    </edge>
+    <edge source="screens/Home.tsx#HomeScreen" target="external:react-native#ActivityIndicator" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[63]</data>
+    </edge>
+    <edge source="screens/Home.tsx#HomeScreen" target="external:react-native#View" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[68]</data>
+    </edge>
+    <edge source="screens/Home.tsx#HomeScreen" target="external:react-native#FlatList" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[69]</data>
+    </edge>
+    <edge source="screens/Home.tsx#HomeScreen" target="hooks/usePosts.ts#usePosts" id="0">
+      <data key="d10">calls</data>
+      <data key="d13">True</data>
+      <data key="d12">[24]</data>
+    </edge>
+    <edge source="screens/Home.tsx#HomeScreen" target="external:react#useCallback" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[26, 32]</data>
+    </edge>
+    <edge source="screens/Home.tsx#HomeScreen" target="external:react#useEffect" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[37, 45]</data>
+    </edge>
+    <edge source="screens/Login.tsx" target="hooks/useToast.ts" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="screens/Login.tsx" target="utils.ts" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="screens/Login.tsx" target="constants.ts" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="screens/Login.tsx" target="screens/Login.tsx#LoginScreen" id="0">
+      <data key="d10">defines</data>
+    </edge>
+    <edge source="screens/Login.tsx#LoginScreen" target="external:react-native#ImageBackground" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[80]</data>
+    </edge>
+    <edge source="screens/Login.tsx#LoginScreen" target="external:react-native#View" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[83]</data>
+    </edge>
+    <edge source="screens/Login.tsx#LoginScreen" target="external:react-native#Text" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[84, 101]</data>
+    </edge>
+    <edge source="screens/Login.tsx#LoginScreen" target="external:react-native#TextInput" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[86, 93]</data>
+    </edge>
+    <edge source="screens/Login.tsx#LoginScreen" target="external:react-native#TouchableOpacity" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[100]</data>
+    </edge>
+    <edge source="screens/Login.tsx#LoginScreen" target="screens/Login.tsx#LoginHint" id="0">
+      <data key="d10">renders</data>
+      <data key="d14">True</data>
+      <data key="d12">[104]</data>
+    </edge>
+    <edge source="screens/Login.tsx#LoginScreen" target="external:react#useReducer" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[48]</data>
+    </edge>
+    <edge source="screens/Login.tsx#LoginScreen" target="external:@react-navigation/native#useNavigation" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[50]</data>
+    </edge>
+    <edge source="screens/Login.tsx#LoginScreen" target="hooks/useToast.ts#useToast" id="0">
+      <data key="d10">calls</data>
+      <data key="d13">True</data>
+      <data key="d12">[51]</data>
+    </edge>
+    <edge source="screens/Login.tsx#LoginScreen" target="external:react#useCallback" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[53, 57, 62]</data>
+    </edge>
+    <edge source="screens/Post.tsx" target="types.ts" id="0">
+      <data key="d10">depends_on</data>
+    </edge>
+    <edge source="screens/Post.tsx" target="screens/Post.tsx#Post" id="0">
+      <data key="d10">defines</data>
+    </edge>
+    <edge source="screens/Post.tsx#Post" target="external:react-native#View" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[10]</data>
+    </edge>
+    <edge source="screens/Post.tsx#Post" target="external:react-native#Text" id="0">
+      <data key="d10">renders</data>
+      <data key="d11">True</data>
+      <data key="d12">[11, 12]</data>
+    </edge>
+    <edge source="screens/Post.tsx#Post" target="external:@react-navigation/native#useRoute" id="0">
+      <data key="d10">calls</data>
+      <data key="d11">True</data>
+      <data key="d12">[7]</data>
+    </edge>
+  </graph>
+</graphml>

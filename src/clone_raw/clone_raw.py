@@ -6,10 +6,10 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-# Default repository details
-REPO_OWNER = "bluesky-social"       # Replace with the GitHub username or organization
-REPO_NAME = "social-app"            # Replace with the repository name
-BRANCH = "main"                     # Replace with target branch
+# Default repository details (override via REPO_OWNER/REPO_NAME/BRANCH env vars)
+REPO_OWNER = os.environ.get("REPO_OWNER", "bluesky-social")
+REPO_NAME = os.environ.get("REPO_NAME", "social-app")
+BRANCH = os.environ.get("BRANCH", "main")
 
 # Folder tag every downstream stage (extract/graph/vector-index/qa_agent) uses
 # to namespace its data/raw and data/processed output for this repo+branch.

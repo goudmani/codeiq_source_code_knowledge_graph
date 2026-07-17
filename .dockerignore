@@ -1,0 +1,17 @@
+.git
+.env
+# Raw clones and the chroma index are rebuilt at container start (see
+# docker/deploy_entrypoint.sh) -- never baked into an image. entities*.jsonl,
+# edges.jsonl, and graph.graphml ARE let through: docker/Dockerfile.deploy
+# copies them in since they're already committed to git and don't need
+# Node/ts-morph/LLM calls to regenerate.
+data/raw/
+data/processed/*/chroma/
+data/processed/*/add-descriptions-intermediate/
+data/eval/
+node_modules/
+img/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/

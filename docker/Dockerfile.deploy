@@ -1,0 +1,46 @@
+# CodeIQ deploy image: clone raw source -> build the vector index -> serve
+# the Shiny app. No Node.js/ts-morph and no LLM description calls -- those
+# only matter for *building* entities.jsonl/edges.jsonl, which are already
+# committed to data/processed/ by the full pipeline (see ../Dockerfile, used
+# by developers via `docker compose up`).
+#
+# Cloning + embedding happen once here at image-BUILD time (not on every
+# container start): the resulting data/raw/ and data/processed/*/chroma/ are
+# baked into this image's layers, never committed to git -- chroma.sqlite3
+# alone runs tens of MB and grows with every repo/entity added, which would
+# risk GitHub's 100MB file limit and permanently bloat repo history on every
+# rebuild. Baking it into the image instead means: git stays small, and
+# thanks to Docker layer caching, rebuilds only redo this slow step when
+# data/processed's entities/edges actually changed -- not on every deploy.
+FROM python:3.11-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# Dependencies first, so source edits don't invalidate this layer
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
+
+COPY src/ src/
+COPY app/ app/
+COPY reports/ reports/
+# entities_with_desc.jsonl, edges.jsonl, graph.graphml only -- data/raw/ and
+# data/processed/*/chroma/ are excluded via .dockerignore and built below
+COPY data/processed/ data/processed/
+
+# Repos the app serves -- keep in sync with REPOS in app/app.py. The default
+# repo is overridable via --build-arg; the second is fixed to match app.py.
+ARG REPO_OWNER=bluesky-social
+ARG REPO_NAME=social-app
+ARG BRANCH=main
+
+RUN REPO_OWNER=$REPO_OWNER REPO_NAME=$REPO_NAME BRANCH=$BRANCH python src/clone_raw/clone_raw.py \
+    && python src/vector_index/build_index.py --tag "${REPO_OWNER}_${REPO_NAME}_${BRANCH}" \
+    && REPO_OWNER=raysk4ever REPO_NAME=Simple-React-Native-App BRANCH=main python src/clone_raw/clone_raw.py \
+    && python src/vector_index/build_index.py --tag raysk4ever_Simple-React-Native-App_main
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "shiny run --host 0.0.0.0 --port ${PORT:-8000} app/app.py"]
